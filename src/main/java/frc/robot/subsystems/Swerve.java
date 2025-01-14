@@ -60,10 +60,8 @@ public class Swerve extends SubsystemBase {
   SwerveDrivePoseEstimator poseEst;
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
-  Runnable nothing = () -> {
-  };
-  Consumer<Boolean> noConsumer = (Boolean b) -> {
-  };
+  Runnable nothing = () -> {};
+  Consumer<Boolean> noConsumer = (Boolean b) -> {};
   BooleanSupplier falseSup = () -> {
     return false;
   };
@@ -164,22 +162,6 @@ public class Swerve extends SubsystemBase {
     sendNT();
   }
 
-  // public void followTrajectory(SwerveSample sample) {
-  // // Get the current pose of the robot
-  // Pose2d pose = getPose();
-
-  // // Generate the next speeds for the robot
-  // ChassisSpeeds speeds = new ChassisSpeeds(
-  // sample.vx + xController.calculate(pose.getX(), sample.x),
-  // sample.vy + xController.calculate(pose.getX(), sample.y),
-  // sample.omega + xController.calculate(pose.getRotation().getRadians(),
-  // sample.heading)
-  // );
-
-  // // Apply the generated speeds
-  // driveFieldRelative(speeds);
-  // }
-
   public SwerveModulePosition[] getModulePostions() {
     List<SwerveModulePosition> out = new ArrayList<SwerveModulePosition>();
     for (Module mod : modules) {
@@ -273,10 +255,11 @@ public class Swerve extends SubsystemBase {
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.omegaRadiansPerSecond *= SwerveConstants.maxRotSpeed;
 
+
+    //TODO: make 0.02 measured instead of a constant.
     chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
 
-    SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(
-        chassisSpeeds);
+    SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
 
     SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
 

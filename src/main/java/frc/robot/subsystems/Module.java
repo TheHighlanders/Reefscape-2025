@@ -86,27 +86,8 @@ public class Module {
         driveEncoder = driveMotor.getEncoder();
         angleEncoder = angleMotor.getEncoder();
 
-        SparkMaxConfig driveConfig = new SparkMaxConfig();
-        SparkMaxConfig angleConfig = new SparkMaxConfig();
-
-        driveConfig.encoder
-                .positionConversionFactor(moduleConstants.drivePCF)
-                .velocityConversionFactor(moduleConstants.drivePCF / 60.0d);
-        angleConfig.encoder
-                .positionConversionFactor(moduleConstants.anglePCF)
-                .velocityConversionFactor(moduleConstants.anglePCF / 60.0d);
-
-        driveConfig.closedLoop
-                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                .pid(moduleConstants.driveP, moduleConstants.driveI, moduleConstants.driveD);
-                
-        angleConfig.closedLoop
-                .pid(moduleConstants.angleP, moduleConstants.angleI, moduleConstants.angleD)
-                .positionWrappingEnabled(true)
-                .positionWrappingInputRange(-180.0d, 180.0d);
-
-        driveConfig.smartCurrentLimit(moduleConstants.driveCurrentLimit).idleMode(IdleMode.kBrake);
-        angleConfig.smartCurrentLimit(moduleConstants.angleCurrentLimit).idleMode(IdleMode.kCoast);
+        SparkMaxConfig driveConfig = createDriveConfig();
+        SparkMaxConfig angleConfig = createAngleConfig();
 
         /* Creates an additional FF controller for extra drive motor control */
         driveFeedforward = new SimpleMotorFeedforward(moduleConstants.driveS, moduleConstants.driveV,
@@ -120,6 +101,38 @@ public class Module {
         driveEncoder.setPosition(0);
         angleEncoder.setPosition(getAbsolutePosition().getDegrees());
 
+    }
+
+    private SparkMaxConfig createDriveConfig() {
+        SparkMaxConfig driveConfig = new SparkMaxConfig();
+        driveConfig.encoder
+                .positionConversionFactor(moduleConstants.drivePCF)
+                .velocityConversionFactor(moduleConstants.drivePCF / 60.0d);
+
+        driveConfig.closedLoop
+                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+                .pid(moduleConstants.driveP, moduleConstants.driveI, moduleConstants.driveD);
+
+        driveConfig.smartCurrentLimit(moduleConstants.driveCurrentLimit).idleMode(IdleMode.kBrake);
+
+        return driveConfig;
+    }
+
+    private SparkMaxConfig createAngleConfig() {
+        SparkMaxConfig angleConfig = new SparkMaxConfig();
+
+        angleConfig.encoder
+                .positionConversionFactor(moduleConstants.anglePCF)
+                .velocityConversionFactor(moduleConstants.anglePCF / 60.0d);
+
+        angleConfig.closedLoop
+                .pid(moduleConstants.angleP, moduleConstants.angleI, moduleConstants.angleD)
+                .positionWrappingEnabled(true)
+                .positionWrappingInputRange(-180.0d, 180.0d);
+
+        angleConfig.smartCurrentLimit(moduleConstants.angleCurrentLimit).idleMode(IdleMode.kCoast);
+
+        return angleConfig;
     }
 
     /**
