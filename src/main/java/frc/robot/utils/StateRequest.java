@@ -3,7 +3,7 @@ package frc.robot.utils;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-
+import java.util.Map;
 import java.lang.reflect.Field;
 import frc.robot.subsystems.Superstructure;
 
@@ -26,22 +26,32 @@ public class StateRequest {
                 throw new RuntimeException("StateRequest not initialized. Call StateRequest.init() first");
             }
 
-            // String methodName = method.getName();
             Class<?> stateType = args[0].getClass();
+            StateHandler<?> handler = superstructure.handlers.get(stateType);
 
-            updateState(stateType, args[0]);
+            if (args[0].getClass().isInstance(handler.getGoal().desired)) {
+                @SuppressWarnings("unchecked")
+                StateHandler<Object> typedHandler = (StateHandler<Object>) handler;
+                typedHandler.getGoal().updateState(args[0]);
+            }
+
             return proxy;
         }
 
         private void updateState(Class<?> stateType, Object state) {
             try {
-                String typeName = stateType.getSimpleName().toLowerCase();
-                String fieldName = typeName.substring(0, typeName.length() - 5) + "Goal";
-                Field goalField = Superstructure.class.getField(fieldName);
-                Object goal = goalField.get(superstructure);
+                Field handlersField = Superstructure.class.getDeclaredField("handlers");
+                handlersField.setAccessible(true);
+                Object handlersObj = handlersField.get(superstructure);
 
-                Method updateStateMethod = goal.getClass().getDeclaredMethod("updateState", Object.class);
-                updateStateMethod.invoke(goal, state);
+                if (handlersObj instanceof Map<?, ?> handlers) {
+                    StateHandler<?> handler = (StateHandler<?>) handlers.get(stateType);
+                    if (handler != null && stateType.isInstance(state)) {
+                        @SuppressWarnings("unchecked")
+                        StateHandler<Object> typedHandler = (StateHandler<Object>) handler;
+                        typedHandler.getGoal().updateState(state);
+                    }
+                }
             } catch (Exception e) {
                 throw new RuntimeException(
                         "Failed to update state, this is likley due to improper naming conventions in the superstructure",

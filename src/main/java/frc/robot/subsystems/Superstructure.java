@@ -4,12 +4,20 @@
 
 package frc.robot.subsystems;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.utils.StateHandler;
 import frc.robot.utils.StateRequest;
+import frc.robot.utils.SubsystemGoal;
 
 public class Superstructure extends SubsystemBase {
   private final Elevator elevator;
@@ -44,56 +52,27 @@ public class Superstructure extends SubsystemBase {
     CORAL_POSITION
   }
 
-  public class SubsystemGoal<T> {
-    T desired;
-    T current;
-    T previous;
-    Timer transitionTimer = new Timer();
-
-    public SubsystemGoal(T initialState) {
-      desired = initialState;
-      current = initialState;
-      previous = initialState;
-      transitionTimer.start();
-    }
-
-    public void updateState(T newDesired) {
-      Commands.print("Changing desired state to: " + newDesired).schedule();
-      if (desired != newDesired) {
-        previous = current;
-        desired = newDesired;
-        transitionTimer.reset();
-      }
-    }
-
-    public double getTransitionTime() {
-      return transitionTimer.get();
-    }
-  }
-
-  // These must be named correctly for the StateRequest class to work.
-  // Mutable goals for the superstructure, can be updated by commands/subsystems,
-  // e.g. StateRequest.create(IntakeState.INTAKING);
-  public final SubsystemGoal<IntakeState> intakeGoal = new SubsystemGoal<>(IntakeState.STOPPED);
-  public final SubsystemGoal<ArmState> armGoal = new SubsystemGoal<>(ArmState.STOWED);
-  public final SubsystemGoal<ElevatorState> elevatorGoal = new SubsystemGoal<>(ElevatorState.HOME);
+  public final Map<Class<? extends Enum<?>>, StateHandler<?>> handlers = new HashMap<>();
 
   public Superstructure(Elevator elevator) {
     // Normally would take in all subsystems but they will throw errors if they dont
     // actually exist
     this.elevator = elevator;
+
+    handlers.put(IntakeState.class, new StateHandler<>(IntakeState.STOPPED, this::handleIntakeState));
+    handlers.put(ArmState.class, new StateHandler<>(ArmState.STOWED, this::handleArmState));
+    handlers.put(ElevatorState.class, new StateHandler<>(ElevatorState.HOME, this::handleElevatorState));
   }
 
   @Override
   public void periodic() {
-    handleIntakeState();
-    handleArmState();
-    handleElevatorState();
+    handlers.values().forEach(StateHandler::handle);
   }
 
-  private void handleIntakeState() {
-    switch (intakeGoal.desired) {
+  private void handleIntakeState(IntakeState state) {
+    switch (state) {
       case STOPPED:
+        Commands.print("STOPPED").schedule();
         // Will call intake.stop()
         break;
       case INTAKING:
@@ -108,8 +87,8 @@ public class Superstructure extends SubsystemBase {
     }
   }
 
-  private void handleArmState() {
-    switch (armGoal.desired) {
+  private void handleArmState(ArmState state) {
+    switch (state) {
       case STOWED:
         // Will call arm.setStowPosition()
         break;
@@ -141,8 +120,8 @@ public class Superstructure extends SubsystemBase {
     }
   }
 
-  private void handleElevatorState() {
-    switch (elevatorGoal.desired) {
+  private void handleElevatorState(ElevatorState state) {
+    switch (state) {
       case HOME:
         // Will call elevator.setHomePosition()
         break;

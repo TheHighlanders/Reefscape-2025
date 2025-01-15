@@ -28,7 +28,7 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    StateRequest.create(ArmState.L4_POSITION);
+    StateRequest.create(ArmState.L4_POSITION).with(IntakeState.STOPPED);
     return Commands.print("Autonomous Command");
   }
 }
