@@ -5,7 +5,9 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.utils.StateRequest;
 
@@ -35,10 +37,14 @@ public class Superstructure extends SubsystemBase {
 
   public enum ElevatorState {
     HOME,
-    CLIMBING
+    L1_POSITION,
+    L2_POSITION,
+    L3_POSITION,
+    L4_POSITION,
+    CORAL_POSITION
   }
 
-  private class SubsystemGoal<T> {
+  public class SubsystemGoal<T> {
     T desired;
     T current;
     T previous;
@@ -52,6 +58,7 @@ public class Superstructure extends SubsystemBase {
     }
 
     public void updateState(T newDesired) {
+      Commands.print("Changing desired state to: " + newDesired).schedule();
       if (desired != newDesired) {
         previous = current;
         desired = newDesired;
@@ -64,12 +71,16 @@ public class Superstructure extends SubsystemBase {
     }
   }
 
-  private final SubsystemGoal<IntakeState> intakeGoal = new SubsystemGoal<>(IntakeState.STOPPED);
-  private final SubsystemGoal<ArmState> armGoal = new SubsystemGoal<>(ArmState.STOWED);
-  private final SubsystemGoal<ElevatorState> elevatorGoal = new SubsystemGoal<>(ElevatorState.HOME);
+  // These must be named correctly for the StateRequest class to work.
+  // Mutable goals for the superstructure, can be updated by commands/subsystems,
+  // e.g. StateRequest.create(IntakeState.INTAKING);
+  public final SubsystemGoal<IntakeState> intakeGoal = new SubsystemGoal<>(IntakeState.STOPPED);
+  public final SubsystemGoal<ArmState> armGoal = new SubsystemGoal<>(ArmState.STOWED);
+  public final SubsystemGoal<ElevatorState> elevatorGoal = new SubsystemGoal<>(ElevatorState.HOME);
 
   public Superstructure(Elevator elevator) {
-    // Normally would take in all subsystems but for example purposes only
+    // Normally would take in all subsystems but they will throw errors if they dont
+    // actually exist
     this.elevator = elevator;
   }
 
@@ -115,6 +126,7 @@ public class Superstructure extends SubsystemBase {
         // Will call arm.setL3Position()
         break;
       case L4_POSITION:
+        Commands.print("L4_POSITION").schedule();
         // Will call arm.setL4Position()
         break;
       case CLIMB_PREP:
@@ -134,28 +146,37 @@ public class Superstructure extends SubsystemBase {
       case HOME:
         // Will call elevator.setHomePosition()
         break;
-      case CLIMBING:
-        // Will call elevator.executeClimb()
+      case L1_POSITION:
+        // Will call elevator.setL1Position()
+        break;
+      case L2_POSITION:
+        // Will call elevator.setL2Position()
+        break;
+      case L3_POSITION:
+        // Will call elevator.setL3Position()
+        break;
+      case L4_POSITION:
+        // Will call elevator.setL4Position()
+        break;
+      case CORAL_POSITION:
+        // Will call elevator.setCoralPosition()
         break;
     }
   }
 
-  private void setState(StateRequest request) {
-    if (request.getIntakeState() != null)
-      intakeGoal.updateState(request.getIntakeState());
-    if (request.getArmState() != null)
-      armGoal.updateState(request.getArmState());
-    if (request.getElevatorState() != null)
-      elevatorGoal.updateState(request.getElevatorState());
-  }
-
-  // Example of a command that will set the superstructure to a specific state
+  // Example commands that will set the superstructure to a specific state
 
   public Command getScoreL1Command() {
     return startEnd(
-        () -> setState(StateRequest.create(ArmState.L1_POSITION)
+        () -> StateRequest.create(ArmState.L1_POSITION)
             .with(ElevatorState.HOME)
-            .with(IntakeState.EJECTING)),
-        () -> setState(StateRequest.create(ArmState.STOWED))).withName("Score L1");
+            .with(IntakeState.EJECTING),
+        () -> StateRequest.create(ArmState.STOWED)).withName("Score L1");
+  }
+
+  public Command getIntakeCommand() {
+    return startEnd(
+        () -> StateRequest.create(IntakeState.INTAKING),
+        () -> StateRequest.create(IntakeState.STOPPED)).withName("Intake");
   }
 }

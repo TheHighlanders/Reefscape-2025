@@ -6,15 +6,29 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.subsystems.Elevator;
+import frc.robot.subsystems.Superstructure;
+import frc.robot.subsystems.Superstructure.ArmState;
+import frc.robot.subsystems.Superstructure.IntakeState;
+import frc.robot.utils.StateRequest;
 
 public class RobotContainer {
+  Superstructure superstructure;
+
+  Elevator elevator;
+
   public RobotContainer() {
+    superstructure = new Superstructure(elevator);
+    StateRequest.init(superstructure);
+
     configureBindings();
   }
 
-  private void configureBindings() {}
+  private void configureBindings() {
+  }
 
   public Command getAutonomousCommand() {
-    return Commands.print("No autonomous command configured");
+    StateRequest.create(ArmState.L4_POSITION);
+    return Commands.print("Autonomous Command");
   }
 }
