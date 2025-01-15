@@ -233,7 +233,7 @@ public class Module {
         positionDeg -= KModuleAbsoluteOffset.getDegrees();
 
         /* Inverts if necesary */
-        positionDeg *= (moduleConstants.absolInverted ? 1 : 1);
+        positionDeg *= (moduleConstants.absolInverted ? -1 : 1);
 
         return Rotation2d.fromDegrees(positionDeg);
     }
