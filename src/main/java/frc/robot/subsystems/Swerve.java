@@ -25,7 +25,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.FunctionalCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
@@ -60,11 +60,6 @@ public class Swerve extends SubsystemBase {
   SwerveDrivePoseEstimator poseEst;
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
-  Runnable nothing = () -> {};
-  Consumer<Boolean> noConsumer = (Boolean b) -> {};
-  BooleanSupplier falseSup = () -> {
-    return false;
-  };
 
   StructArrayPublisher<SwerveModuleState> statePublisher;
   StructArrayPublisher<SwerveModuleState> setpointPublisher;
@@ -224,15 +219,21 @@ public class Swerve extends SubsystemBase {
       DoubleSupplier x,
       DoubleSupplier y,
       DoubleSupplier omega) {
-    return new FunctionalCommand(
-        nothing,
+
+    return new RunCommand(
         () -> {
           drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble());
         },
-        noConsumer,
-        falseSup,
-        this)
-        .withName("Swerve Drive Command");
+        this).withName("Swerve Drive Command");
+    // return new FunctionalCommand(
+    //     nothing,
+    //     () -> {
+    //       drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble());
+    //     },
+    //     noConsumer,
+    //     falseSup,
+    //     this);
+
     // TODO: Implement Driving
   }
 
@@ -254,7 +255,6 @@ public class Swerve extends SubsystemBase {
     chassisSpeeds.vxMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.omegaRadiansPerSecond *= SwerveConstants.maxRotSpeed;
-
 
     //TODO: make 0.02 measured instead of a constant.
     chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
