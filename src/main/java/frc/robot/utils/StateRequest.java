@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Map;
+import java.util.Set;
 import java.lang.reflect.Field;
 import frc.robot.subsystems.Superstructure;
 
@@ -17,6 +18,43 @@ public class StateRequest {
 
     public static void init(Superstructure superstructure) {
         StateRequest.superstructure = superstructure;
+    }
+
+    public static void addOneWayExclusion(Object fromState, Object... excludedStates) {
+        if (superstructure == null) {
+            throw new RuntimeException("StateRequest not initialized. Call StateRequest.init() first");
+        }
+
+        StateHandler<?> handlerA = superstructure.handlers.get(fromState.getClass());
+
+        if (handlerA != null) {
+            @SuppressWarnings("unchecked")
+            StateHandler<Object> typedHandlerA = (StateHandler<Object>) handlerA;
+            for (Object excludedState : excludedStates) {
+                typedHandlerA.addOneWayExclusion(fromState, excludedState);
+            }
+        }
+    }
+
+    public static void addTwoWayExclusion(Object fromState, Object... otherStates) {
+        if (superstructure == null) {
+            throw new RuntimeException("StateRequest not initialized. Call StateRequest.init() first");
+        }
+
+        for (Object otherState : otherStates) {
+            StateHandler<?> handlerA = superstructure.handlers.get(fromState.getClass());
+            StateHandler<?> handlerB = superstructure.handlers.get(otherState.getClass());
+
+            if (handlerA != null && handlerB != null) {
+                @SuppressWarnings("unchecked")
+                StateHandler<Object> typedHandlerA = (StateHandler<Object>) handlerA;
+                @SuppressWarnings("unchecked")
+                StateHandler<Object> typedHandlerB = (StateHandler<Object>) handlerB;
+
+                typedHandlerA.addOneWayExclusion(fromState, otherState);
+                typedHandlerB.addOneWayExclusion(otherState, fromState);
+            }
+        }
     }
 
     private static class StateRequestHandler implements InvocationHandler {
@@ -69,4 +107,5 @@ public class StateRequest {
         handler.updateState(state.getClass(), state);
         return request;
     }
+
 }

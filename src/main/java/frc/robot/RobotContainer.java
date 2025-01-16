@@ -4,22 +4,19 @@
 
 package frc.robot;
 
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Superstructure;
-import frc.robot.subsystems.Superstructure.ArmState;
-import frc.robot.subsystems.Superstructure.IntakeState;
 import frc.robot.utils.StateRequest;
+import frc.robot.utils.SubsystemRegistry;
 
 public class RobotContainer {
-  Superstructure superstructure;
 
-  Elevator elevator;
+  // Add a subsystem field for each subsystem
 
   public RobotContainer() {
-    superstructure = new Superstructure(elevator);
-    StateRequest.init(superstructure);
+    StateRequest.init(SubsystemRegistry.getInstance(Superstructure.class));
 
     configureBindings();
   }
@@ -28,7 +25,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    StateRequest.create(ArmState.L4_POSITION).with(IntakeState.STOPPED);
     return Commands.print("Autonomous Command");
   }
 }
