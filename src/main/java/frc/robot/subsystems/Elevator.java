@@ -4,11 +4,7 @@
 
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.utils.StateHandler;
 import frc.robot.utils.StateManagedSubsystemBase;
-
-
 
 public class Elevator extends StateManagedSubsystemBase<Elevator.ElevatorState> {
   public enum ElevatorState {
@@ -16,13 +12,12 @@ public class Elevator extends StateManagedSubsystemBase<Elevator.ElevatorState> 
     SLOW
   }
 
-
   /** Creates a new Elevator. */
   public Elevator() {
   }
 
   @Override
   public void periodic() {
-    
+
   }
 }

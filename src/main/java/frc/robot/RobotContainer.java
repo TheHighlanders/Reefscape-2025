@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Superstructure;
-import frc.robot.utils.StateManagedSubsystem;
 import frc.robot.utils.StateRequest;
 
 public class RobotContainer {
@@ -26,7 +25,7 @@ public class RobotContainer {
     Superstructure superstructure = new Superstructure(subsystems);
     subsystems.add(superstructure);
     StateRequest.init(superstructure);
-    
+
     configureBindings();
   }
 

@@ -1,9 +1,7 @@
 package frc.robot.utils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -37,5 +35,17 @@ public class StateHandler<T extends Enum<T>> {
 
     public SubsystemGoal<T> getSubsystemStates() {
         return goal;
+    }
+
+    public T getCurrentState() {
+        return goal.currentState();
+    }
+
+    public T getDesiredState() {
+        return goal.desiredState();
+    }
+
+    public T getPreviousState() {
+        return goal.previousState();
     }
 }
