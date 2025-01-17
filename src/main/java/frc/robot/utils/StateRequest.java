@@ -4,7 +4,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Map;
-import java.util.Set;
 import java.lang.reflect.Field;
 import frc.robot.subsystems.Superstructure;
 
@@ -20,7 +19,7 @@ public class StateRequest {
         StateRequest.superstructure = superstructure;
     }
 
-    public static void addOneWayExclusion(Object fromState, Object... excludedStates) {
+    public static <T extends Enum<T>> void addOneWayExclusion(T fromState, T... excludedStates) {
         if (superstructure == null) {
             throw new RuntimeException("StateRequest not initialized. Call StateRequest.init() first");
         }
@@ -29,27 +28,27 @@ public class StateRequest {
 
         if (handlerA != null) {
             @SuppressWarnings("unchecked")
-            StateHandler<Object> typedHandlerA = (StateHandler<Object>) handlerA;
-            for (Object excludedState : excludedStates) {
+            StateHandler<T> typedHandlerA = (StateHandler<T>) handlerA;
+            for (T excludedState : excludedStates) {
                 typedHandlerA.addOneWayExclusion(fromState, excludedState);
             }
         }
     }
 
-    public static void addTwoWayExclusion(Object fromState, Object... otherStates) {
+    public static <T extends Enum<T>> void addTwoWayExclusion(T fromState, T... otherStates) {
         if (superstructure == null) {
             throw new RuntimeException("StateRequest not initialized. Call StateRequest.init() first");
         }
 
-        for (Object otherState : otherStates) {
+        for (T otherState : otherStates) {
             StateHandler<?> handlerA = superstructure.handlers.get(fromState.getClass());
             StateHandler<?> handlerB = superstructure.handlers.get(otherState.getClass());
 
             if (handlerA != null && handlerB != null) {
                 @SuppressWarnings("unchecked")
-                StateHandler<Object> typedHandlerA = (StateHandler<Object>) handlerA;
+                StateHandler<T> typedHandlerA = (StateHandler<T>) handlerA;
                 @SuppressWarnings("unchecked")
-                StateHandler<Object> typedHandlerB = (StateHandler<Object>) handlerB;
+                StateHandler<T> typedHandlerB = (StateHandler<T>) handlerB;
 
                 typedHandlerA.addOneWayExclusion(fromState, otherState);
                 typedHandlerB.addOneWayExclusion(otherState, fromState);
@@ -64,47 +63,47 @@ public class StateRequest {
                 throw new RuntimeException("StateRequest not initialized. Call StateRequest.init() first");
             }
 
-            Class<?> stateType = args[0].getClass();
-            StateHandler<?> handler = superstructure.handlers.get(stateType);
-
-            if (args[0].getClass().isInstance(handler.getGoal().desired)) {
-                @SuppressWarnings("unchecked")
-                StateHandler<Object> typedHandler = (StateHandler<Object>) handler;
-                typedHandler.getGoal().updateState(args[0]);
-            }
-
+            updateStateWithType(args[0]);
             return proxy;
         }
 
-        private void updateState(Class<?> stateType, Object state) {
+        private <T extends Enum<T>> void updateStateWithType(Object stateObj) {
+            @SuppressWarnings("unchecked")
+            T state = (T) stateObj;
+            Class<T> stateType = (Class<T>) state.getClass();
+
+            StateHandler<T> handler = (StateHandler<T>) superstructure.handlers.get(stateType);
+            if (handler != null) {
+                handler.getSubsystemStates().updateState(state);
+            }
+        }
+
+        private <T extends Enum<T>> void updateState(Class<T> stateType, T state) {
             try {
                 Field handlersField = Superstructure.class.getDeclaredField("handlers");
                 handlersField.setAccessible(true);
                 Object handlersObj = handlersField.get(superstructure);
 
                 if (handlersObj instanceof Map<?, ?> handlers) {
-                    StateHandler<?> handler = (StateHandler<?>) handlers.get(stateType);
-                    if (handler != null && stateType.isInstance(state)) {
-                        @SuppressWarnings("unchecked")
-                        StateHandler<Object> typedHandler = (StateHandler<Object>) handler;
-                        typedHandler.getGoal().updateState(state);
+                    @SuppressWarnings("unchecked")
+                    StateHandler<T> handler = (StateHandler<T>) handlers.get(stateType);
+                    if (handler != null) {
+                        handler.getSubsystemStates().updateState(state);
                     }
                 }
             } catch (Exception e) {
-                throw new RuntimeException(
-                        "Failed to update state, this is likley due to improper naming conventions in the superstructure",
-                        e);
+                throw new RuntimeException("Failed to update state", e);
             }
         }
 
     }
 
-    public static IStateRequest create(Object state) {
+    public static <T extends Enum<T>> IStateRequest create(T state) {
         IStateRequest request = (IStateRequest) Proxy.newProxyInstance(
                 StateRequest.class.getClassLoader(),
                 new Class<?>[] { IStateRequest.class },
                 handler);
-        handler.updateState(state.getClass(), state);
+        handler.updateStateWithType(state);
         return request;
     }
 

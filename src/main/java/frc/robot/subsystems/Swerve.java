@@ -26,14 +26,13 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
+import frc.robot.utils.StateHandler;
+import frc.robot.utils.StateManagedSubsystemBase;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 
 import com.studica.frc.AHRS;
@@ -53,7 +52,18 @@ class SwerveConstants {
   static double accelLim = 1.5;
 }
 
-public class Swerve extends SubsystemBase {
+public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
+
+  // This is the state handler bit for consistency purposes
+  // <------------ State Handler Stuff ------------>
+  enum SwerveState {
+    FAST,
+    SLOW
+  }
+
+  private static final double SLOW_MODE_MULTIPLIER = 0.3;
+  private final StateHandler<SwerveState> stateHandler;
+  // <------------ Non State Handler Stuff ------------>
 
   Module[] modules = new Module[4];
   AHRS gyro;
@@ -72,6 +82,9 @@ public class Swerve extends SubsystemBase {
 
   /** Creates a new Swerve. */
   public Swerve() {
+
+    stateHandler = new StateHandler<>(SwerveState.FAST);
+
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
     }
@@ -222,19 +235,15 @@ public class Swerve extends SubsystemBase {
 
     return new RunCommand(
         () -> {
-          drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble());
+          double speedMultiplier = stateHandler.getSubsystemStates().currentState() == SwerveState.SLOW
+              ? SLOW_MODE_MULTIPLIER
+              : 1.0;
+          drive(
+              x.getAsDouble() * speedMultiplier,
+              y.getAsDouble() * speedMultiplier,
+              omega.getAsDouble() * speedMultiplier);
         },
         this).withName("Swerve Drive Command");
-    // return new FunctionalCommand(
-    //     nothing,
-    //     () -> {
-    //       drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble());
-    //     },
-    //     noConsumer,
-    //     falseSup,
-    //     this);
-
-    // TODO: Implement Driving
   }
 
   /**
@@ -256,7 +265,7 @@ public class Swerve extends SubsystemBase {
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.omegaRadiansPerSecond *= SwerveConstants.maxRotSpeed;
 
-    //TODO: make 0.02 measured instead of a constant.
+    // TODO: make 0.02 measured instead of a constant.
     chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
 
     SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);

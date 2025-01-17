@@ -4,16 +4,25 @@
 
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.utils.StateHandler;
+import frc.robot.utils.StateManagedSubsystemBase;
 
-// PLACEHOLDER FOR SUPERSTRUCTURE EXAMPLE
 
-public class Elevator extends SubsystemBase {
+
+public class Elevator extends StateManagedSubsystemBase<Elevator.ElevatorState> {
+  public enum ElevatorState {
+    FAST,
+    SLOW
+  }
+
+
   /** Creates a new Elevator. */
-  public Elevator() {}
+  public Elevator() {
+  }
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
+    
   }
 }
