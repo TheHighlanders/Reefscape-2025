@@ -7,8 +7,8 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.Superstructure.IntakeState;
-import frc.robot.utils.StateRequest;
+// import frc.robot.subsystems.Superstructure.IntakeState;
+// import frc.robot.utils.StateRequest;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -22,13 +22,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Robot extends TimedRobot {
 
-  private SparkMax motor;
-  private SparkMaxConfig motorConfig;
-  private SparkLimitSwitch forwardLimitSwitch;
-  private SparkLimitSwitch reverseLimitSwitch;
-  private RelativeEncoder encoder;
-
-
+  private SparkMax elevatorMotor;
+  private SparkMaxConfig elevatorMotorConfig;
+  private SparkLimitSwitch bottomLimitSwitch;
+  private RelativeEncoder elevatorEncoder;
 
   private Command m_autonomousCommand;
 
@@ -37,31 +34,31 @@ public class Robot extends TimedRobot {
   public Robot() {
     m_robotContainer = new RobotContainer();
 
-    motor = new SparkMax(1, MotorType.kBrushless);
-    forwardLimitSwitch = motor.getForwardLimitSwitch();
-    reverseLimitSwitch = motor.getReverseLimitSwitch();
-    encoder = motor.getEncoder();
+    elevatorMotor = new SparkMax(1, MotorType.kBrushless);
+    bottomLimitSwitch = elevatorMotor.getReverseLimitSwitch();
+    elevatorEncoder = elevatorMotor.getEncoder();
 
-    motorConfig = new SparkMaxConfig();
+    elevatorMotorConfig = new SparkMaxConfig();
 
-    motorConfig.idleMode(IdleMode.kBrake);
+    elevatorMotorConfig.idleMode(IdleMode.kBrake);
 
-    motorConfig.limitSwitch
-    .forwardLimitSwitchType(Type.kNormallyOpen)
-    .forwardLimitSwitchEnabled(true)
-    .reverseLimitSwitchType(Type.kNormallyOpen)
-    .reverseLimitSwitchEnabled(true);
+    elevatorMotorConfig.limitSwitch
+       .forwardLimitSwitchType(Type.kNormallyOpen)
+       .forwardLimitSwitchEnabled(true)
+       .reverseLimitSwitchType(Type.kNormallyOpen)
+       .bottomLimitSwitchEnabled(true);
 
-    motorConfig.softLimit
+
+    elevatorMotorConfig.softLimit
     .forwardSoftLimit(50)
     .forwardSoftLimitEnabled(true)
     .reverseSoftLimit(-50)
     .reverseSoftLimitEnabled(true);
 
-    motor.configure(motorConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
+    elevatorMotor.configure(elevatorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
     // Reset the position to 0 to start within the range of the soft limits
-    encoder.setPosition(0);
+    elevatorEncoder.setPosition(0);
 
     // Initialize dashboard values
     SmartDashboard.setDefaultBoolean("Direction", true);
@@ -72,10 +69,9 @@ public class Robot extends TimedRobot {
     CommandScheduler.getInstance().run();
 
         // Display data from SPARK onto the dashboard
-        SmartDashboard.putBoolean("Forward Limit Reached", forwardLimitSwitch.isPressed());
-        SmartDashboard.putBoolean("Reverse Limit Reached", reverseLimitSwitch.isPressed());
-        SmartDashboard.putNumber("Applied Output", motor.getAppliedOutput());
-        SmartDashboard.putNumber("Position", encoder.getPosition());
+        SmartDashboard.putBoolean("Reverse Limit Reached", bottomLimitSwitch.isPressed());
+        SmartDashboard.putNumber("Applied Output", elevatorMotor.getAppliedOutput());
+        SmartDashboard.putNumber("Position", elevatorEncoder.getPosition());
   }
 
   @Override
@@ -119,9 +115,9 @@ public class Robot extends TimedRobot {
 
         // Set the motor setpoint based on the direction from the dashboard
         if (SmartDashboard.getBoolean("Direction", true)) {
-          motor.set(0.2);
+          elevatorMotor.set(0.2);
         } else {
-          motor.set(-0.2);
+          elevatorMotor.set(-0.2);
         }
   }
 
