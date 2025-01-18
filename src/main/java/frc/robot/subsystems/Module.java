@@ -22,6 +22,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants;
 
 class moduleConstants {
@@ -80,9 +81,6 @@ public class Module {
         driveMotor = new SparkMax(Constants.driveMotorIDs[moduleNumber], MotorType.kBrushless);
         angleMotor = new SparkMax(Constants.angleMotorIDs[moduleNumber], MotorType.kBrushless);
 
-        driveEncoder = driveMotor.getEncoder();
-        angleEncoder = angleMotor.getEncoder();
-
         SparkMaxConfig driveConfig = createDriveConfig();
         SparkMaxConfig angleConfig = createAngleConfig();
 
@@ -92,6 +90,9 @@ public class Module {
 
         angleMotor.configure(angleConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
         driveMotor.configure(driveConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+
+        driveEncoder = driveMotor.getEncoder();
+        angleEncoder = angleMotor.getEncoder();
 
         absoluteEncoder = angleMotor.getAbsoluteEncoder();
 
@@ -105,6 +106,9 @@ public class Module {
 
     private SparkMaxConfig createDriveConfig() {
         SparkMaxConfig driveConfig = new SparkMaxConfig();
+
+        driveConfig.inverted(false);
+
         driveConfig.encoder
                 .positionConversionFactor(moduleConstants.drivePCF)
                 .velocityConversionFactor(moduleConstants.drivePCF / 60.0d);
@@ -121,6 +125,8 @@ public class Module {
     private SparkMaxConfig createAngleConfig() {
         SparkMaxConfig angleConfig = new SparkMaxConfig();
 
+        angleConfig.inverted(true);
+
         angleConfig.encoder
                 .positionConversionFactor(moduleConstants.anglePCF)
                 .velocityConversionFactor(moduleConstants.anglePCF / 60.0d);
@@ -128,8 +134,7 @@ public class Module {
         angleConfig.closedLoop
                 .pid(moduleConstants.angleP, moduleConstants.angleI, moduleConstants.angleD)
                 .positionWrappingEnabled(true)
-                .positionWrappingInputRange(-180.0d, 180.0d)
-                .feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
+                .positionWrappingInputRange(-180.0d, 180.0d);
 
         angleConfig.smartCurrentLimit(moduleConstants.angleCurrentLimit).idleMode(IdleMode.kCoast);
 

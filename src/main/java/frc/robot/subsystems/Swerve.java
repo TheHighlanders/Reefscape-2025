@@ -79,9 +79,9 @@ public class Swerve extends SubsystemBase {
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
   SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
-  private final PIDController xController = new PIDController(10.0, 0.0, 0.0);
-  private final PIDController yController = new PIDController(10.0, 0.0, 0.0);
-  private final PIDController headingController = new PIDController(7.5, 0.0, 0.0);
+  private final PIDController xController = new PIDController(0, 0.0, 0.0);
+  private final PIDController yController = new PIDController(0, 0.0, 0.0);
+  private final PIDController headingController = new PIDController(0, 0.0, 0.0);
 
   private final SysIdRoutine sysId;
 

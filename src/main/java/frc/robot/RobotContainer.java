@@ -9,6 +9,7 @@ import java.util.Set;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.SuperstructureExampleUse;
 import frc.robot.subsystems.Swerve;
@@ -17,6 +18,8 @@ import frc.robot.utils.StateRequest;
 public class RobotContainer {
   private final Set<Subsystem> subsystems = new HashSet<>();
   SuperstructureExampleUse example;
+
+  CommandXboxController driver = new CommandXboxController(0);
 
   Swerve drive = new Swerve();
   Autos autos = new Autos(drive);
@@ -31,6 +34,8 @@ public class RobotContainer {
     StateRequest.init(superstructure);
 
     configureBindings();
+
+    drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
   private void configureBindings() {
