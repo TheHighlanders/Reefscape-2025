@@ -95,6 +95,9 @@ public class Module {
 
         absoluteEncoder = angleMotor.getAbsoluteEncoder();
 
+        angleController = angleMotor.getClosedLoopController();
+        driveController = driveMotor.getClosedLoopController();
+
         driveEncoder.setPosition(0);
         angleEncoder.setPosition(getAbsolutePosition().getDegrees());
 
