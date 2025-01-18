@@ -33,6 +33,7 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
+    StateRequest.addTwoWayExclusion(Elevator.ElevatorState.SLOW, Elevator.ElevatorState.FAST);
     StateRequest.create(Elevator.ElevatorState.SLOW);
     return Commands.print("Autonomous Command");
   }

@@ -26,10 +26,9 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
-import frc.robot.utils.StateHandler;
-import frc.robot.utils.StateManagedSubsystemBase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +51,7 @@ class SwerveConstants {
   static double accelLim = 1.5;
 }
 
-public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
+public class Swerve extends SubsystemBase {
 
   // This is the state handler bit for consistency purposes
   // <------------ State Handler Stuff ------------>
@@ -62,7 +61,7 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
   }
 
   private static final double SLOW_MODE_MULTIPLIER = 0.3;
-  private final StateHandler<SwerveState> stateHandler;
+  private final SwerveState stateHandler;
   // <------------ Non State Handler Stuff ------------>
 
   Module[] modules = new Module[4];
@@ -83,7 +82,7 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
   /** Creates a new Swerve. */
   public Swerve() {
 
-    stateHandler = new StateHandler<>(SwerveState.FAST);
+    stateHandler = SwerveState.FAST;
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
@@ -235,7 +234,7 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
 
     return new RunCommand(
         () -> {
-          double speedMultiplier = stateHandler.getSubsystemStates().currentState() == SwerveState.SLOW
+          double speedMultiplier = stateHandler == SwerveState.SLOW
               ? SLOW_MODE_MULTIPLIER
               : 1.0;
           drive(
