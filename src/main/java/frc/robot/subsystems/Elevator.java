@@ -52,19 +52,18 @@ public class Elevator extends SubsystemBase {
   public Elevator() {
 
     m_controller = elevatorMotor.getClosedLoopController();
-
+    elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(1, MotorType.kBrushless);
     reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
     elevatorEncoder = elevatorMotor.getEncoder();
-    elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotorConfig.idleMode(IdleMode.kBrake);
     elevatorMotorConfig.limitSwitch
         .reverseLimitSwitchType(Type.kNormallyOpen)
         .reverseLimitSwitchEnabled(true);
 
     elevatorMotorConfig.softLimit
-        // .forwardSoftLimit(50)
-        // .forwardSoftLimitEnabled(true)
+        .forwardSoftLimit(50)
+        .forwardSoftLimitEnabled(true)
         .reverseSoftLimit(0)
         .reverseSoftLimitEnabled(true);
 
