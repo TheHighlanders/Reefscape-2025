@@ -11,9 +11,6 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.AbsoluteEncoderConfig;
-import com.revrobotics.spark.config.ClosedLoopConfig;
-import com.revrobotics.spark.config.EncoderConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -233,7 +230,7 @@ public class Module {
         positionDeg -= KModuleAbsoluteOffset.getDegrees();
 
         /* Inverts if necesary */
-        positionDeg *= (moduleConstants.absolInverted ? 1 : 1);
+        positionDeg *= (moduleConstants.absolInverted ? -1 : 1);
 
         return Rotation2d.fromDegrees(positionDeg);
     }

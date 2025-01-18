@@ -4,17 +4,38 @@
 
 package frc.robot;
 
+import java.lang.Thread.State;
+import java.util.HashSet;
+import java.util.Set;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.subsystems.SuperstructureExampleUse;
+import frc.robot.subsystems.Superstructure;
+import frc.robot.utils.StateRequest;
 
 public class RobotContainer {
+  private final Set<Subsystem> subsystems = new HashSet<>();
+  SuperstructureExampleUse example;
+
   public RobotContainer() {
+    example = new SuperstructureExampleUse();
+    subsystems.add(example);
+
+    // This needs to be the last subsystem added
+    Superstructure superstructure = new Superstructure(subsystems);
+    subsystems.add(superstructure);
+    StateRequest.init(superstructure);
+
     configureBindings();
   }
 
-  private void configureBindings() {}
+  private void configureBindings() {
+  }
 
   public Command getAutonomousCommand() {
-    return Commands.print("No autonomous command configured");
+    example.runTests();
+    return Commands.print("Autonomous Command");
   }
 }
