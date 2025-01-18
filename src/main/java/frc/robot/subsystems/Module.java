@@ -125,7 +125,8 @@ public class Module {
         angleConfig.closedLoop
                 .pid(moduleConstants.angleP, moduleConstants.angleI, moduleConstants.angleD)
                 .positionWrappingEnabled(true)
-                .positionWrappingInputRange(-180.0d, 180.0d);
+                .positionWrappingInputRange(-180.0d, 180.0d)
+                .feedbackSensor(FeedbackSensor.kAbsoluteEncoder);
 
         angleConfig.smartCurrentLimit(moduleConstants.angleCurrentLimit).idleMode(IdleMode.kCoast);
 

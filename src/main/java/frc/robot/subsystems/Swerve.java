@@ -53,16 +53,12 @@ class SwerveConstants {
 
 public class Swerve extends SubsystemBase {
 
-  // This is the state handler bit for consistency purposes
-  // <------------ State Handler Stuff ------------>
   enum SwerveState {
     FAST,
     SLOW
   }
 
   private static final double SLOW_MODE_MULTIPLIER = 0.3;
-  private final SwerveState stateHandler;
-  // <------------ Non State Handler Stuff ------------>
 
   Module[] modules = new Module[4];
   AHRS gyro;
@@ -79,10 +75,10 @@ public class Swerve extends SubsystemBase {
 
   private final SysIdRoutine sysId;
 
+  SwerveState current = SwerveState.FAST;
+
   /** Creates a new Swerve. */
   public Swerve() {
-
-    stateHandler = SwerveState.FAST;
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
@@ -234,13 +230,10 @@ public class Swerve extends SubsystemBase {
 
     return new RunCommand(
         () -> {
-          double speedMultiplier = stateHandler == SwerveState.SLOW
-              ? SLOW_MODE_MULTIPLIER
-              : 1.0;
           drive(
-              x.getAsDouble() * speedMultiplier,
-              y.getAsDouble() * speedMultiplier,
-              omega.getAsDouble() * speedMultiplier);
+              x.getAsDouble(),
+              y.getAsDouble(),
+              omega.getAsDouble());
         },
         this).withName("Swerve Drive Command");
   }
@@ -254,6 +247,12 @@ public class Swerve extends SubsystemBase {
    */
   public void drive(double x, double y, double omega) {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
+
+    //TODO: Do speed limit changing here
+    if(current == SwerveState.SLOW){
+      x *= SLOW_MODE_MULTIPLIER;
+      y *= SLOW_MODE_MULTIPLIER;
+    }
 
     ChassisSpeeds chassisSpeeds = fromAllianceRelativeSpeeds(
         xLim.calculate(x),
@@ -344,6 +343,10 @@ public class Swerve extends SubsystemBase {
     fr = ChassisSpeeds.fromFieldRelativeSpeeds(fr, getGyroAngle());
 
     return fr;
+  }
+
+  public Command slowMode(){
+    return new RunCommand(() -> current = SwerveState.SLOW, this).finallyDo(() -> current = SwerveState.FAST);
   }
 
   public void driveVoltage(Measure<VoltageUnit> voltage) {
