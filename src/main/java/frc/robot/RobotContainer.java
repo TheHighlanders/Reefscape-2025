@@ -4,22 +4,24 @@
 
 package frc.robot;
 
+import java.lang.Thread.State;
 import java.util.HashSet;
 import java.util.Set;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import frc.robot.subsystems.Elevator;
+import frc.robot.subsystems.SuperstructureExampleUse;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.utils.StateRequest;
 
 public class RobotContainer {
   private final Set<Subsystem> subsystems = new HashSet<>();
+  SuperstructureExampleUse example;
 
   public RobotContainer() {
-    Elevator elevator = new Elevator();
-    subsystems.add(elevator);
+    example = new SuperstructureExampleUse();
+    subsystems.add(example);
 
     // This needs to be the last subsystem added
     Superstructure superstructure = new Superstructure(subsystems);
@@ -33,8 +35,7 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    StateRequest.addTwoWayExclusion(Elevator.ElevatorState.SLOW, Elevator.ElevatorState.FAST);
-    StateRequest.create(Elevator.ElevatorState.SLOW);
+    example.runTests();
     return Commands.print("Autonomous Command");
   }
 }
