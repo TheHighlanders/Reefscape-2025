@@ -4,15 +4,15 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class Superstructure extends SubsystemBase {
   public final Map<Class<? extends Enum<?>>, Enum<?>> states = new HashMap<>();
   public final Map<Class<? extends Enum<?>>, Field> stateFields = new HashMap<>();
   public final Map<Class<? extends Enum<?>>, Object> stateObjects = new HashMap<>();
 
-  public Superstructure(Set<Subsystem> subsystems) {
+  public Superstructure(List<Subsystem> subsystems) {
     subsystems.stream()
         .filter(subsystem -> subsystem instanceof SubsystemBase)
         .forEach(

@@ -10,11 +10,12 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.SuperstructureExampleUse;
 import frc.robot.utils.StateRequest;
-import java.util.HashSet;
-import java.util.Set;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class RobotContainer {
-  private final Set<Subsystem> subsystems = new HashSet<>();
+  private final List<Subsystem> subsystems = new ArrayList<Subsystem>();
   SuperstructureExampleUse example;
 
   public RobotContainer() {
