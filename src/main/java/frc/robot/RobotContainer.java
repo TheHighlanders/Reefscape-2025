@@ -4,16 +4,14 @@
 
 package frc.robot;
 
-import java.lang.Thread.State;
-import java.util.HashSet;
-import java.util.Set;
-
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import frc.robot.subsystems.SuperstructureExampleUse;
 import frc.robot.subsystems.Superstructure;
+import frc.robot.subsystems.SuperstructureExampleUse;
 import frc.robot.utils.StateRequest;
+import java.util.HashSet;
+import java.util.Set;
 
 public class RobotContainer {
   private final Set<Subsystem> subsystems = new HashSet<>();
@@ -31,8 +29,7 @@ public class RobotContainer {
     configureBindings();
   }
 
-  private void configureBindings() {
-  }
+  private void configureBindings() {}
 
   public Command getAutonomousCommand() {
     example.runTests();
