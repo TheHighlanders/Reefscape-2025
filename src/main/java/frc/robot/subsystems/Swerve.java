@@ -4,8 +4,21 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volt;
+import static edu.wpi.first.units.Units.Volts;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.DoubleSupplier;
+
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
+
+import choreo.trajectory.SwerveSample;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -29,13 +42,6 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.DoubleSupplier;
-
-import com.studica.frc.AHRS;
-import com.studica.frc.AHRS.NavXComType;
 
 class SwerveConstants {
 
@@ -72,6 +78,10 @@ public class Swerve extends SubsystemBase {
 
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
   SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
+
+  private final PIDController xController = new PIDController(10.0, 0.0, 0.0);
+  private final PIDController yController = new PIDController(10.0, 0.0, 0.0);
+  private final PIDController headingController = new PIDController(7.5, 0.0, 0.0);
 
   private final SysIdRoutine sysId;
 
@@ -164,6 +174,10 @@ public class Swerve extends SubsystemBase {
 
     sendNT();
   }
+  public Pose2d getPose(){
+    return poseEst.getEstimatedPosition();
+  }
+
 
   public SwerveModulePosition[] getModulePostions() {
     List<SwerveModulePosition> out = new ArrayList<SwerveModulePosition>();
@@ -191,6 +205,10 @@ public class Swerve extends SubsystemBase {
 
   public Rotation2d getGyroAngle() {
     return gyro.getRotation2d();
+  }
+
+  public void resetOdometry(Pose2d pose){
+    poseEst.resetPosition(pose.getRotation(), getModulePostions(), pose);
   }
 
   /**
@@ -263,12 +281,24 @@ public class Swerve extends SubsystemBase {
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.omegaRadiansPerSecond *= SwerveConstants.maxRotSpeed;
 
-    // TODO: make 0.02 measured instead of a constant.
+    driveChassisSpeedsFieldRelative(chassisSpeeds);
+  }
+
+  public void driveChassisSpeedsFieldRelative(ChassisSpeeds chassisSpeeds){
+    //https://github.com/wpilibsuite/allwpilib/issues/7332
+
+    //Convert to States and desat
+    SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
+
+    //Convert to ChassisSpeeds and discretize
+    chassisSpeeds = kinematics.toChassisSpeeds(targetStates);
     chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
 
-    SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
-
+    //Convert back to States, and desat, again
+    targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
+  
 
     for (int i = 0; i < modules.length; i++) {
       modules[i].setModuleState(targetStates[i], false);
@@ -354,4 +384,19 @@ public class Swerve extends SubsystemBase {
       m.driveVolts(voltage);
     }
   }
+
+  public void followTraj(SwerveSample sample){
+        // Get the current pose of the robot
+        Pose2d pose = getPose();
+
+        // Generate the next speeds for the robot
+        ChassisSpeeds speeds = new ChassisSpeeds(
+            sample.vx + xController.calculate(pose.getX(), sample.x),
+            sample.vy + yController.calculate(pose.getY(), sample.y),
+            sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading)
+        );
+
+        // Apply the generated speeds
+        driveChassisSpeedsFieldRelative(speeds);
+    }
 }

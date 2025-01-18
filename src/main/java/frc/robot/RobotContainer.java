@@ -4,20 +4,22 @@
 
 package frc.robot;
 
-import java.lang.Thread.State;
 import java.util.HashSet;
 import java.util.Set;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import frc.robot.subsystems.SuperstructureExampleUse;
 import frc.robot.subsystems.Superstructure;
+import frc.robot.subsystems.SuperstructureExampleUse;
+import frc.robot.subsystems.Swerve;
 import frc.robot.utils.StateRequest;
 
 public class RobotContainer {
   private final Set<Subsystem> subsystems = new HashSet<>();
   SuperstructureExampleUse example;
+
+  Swerve drive = new Swerve();
+  Autos autos = new Autos(drive);
 
   public RobotContainer() {
     example = new SuperstructureExampleUse();
@@ -35,7 +37,6 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    example.runTests();
-    return Commands.print("Autonomous Command");
+    return autos.testTraj();
   }
 }
