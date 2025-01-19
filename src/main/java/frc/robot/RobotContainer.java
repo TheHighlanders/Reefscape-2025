@@ -11,20 +11,21 @@ import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.SuperstructureExampleUse;
 import frc.robot.utils.StateRequest;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.lang.Thread.State;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RobotContainer {
-  private final List<Subsystem> subsystems = new ArrayList<Subsystem>();
+  private final Map<String, Subsystem> subsystems = new HashMap<String, Subsystem>();
   SuperstructureExampleUse example;
 
   public RobotContainer() {
     example = new SuperstructureExampleUse();
-    subsystems.add(example);
+    subsystems.put("example", example);
 
     // This needs to be the last subsystem added
     Superstructure superstructure = new Superstructure(subsystems);
-    subsystems.add(superstructure);
+    subsystems.put("superstructure", superstructure);
     StateRequest.init(superstructure);
 
     configureBindings();
@@ -34,6 +35,7 @@ public class RobotContainer {
 
   public Command getAutonomousCommand() {
     example.runTests();
+    StateRequest.create(Superstructure.SuperstructureState.L1);
     return Commands.print("Autonomous Command");
   }
 }

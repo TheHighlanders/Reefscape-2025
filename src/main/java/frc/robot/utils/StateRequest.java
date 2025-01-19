@@ -73,11 +73,21 @@ public class StateRequest {
           } catch (IllegalAccessException e) {
             e.printStackTrace();
           }
+        } else {
+          System.out.println("State " + stateClass.getSimpleName() + " not found in Superstructure");
+          System.out.println(superstructure.states.keySet());
         }
       }
     }
   }
 
+  /**
+   * Creates a new {@link IStateRequest} instance that represents a request to update the state of a subsystem.
+   *
+   * @param <T> The enum type of the state being requested.
+   * @param state The new state to be set.
+   * @return A new {@link IStateRequest} instance that can be used to update the state.
+   */
   public static <T extends Enum<T>> IStateRequest create(T state) {
     IStateRequest request =
         (IStateRequest)
