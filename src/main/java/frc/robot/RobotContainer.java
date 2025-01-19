@@ -8,20 +8,15 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.subsystems.Superstructure;
-import frc.robot.subsystems.SuperstructureExampleUse;
 import frc.robot.utils.StateRequest;
 
-import java.lang.Thread.State;
 import java.util.HashMap;
 import java.util.Map;
 
 public class RobotContainer {
   private final Map<String, Subsystem> subsystems = new HashMap<String, Subsystem>();
-  SuperstructureExampleUse example;
 
   public RobotContainer() {
-    example = new SuperstructureExampleUse();
-    subsystems.put("example", example);
 
     // This needs to be the last subsystem added
     Superstructure superstructure = new Superstructure(subsystems);
@@ -34,7 +29,6 @@ public class RobotContainer {
   private void configureBindings() {}
 
   public Command getAutonomousCommand() {
-    example.runTests();
     StateRequest.create(Superstructure.SuperstructureState.L1);
     return Commands.print("Autonomous Command");
   }
