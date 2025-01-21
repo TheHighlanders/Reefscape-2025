@@ -12,11 +12,11 @@ import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
 
-class moduleConstants {
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+
+class climberConstants {
 
   static double climberP = 0;
   static double climberI = 0;
@@ -29,12 +29,13 @@ class moduleConstants {
   static double climberPCF = 0;
 
   static int climberCurrentLimit = 0;
-
+  
+  static int climbMotorID= 0;
 }
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
-  public SparkMax climbMotor = new SparkMax(Constants.climberConstants.climbMotorID,MotorType.kBrushless);
+  public SparkMax climbMotor = new SparkMax(climberConstants.climbMotorID,MotorType.kBrushless);
   
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
@@ -44,14 +45,14 @@ public class Climber extends SubsystemBase {
    private SparkMaxConfig createClimberConfig() {
         SparkMaxConfig climberConfig = new SparkMaxConfig();
         climberConfig.encoder
-                .positionConversionFactor(moduleConstants.climberPCF)
-                .velocityConversionFactor(moduleConstants.climberPCF / 60.0d);
+                .positionConversionFactor(climberConstants.climberPCF)
+                .velocityConversionFactor(climberConstants.climberPCF / 60.0d);
 
         climberConfig.closedLoop
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                .pid(moduleConstants.climberP, moduleConstants.climberI, moduleConstants.climberD);
+                .pid(climberConstants.climberP, climberConstants.climberI, climberConstants.climberD);
 
-        climberConfig.smartCurrentLimit(moduleConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
+        climberConfig.smartCurrentLimit(climberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
 
         return climberConfig;
     }
