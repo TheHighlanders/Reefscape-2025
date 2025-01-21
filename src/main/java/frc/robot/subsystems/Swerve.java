@@ -6,6 +6,8 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+import com.studica.frc.AHRS;
+import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -26,17 +28,12 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
-import frc.robot.utils.StateHandler;
-import frc.robot.utils.StateManagedSubsystemBase;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.DoubleSupplier;
-
-import com.studica.frc.AHRS;
-import com.studica.frc.AHRS.NavXComType;
 
 class SwerveConstants {
 
@@ -52,7 +49,7 @@ class SwerveConstants {
   static double accelLim = 1.5;
 }
 
-public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
+public class Swerve extends SubsystemBase {
 
   // This is the state handler bit for consistency purposes
   // <------------ State Handler Stuff ------------>
@@ -62,7 +59,7 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
   }
 
   private static final double SLOW_MODE_MULTIPLIER = 0.3;
-  private final StateHandler<SwerveState> stateHandler;
+  private final SwerveState stateHandler;
   // <------------ Non State Handler Stuff ------------>
 
   Module[] modules = new Module[4];
@@ -83,7 +80,7 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
   /** Creates a new Swerve. */
   public Swerve() {
 
-    stateHandler = new StateHandler<>(SwerveState.FAST);
+    stateHandler = SwerveState.FAST;
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
@@ -95,77 +92,69 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
     double y = SwerveConstants.width / 2.0d;
     double x = SwerveConstants.length / 2.0d;
 
-    kinematics = new SwerveDriveKinematics(
-        new Translation2d(x, y),
-        new Translation2d(x, -y),
-        new Translation2d(-x, y),
-        new Translation2d(-x, -y));
+    kinematics =
+        new SwerveDriveKinematics(
+            new Translation2d(x, y),
+            new Translation2d(x, -y),
+            new Translation2d(-x, y),
+            new Translation2d(-x, -y));
 
     // Default Port is MXP
     gyro = new AHRS(NavXComType.kMXP_SPI);
 
-    poseEst = new SwerveDrivePoseEstimator(
-        kinematics,
-        startPose.getRotation(),
-        getModulePostions(),
-        startPose);
+    poseEst =
+        new SwerveDrivePoseEstimator(
+            kinematics, startPose.getRotation(), getModulePostions(), startPose);
 
-    statePublisher = NetworkTableInstance
-        .getDefault()
-        .getStructArrayTopic("/Swerve/States", SwerveModuleState.struct)
-        .publish();
-    setpointPublisher = NetworkTableInstance
-        .getDefault()
-        .getStructArrayTopic("/Swerve/Setpoints", SwerveModuleState.struct)
-        .publish();
+    statePublisher =
+        NetworkTableInstance.getDefault()
+            .getStructArrayTopic("/Swerve/States", SwerveModuleState.struct)
+            .publish();
+    setpointPublisher =
+        NetworkTableInstance.getDefault()
+            .getStructArrayTopic("/Swerve/Setpoints", SwerveModuleState.struct)
+            .publish();
 
-    posePublisher = NetworkTableInstance
-        .getDefault()
-        .getStructTopic("/Swerve/Poses", Pose2d.struct)
-        .publish();
+    posePublisher =
+        NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
 
-    sysId = new SysIdRoutine(
-        new SysIdRoutine.Config(
-            null,
-            Volt.of(4),
-            Seconds.of(6),
-            state -> {
-              SmartDashboard.putString("Drive/SysIdState", state.toString());
-            }),
-        new SysIdRoutine.Mechanism(
-            voltage -> {
-              driveVoltage(voltage);
-            },
-            log -> {
-              log
-                  .motor("Front-Left")
-                  .voltage(
-                      Volts.of(
-                          modules[0].getDriveVolts().in(Volts) *
-                              RobotController.getBatteryVoltage()))
-                  .linearPosition(Meters.of(modules[0].getDrivePosition()))
-                  .linearVelocity(
-                      MetersPerSecond.of(modules[0].getDriveVelocity()));
-              log
-                  .motor("Front-Right")
-                  .voltage(
-                      Volts.of(
-                          modules[1].getDriveVolts().in(Volts) *
-                              RobotController.getBatteryVoltage()))
-                  .linearPosition(Meters.of(modules[1].getDrivePosition()))
-                  .linearVelocity(
-                      MetersPerSecond.of(modules[1].getDriveVelocity()));
-            },
-            this));
+    sysId =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(
+                null,
+                Volt.of(4),
+                Seconds.of(6),
+                state -> {
+                  SmartDashboard.putString("Drive/SysIdState", state.toString());
+                }),
+            new SysIdRoutine.Mechanism(
+                voltage -> {
+                  driveVoltage(voltage);
+                },
+                log -> {
+                  log.motor("Front-Left")
+                      .voltage(
+                          Volts.of(
+                              modules[0].getDriveVolts().in(Volts)
+                                  * RobotController.getBatteryVoltage()))
+                      .linearPosition(Meters.of(modules[0].getDrivePosition()))
+                      .linearVelocity(MetersPerSecond.of(modules[0].getDriveVelocity()));
+                  log.motor("Front-Right")
+                      .voltage(
+                          Volts.of(
+                              modules[1].getDriveVolts().in(Volts)
+                                  * RobotController.getBatteryVoltage()))
+                      .linearPosition(Meters.of(modules[1].getDrivePosition()))
+                      .linearVelocity(MetersPerSecond.of(modules[1].getDriveVelocity()));
+                },
+                this));
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
     poseEst.updateWithTime(
-        RobotController.getFPGATime() * Math.pow(10, 6),
-        getGyroAngle(),
-        getModulePostions());
+        RobotController.getFPGATime() * Math.pow(10, 6), getGyroAngle(), getModulePostions());
 
     sendNT();
   }
@@ -199,8 +188,7 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
   }
 
   /**
-   * Returns a command that will execute a quasistatic test in the given
-   * direction.
+   * Returns a command that will execute a quasistatic test in the given direction.
    *
    * @param direction The direction (forward or reverse) to run the test in
    */
@@ -228,38 +216,36 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
    * @param y Supplier for desired Alliance Relative Y translation
    * @return Drive Command
    */
-  public Command driveCMD(
-      DoubleSupplier x,
-      DoubleSupplier y,
-      DoubleSupplier omega) {
+  public Command driveCMD(DoubleSupplier x, DoubleSupplier y, DoubleSupplier omega) {
 
     return new RunCommand(
-        () -> {
-          double speedMultiplier = stateHandler.getSubsystemStates().currentState() == SwerveState.SLOW
-              ? SLOW_MODE_MULTIPLIER
-              : 1.0;
-          drive(
-              x.getAsDouble() * speedMultiplier,
-              y.getAsDouble() * speedMultiplier,
-              omega.getAsDouble() * speedMultiplier);
-        },
-        this).withName("Swerve Drive Command");
+            () -> {
+              double speedMultiplier =
+                  stateHandler == SwerveState.SLOW ? SLOW_MODE_MULTIPLIER : 1.0;
+              drive(
+                  x.getAsDouble() * speedMultiplier,
+                  y.getAsDouble() * speedMultiplier,
+                  omega.getAsDouble() * speedMultiplier);
+            },
+            this)
+        .withName("Swerve Drive Command");
   }
 
   /**
    * Method to drive the robot
-   * 
-   * @param x     Alliance Relative X Speed, as defined above (m/s)
-   * @param y     Alliance Relative Y Speed, as defined above (m/s)
+   *
+   * @param x Alliance Relative X Speed, as defined above (m/s)
+   * @param y Alliance Relative Y Speed, as defined above (m/s)
    * @param omega Rotational Speed (rad/s)
    */
   public void drive(double x, double y, double omega) {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
 
-    ChassisSpeeds chassisSpeeds = fromAllianceRelativeSpeeds(
-        xLim.calculate(x),
-        yLim.calculate(y),
-        omega); // Takes in Alliance Relative, returns Field Relative
+    ChassisSpeeds chassisSpeeds =
+        fromAllianceRelativeSpeeds(
+            xLim.calculate(x),
+            yLim.calculate(y),
+            omega); // Takes in Alliance Relative, returns Field Relative
 
     chassisSpeeds.vxMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
@@ -283,23 +269,20 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
     posePublisher.set(poseEst.getEstimatedPosition());
     SmartDashboard.putNumber(
         "Hypot",
-        Math.pow(poseEst.getEstimatedPosition().getX(), 2) +
-            Math.pow(poseEst.getEstimatedPosition().getY(), 2));
+        Math.pow(poseEst.getEstimatedPosition().getX(), 2)
+            + Math.pow(poseEst.getEstimatedPosition().getY(), 2));
   }
 
   /**
-   * Create Field Relative IN CHASSIS SPEEDS COORD SYSTEM Chassis Speeds from
-   * Alliance Relative desired speeds
-   * 
+   * Create Field Relative IN CHASSIS SPEEDS COORD SYSTEM Chassis Speeds from Alliance Relative
+   * desired speeds
+   *
    * @param arx Alliance relative desired X speed
    * @param ary Alliance relative desired Y speed
    * @param rot Rotation speed, direction does not differ between alliances
    * @return Field Relative Chassis Speeds
    */
-  public ChassisSpeeds fromAllianceRelativeSpeeds(
-      double arx,
-      double ary,
-      double rot) {
+  public ChassisSpeeds fromAllianceRelativeSpeeds(double arx, double ary, double rot) {
     boolean isRedAlliance = true;
     ChassisSpeeds fr; // Field Relative
 
@@ -312,36 +295,25 @@ public class Swerve extends StateManagedSubsystemBase<Swerve.SwerveState> {
     if (DriverStation.getAlliance().isPresent()) {
       isRedAlliance = DriverStation.getAlliance().get() == DriverStation.Alliance.Red;
     } else {
-      DriverStation.reportError(
-          "No Alliance Present, Defaulting to RED",
-          false);
+      DriverStation.reportError("No Alliance Present, Defaulting to RED", false);
     }
-    SmartDashboard.putNumber(
-        "Alliance Relative X BEFORE",
-        allianceRelativeSpeeds.getX());
+    SmartDashboard.putNumber("Alliance Relative X BEFORE", allianceRelativeSpeeds.getX());
 
     if (isRedAlliance) {
     } else { // RED ALLIANCE CASE //BLUE ALLIANCE CASE
-      allianceRelativeSpeeds = new Translation2d(
-          -allianceRelativeSpeeds.getX(),
-          -allianceRelativeSpeeds.getY());
+      allianceRelativeSpeeds =
+          new Translation2d(-allianceRelativeSpeeds.getX(), -allianceRelativeSpeeds.getY());
     }
 
-    SmartDashboard.putNumber(
-        "Alliance Relative X AFTER",
-        allianceRelativeSpeeds.getX());
+    SmartDashboard.putNumber("Alliance Relative X AFTER", allianceRelativeSpeeds.getX());
 
     // Convert Blue Alliance Relative to Field Relative
     // fieldRelativeSpeeds =
     // allianceRelativeSpeeds.rotateBy(Rotation2d.fromDegrees(90));
-    fieldRelativeSpeeds = new Translation2d(
-        allianceRelativeSpeeds.getY(),
-        -allianceRelativeSpeeds.getX());
+    fieldRelativeSpeeds =
+        new Translation2d(allianceRelativeSpeeds.getY(), -allianceRelativeSpeeds.getX());
 
-    fr = new ChassisSpeeds(
-        fieldRelativeSpeeds.getX(),
-        fieldRelativeSpeeds.getY(),
-        rot);
+    fr = new ChassisSpeeds(fieldRelativeSpeeds.getX(), fieldRelativeSpeeds.getY(), rot);
     fr = ChassisSpeeds.fromFieldRelativeSpeeds(fr, getGyroAngle());
 
     return fr;
