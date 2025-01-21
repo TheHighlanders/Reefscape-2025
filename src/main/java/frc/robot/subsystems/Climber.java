@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
@@ -13,52 +15,46 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+
 class moduleConstants {
-  static double angleP = 0;
-  static double angleI = 0;
-  static double angleD = 0;
 
-  static double driveP = 0;
-  static double driveI = 0;
-  static double driveD = 0;
+  static double climberP = 0;
+  static double climberI = 0;
+  static double climberD = 0;
 
-  static double driveS = 0;
-  static double driveV = 0;
-  static double driveA = 0;
+  static double climberS = 0;
+  static double climerV = 0;
+  static double climberA = 0;
 
-  static double drivePCF = Units.inchesToMeters(4) * Math.PI / 8.14d;
-  static double anglePCF = 360.0 / 12.8d;
+  static double climberPCF = 0;
 
-  static int driveCurrentLimit = 0;
-  static int angleCurrentLimit = 0;
+  static int climberCurrentLimit = 0;
 
-  static boolean driveInverted = false;
-  static boolean angleInverted = false;
-  static boolean absolInverted = false;
-
-  static double maxSpeed = Constants.maxSpeed;
 }
+
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
   public SparkMax climbMotor = new SparkMax(Constants.climberConstants.climbMotorID,MotorType.kBrushless);
+  
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
+    climbMotor.configure(climberConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
   }
- private SparkMaxConfig createClimberConfig() {
+
+   private SparkMaxConfig createClimberConfig() {
         SparkMaxConfig climberConfig = new SparkMaxConfig();
         climberConfig.encoder
-                .positionConversionFactor(moduleConstants.drivePCF)
-                .velocityConversionFactor(moduleConstants.drivePCF / 60.0d);
+                .positionConversionFactor(moduleConstants.climberPCF)
+                .velocityConversionFactor(moduleConstants.climberPCF / 60.0d);
 
         climberConfig.closedLoop
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                .pid(moduleConstants.driveP, moduleConstants.driveI, moduleConstants.driveD);
+                .pid(moduleConstants.climberP, moduleConstants.climberI, moduleConstants.climberD);
 
-        climberConfig.smartCurrentLimit(moduleConstants.driveCurrentLimit).idleMode(IdleMode.kBrake);
+        climberConfig.smartCurrentLimit(moduleConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
 
         return climberConfig;
     }
-  
 
   @Override
   public void periodic() {
