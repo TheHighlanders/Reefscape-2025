@@ -281,7 +281,6 @@ public class Swerve extends SubsystemBase {
   public void drive(double x, double y, double omega) {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
 
-    //TODO: Do speed limit changing here
     if(current == SwerveState.SLOW){
       x *= SLOW_MODE_MULTIPLIER;
       y *= SLOW_MODE_MULTIPLIER;
@@ -296,10 +295,10 @@ public class Swerve extends SubsystemBase {
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.omegaRadiansPerSecond *= SwerveConstants.maxRotSpeed;
 
-    driveChassisSpeedsFieldRelative(chassisSpeeds);
+    driveChassisSpeedsRobotRelative(chassisSpeeds);
   }
 
-  public void driveChassisSpeedsFieldRelative(ChassisSpeeds chassisSpeeds){
+  public void driveChassisSpeedsRobotRelative(ChassisSpeeds chassisSpeeds){
     //https://github.com/wpilibsuite/allwpilib/issues/7332
 
     //Convert to States and desat
@@ -361,9 +360,6 @@ public class Swerve extends SubsystemBase {
           "No Alliance Present, Defaulting to RED",
           false);
     }
-    SmartDashboard.putNumber(
-        "Alliance Relative X BEFORE",
-        allianceRelativeSpeeds.getX());
 
     if (isRedAlliance) {
     } else { // RED ALLIANCE CASE //BLUE ALLIANCE CASE
@@ -371,10 +367,6 @@ public class Swerve extends SubsystemBase {
           -allianceRelativeSpeeds.getX(),
           -allianceRelativeSpeeds.getY());
     }
-
-    SmartDashboard.putNumber(
-        "Alliance Relative X AFTER",
-        allianceRelativeSpeeds.getX());
 
     // Convert Blue Alliance Relative to Field Relative
     // fieldRelativeSpeeds =
@@ -414,6 +406,6 @@ public class Swerve extends SubsystemBase {
         );
 
         // Apply the generated speeds
-        driveChassisSpeedsFieldRelative(speeds);
+        driveChassisSpeedsRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyroAngle()));
     }
 }
