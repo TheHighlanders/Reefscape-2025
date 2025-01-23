@@ -10,4 +10,6 @@ public class Constants {
 
     public static final double maxSpeed = Units.feetToMeters(13);
     //{347.1482491493225, 307, 237.8471857309, 256.65536928176877}
+
+    public static boolean sim = Robot.isSimulation();
 }

@@ -29,6 +29,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
@@ -36,6 +37,7 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -74,6 +76,7 @@ public class Swerve extends SubsystemBase {
 
   StructArrayPublisher<SwerveModuleState> statePublisher;
   StructArrayPublisher<SwerveModuleState> setpointPublisher;
+  DoublePublisher voltagePublisher;
   StructPublisher<Pose2d> posePublisher;
 
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
@@ -129,6 +132,8 @@ public class Swerve extends SubsystemBase {
         .getStructTopic("/Swerve/Poses", Pose2d.struct)
         .publish();
 
+    voltagePublisher = NetworkTableInstance.getDefault().getDoubleTopic("/Voltage").publish();
+
     sysId = new SysIdRoutine(
         new SysIdRoutine.Config(
             null,
@@ -173,7 +178,15 @@ public class Swerve extends SubsystemBase {
         getModulePostions());
 
     sendNT();
+
+    if(Constants.sim){
+      for(Module m : modules){
+        m.updateSimMotors();
+      }
+    }
   }
+
+
   public Pose2d getPose(){
     return poseEst.getEstimatedPosition();
   }
@@ -313,6 +326,8 @@ public class Swerve extends SubsystemBase {
         "Hypot",
         Math.pow(poseEst.getEstimatedPosition().getX(), 2) +
             Math.pow(poseEst.getEstimatedPosition().getY(), 2));
+
+    voltagePublisher.set(RoboRioSim.getVInVoltage());
   }
 
   /**
@@ -391,8 +406,8 @@ public class Swerve extends SubsystemBase {
 
         // Generate the next speeds for the robot
         ChassisSpeeds speeds = new ChassisSpeeds(
-            sample.vx + xController.calculate(pose.getX(), sample.x),
-            sample.vy + yController.calculate(pose.getY(), sample.y),
+            -(sample.vx + xController.calculate(pose.getX(), sample.x)),
+            -(sample.vy + yController.calculate(pose.getY(), sample.y)),
             sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading)
         );
 
