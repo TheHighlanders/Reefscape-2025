@@ -178,12 +178,16 @@ public class Swerve extends SubsystemBase {
         getModulePostions());
 
     sendNT();
+  }
 
-    if(Constants.sim){
+  @Override
+  public void simulationPeriodic(){
       for(Module m : modules){
         m.updateSimMotors();
+        SmartDashboard.putNumber("Angle P Module" + m.getModuleNumber(), m.getAppliedVoltageAngle());
       }
-    }
+
+      
   }
 
 

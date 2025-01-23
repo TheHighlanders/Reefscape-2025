@@ -101,7 +101,7 @@ public class Module {
         angleNeo = DCMotor.getNEO(1);
         driveNeo = DCMotor.getNEO(1);
 
-        angleNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(angleNeo, 0.004, 1/12.8d),angleNeo);
+        angleNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(angleNeo, 0.001, 1/12.8d),angleNeo);
         driveNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(driveNeo, 0.025, 1/6.75),driveNeo);
 
 
@@ -240,6 +240,22 @@ public class Module {
      */
     public Rotation2d getAnglePosition() {
         return Rotation2d.fromDegrees(angleEncoder.getPosition());
+    }
+
+    /**
+     * SIM ONLY
+     * @return
+     */
+    public double getAppliedVoltageAngle(){
+        return angleSim.getAppliedOutput() * RoboRioSim.getVInVoltage();
+    }
+
+    /**
+     * SIM ONLY
+     * @return
+     */
+    public double getAngleSimP(){
+        return angleMotor.configAccessor.closedLoop.getP();
     }
 
     /**
