@@ -7,6 +7,9 @@ package frc.robot.subsystems;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+
+import java.util.function.DoubleSupplier;
+
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -58,14 +61,18 @@ public class Climber extends SubsystemBase {
   public Climber m_Climber;
 
   
-  public Climber() {
+  public Climber(DoubleSupplier climb1Control, DoubleSupplier climb2Control) {
     SparkMaxConfig climberConfig = createClimberConfig();
     climbMotor.configure(climberConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
     SparkMaxConfig climber2Config = createClimber2Config();
     climb2Motor.configure(climber2Config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
   }
 
-   private SparkMaxConfig createClimberConfig() {
+   public Climber(Object object, Object object2) {
+    //TODO Auto-generated constructor stub
+  }
+
+  private SparkMaxConfig createClimberConfig() {
         SparkMaxConfig climberConfig = new SparkMaxConfig();
         climberConfig.encoder
                 .positionConversionFactor(climberConstants.climberPCF)

@@ -7,6 +7,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.utils.StateRequest;
@@ -16,10 +17,12 @@ import java.util.Map;
 
 public class RobotContainer {
   private final Map<String, Subsystem> subsystems = new HashMap<String, Subsystem>();
+  private final CommandXboxController controller = new CommandXboxController(0);
+  private final CommandXboxController controller2 = new CommandXboxController(1);
+  private final Climber climber = new Climber(controller::getRightY, controller::getRightX); 
 
   public RobotContainer() {
-
-    Climber climber = new Climber();
+  //private final Drive drive = new Drive(controller::getRightY, controller::getRightX);
     subsystems.put("climber", climber);
 
     // This needs to be the last subsystem added
