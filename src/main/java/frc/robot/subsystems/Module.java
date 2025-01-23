@@ -101,7 +101,7 @@ public class Module {
         angleNeo = DCMotor.getNEO(1);
         driveNeo = DCMotor.getNEO(1);
 
-        angleNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(angleNeo, 0.001, 1/12.8d),angleNeo);
+        angleNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(angleNeo, 0.004, 1/12.8d),angleNeo);
         driveNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(driveNeo, 0.025, 1/6.75),driveNeo);
 
 
