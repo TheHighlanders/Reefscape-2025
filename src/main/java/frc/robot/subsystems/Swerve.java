@@ -184,10 +184,8 @@ public class Swerve extends SubsystemBase {
   public void simulationPeriodic(){
       for(Module m : modules){
         m.updateSimMotors();
-        SmartDashboard.putNumber("Angle P Module" + m.getModuleNumber(), m.getAppliedVoltageAngle());
+        SmartDashboard.putNumber("Drive Voltage Module" + m.getModuleNumber(), m.getAppliedVoltageDrive());
       }
-
-      
   }
 
 
@@ -315,9 +313,9 @@ public class Swerve extends SubsystemBase {
     //Convert back to States, and desat, again
     targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
-  
 
     for (int i = 0; i < modules.length; i++) {
+      // targetStates[i].optimize(getModulePostions()[i].angle);
       modules[i].setModuleState(targetStates[i], false);
     }
   }
@@ -410,8 +408,8 @@ public class Swerve extends SubsystemBase {
 
         // Generate the next speeds for the robot
         ChassisSpeeds speeds = new ChassisSpeeds(
-            -(sample.vx + xController.calculate(pose.getX(), sample.x)),
-            -(sample.vy + yController.calculate(pose.getY(), sample.y)),
+            sample.vx + xController.calculate(pose.getX(), sample.x),
+            sample.vy + yController.calculate(pose.getY(), sample.y),
             sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading)
         );
 

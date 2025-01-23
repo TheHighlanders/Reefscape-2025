@@ -12,7 +12,6 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkSim;
-import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
@@ -22,7 +21,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
@@ -43,14 +41,13 @@ class moduleConstants {
     static double driveV = 2.5;
     static double driveA = 0.;
 
-    static double drivePCF = Units.inchesToMeters(4) * Math.PI / 8.14d;
+    //TODO: Change to L2 (6.75) when we go to actual modules
+    static double drivePCF = edu.wpi.first.math.util.Units.inchesToMeters(3 + 13d/16d) * Math.PI / 8.14d;
     static double anglePCF = 360.0 / 12.8d;
 
     static int driveCurrentLimit = 40;
     static int angleCurrentLimit = 20;
 
-    static boolean driveInverted = false;
-    static boolean angleInverted = false;
     static boolean absolInverted = false;
 
     static double maxSpeed = Constants.maxSpeed;
@@ -101,9 +98,8 @@ public class Module {
         angleNeo = DCMotor.getNEO(1);
         driveNeo = DCMotor.getNEO(1);
 
-        angleNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(angleNeo, 0.001, 1/12.8d),angleNeo);
-        driveNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(driveNeo, 0.025, 1/6.75),driveNeo);
-
+        angleNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(angleNeo, 0.004, moduleConstants.anglePCF), angleNeo);
+        driveNeoSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(driveNeo, 0.025, 1/8.14), driveNeo);
 
         if(Constants.sim){
             driveSim = new SparkSim(driveMotor, driveNeo);
@@ -143,8 +139,7 @@ public class Module {
                 .velocityConversionFactor(moduleConstants.drivePCF / 60.0d);
 
         driveConfig.closedLoop
-                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                .pid(moduleConstants.driveP, moduleConstants.driveI, moduleConstants.driveD);
+            .pid(moduleConstants.driveP, moduleConstants.driveI, moduleConstants.driveD);
 
         driveConfig.smartCurrentLimit(moduleConstants.driveCurrentLimit).idleMode(IdleMode.kBrake);
 
@@ -154,7 +149,7 @@ public class Module {
     private SparkMaxConfig createAngleConfig() {
         SparkMaxConfig angleConfig = new SparkMaxConfig();
 
-        angleConfig.inverted(true);
+        angleConfig.inverted(false);
 
         angleConfig.encoder
                 .positionConversionFactor(moduleConstants.anglePCF)
@@ -202,7 +197,8 @@ public class Module {
                     state.speedMetersPerSecond,
                     ControlType.kVelocity,
                     ClosedLoopSlot.kSlot0,
-                    driveFeedforward.calculate(state.speedMetersPerSecond));
+                    driveFeedforward.calculate(state.speedMetersPerSecond)
+                    );
             driveReference = state.speedMetersPerSecond;
         }
 
@@ -242,12 +238,8 @@ public class Module {
         return Rotation2d.fromDegrees(angleEncoder.getPosition());
     }
 
-    /**
-     * SIM ONLY
-     * @return
-     */
-    public double getAppliedVoltageAngle(){
-        return angleSim.getAppliedOutput() * RoboRioSim.getVInVoltage();
+    public double getAppliedVoltageDrive(){
+        return driveSim.getAppliedOutput() * RoboRioSim.getVInVoltage();
     }
 
     /**
@@ -320,6 +312,7 @@ public class Module {
         driveMotor.setVoltage(voltage.in(Volts));
     }
 
+    //TODO: Investigate
     public Measure<VoltageUnit> getDriveVolts() {
         return Volts.of(/* driveMotor.getBusVoltage() */ driveMotor.getAppliedOutput());
     }
@@ -347,10 +340,10 @@ public class Module {
         angleNeoSim.update(0.02);
         driveNeoSim.update(0.02);
 
-        angleSim.iterate(angleNeoSim.getAngularVelocityRadPerSec(),RoboRioSim.getVInVoltage(), 0.02);
-        driveSim.iterate(driveNeoSim.getAngularVelocityRadPerSec(),RoboRioSim.getVInVoltage(), 0.02);
+        angleSim.iterate(angleNeoSim.getAngularVelocityRPM(),RoboRioSim.getVInVoltage(), 0.02);
+        driveSim.iterate(driveNeoSim.getAngularVelocityRPM()/60.0d,RoboRioSim.getVInVoltage(), 0.02);
 
-        RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(angleNeoSim.getCurrentDrawAmps()));
+        RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(angleNeoSim.getCurrentDrawAmps(), driveNeoSim.getCurrentDrawAmps()));
     }
 
     /**
