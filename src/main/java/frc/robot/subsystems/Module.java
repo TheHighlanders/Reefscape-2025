@@ -152,11 +152,14 @@ public class Module {
         angleConfig.inverted(false);
 
         angleConfig.encoder
-                .positionConversionFactor(moduleConstants.anglePCF)
-                .velocityConversionFactor(moduleConstants.anglePCF / 60.0d);
+                 .positionConversionFactor(moduleConstants.anglePCF)
+                 .velocityConversionFactor(moduleConstants.anglePCF / 60.0d);
 
         angleConfig.closedLoop
-                .pid(moduleConstants.angleP, moduleConstants.angleI, moduleConstants.angleD)
+                 .pid(moduleConstants.angleP, moduleConstants.angleI, moduleConstants.angleD)
+                // .p(moduleConstants.angleP)
+                // .i(moduleConstants.angleI)
+                // .d(moduleConstants.angleD)
                 .positionWrappingEnabled(true)
                 .positionWrappingInputRange(-180.0d, 180.0d);
 
