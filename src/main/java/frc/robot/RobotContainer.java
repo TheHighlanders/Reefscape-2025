@@ -22,7 +22,6 @@ public class RobotContainer {
   private final Climber climber = new Climber(controller::getRightY, controller::getRightX); 
 
   public RobotContainer() {
-  //private final Drive drive = new Drive(controller::getRightY, controller::getRightX);
     subsystems.put("climber", climber);
 
     // This needs to be the last subsystem added

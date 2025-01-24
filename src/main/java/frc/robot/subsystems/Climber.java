@@ -16,35 +16,17 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
 class climberConstants {
 
-  static double climberP = 0;
-  static double climberI = 0;
-  static double climberD = 0;
-
-  static double climberS = 0;
-  static double climerV = 0;
-  static double climberA = 0;
-
   static double climberPCF = 0;
 
   static int climberCurrentLimit = 0;
   
   static int climbMotorID= 3;
-
-
-  static double climber2P = 0;    //2nd motor's constants
-  static double climber2I = 0;
-  static double climber2D = 0;
-
-  static double climber2S = 0;
-  static double climer2V = 0;
-  static double climber2A = 0;
 
   static double climber2PCF = 0;
 
@@ -79,8 +61,7 @@ public class Climber extends SubsystemBase {
                 .velocityConversionFactor(climberConstants.climberPCF / 60.0d);
 
         climberConfig.closedLoop
-                .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-                .pid(climberConstants.climberP, climberConstants.climberI, climberConstants.climberD);
+                .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
         climberConfig.smartCurrentLimit(climberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
 
@@ -94,8 +75,7 @@ public class Climber extends SubsystemBase {
               .velocityConversionFactor(climberConstants.climberPCF / 60.0d);
 
       climber2Config.closedLoop
-              .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-              .pid(climberConstants.climber2P, climberConstants.climber2I, climberConstants.climber2D);
+              .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
       climber2Config.smartCurrentLimit(climberConstants.climber2CurrentLimit).idleMode(IdleMode.kBrake);
 
