@@ -13,6 +13,8 @@ public class Robot extends TimedRobot {
 
   private final RobotContainer m_robotContainer;
 
+  private double loops = 0;
+
   public Robot() {
     m_robotContainer = new RobotContainer();
   }
@@ -28,6 +30,11 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledPeriodic() {
+    if(loops % 10 == 0){
+      m_robotContainer.drive.resetEncoders();
+      loops = 0;
+    }
+    loops++;
   }
 
   @Override

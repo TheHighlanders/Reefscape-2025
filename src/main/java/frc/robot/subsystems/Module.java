@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Volts;
 
+import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkAbsoluteEncoder;
@@ -14,6 +15,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -26,6 +28,7 @@ import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 class moduleConstants {
@@ -113,8 +116,8 @@ public class Module {
         driveFeedforward = new SimpleMotorFeedforward(moduleConstants.driveS, moduleConstants.driveV,
                 moduleConstants.driveA);
 
-        angleMotor.configure(angleConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-        driveMotor.configure(driveConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        angleMotor.configure(angleConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        driveMotor.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         driveEncoder = driveMotor.getEncoder();
         angleEncoder = angleMotor.getEncoder();
@@ -125,8 +128,8 @@ public class Module {
         driveController = driveMotor.getClosedLoopController();
 
         driveEncoder.setPosition(0);
-        angleEncoder.setPosition(getAbsolutePosition().getDegrees());
 
+        angleEncoder.setPosition(getAbsolutePosition().getDegrees());
     }
 
     private SparkMaxConfig createDriveConfig() {
@@ -161,7 +164,8 @@ public class Module {
                 // .i(moduleConstants.angleI)
                 // .d(moduleConstants.angleD)
                 .positionWrappingEnabled(true)
-                .positionWrappingInputRange(-180.0d, 180.0d);
+                .positionWrappingInputRange(-180.0d, 180.0d)
+                .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
         angleConfig.smartCurrentLimit(moduleConstants.angleCurrentLimit).idleMode(IdleMode.kCoast);
 
@@ -354,5 +358,21 @@ public class Module {
      */
     public void setIntegratedAngleToAbsolute() {
         angleEncoder.setPosition(getAbsolutePosition().getDegrees());
+    }
+
+    public boolean getAngleInverted() {
+        return angleMotor.configAccessor.getInverted();
+    }
+
+    public double getAngleP(){
+        return angleMotor.configAccessor.closedLoop.getP();
+    }
+
+    public double getAngleI(){
+        return angleMotor.configAccessor.closedLoop.getI();
+    }
+
+    public double getAngleD(){
+        return angleMotor.configAccessor.closedLoop.getD();
     }
 }

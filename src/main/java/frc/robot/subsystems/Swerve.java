@@ -40,6 +40,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -181,18 +182,16 @@ public class Swerve extends SubsystemBase {
   }
 
   @Override
-  public void simulationPeriodic(){
-      for(Module m : modules){
-        m.updateSimMotors();
-        SmartDashboard.putNumber("Drive Voltage Module" + m.getModuleNumber(), m.getAppliedVoltageDrive());
-      }
+  public void simulationPeriodic() {
+    for (Module m : modules) {
+      m.updateSimMotors();
+      SmartDashboard.putNumber("Drive Voltage Module" + m.getModuleNumber(), m.getAppliedVoltageDrive());
+    }
   }
 
-
-  public Pose2d getPose(){
+  public Pose2d getPose() {
     return poseEst.getEstimatedPosition();
   }
-
 
   public SwerveModulePosition[] getModulePostions() {
     List<SwerveModulePosition> out = new ArrayList<SwerveModulePosition>();
@@ -210,6 +209,21 @@ public class Swerve extends SubsystemBase {
     return out.toArray(new SwerveModuleState[0]);
   }
 
+  public Command readAngleEncoders() {
+    return new InstantCommand(() -> {
+      for (Module m : modules) {
+        SmartDashboard.putNumber("Relative"+m.moduleNumber,m.getAnglePosition().getDegrees());
+        SmartDashboard.putNumber("Absolute"+m.moduleNumber,m.getAbsolutePosition().getDegrees());
+      }
+    }, this).ignoringDisable(true);
+  }
+
+  public void resetEncoders(){
+    for (Module m : modules) {
+      m.setIntegratedAngleToAbsolute();  
+    }
+  }
+
   public SwerveModuleState[] getModuleSetpoints() {
     List<SwerveModuleState> out = new ArrayList<SwerveModuleState>();
     for (Module mod : modules) {
@@ -222,7 +236,7 @@ public class Swerve extends SubsystemBase {
     return gyro.getRotation2d();
   }
 
-  public void resetOdometry(Pose2d pose){
+  public void resetOdometry(Pose2d pose) {
     poseEst.resetPosition(pose.getRotation(), getModulePostions(), pose);
   }
 
@@ -281,7 +295,7 @@ public class Swerve extends SubsystemBase {
   public void drive(double x, double y, double omega) {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
 
-    if(current == SwerveState.SLOW){
+    if (current == SwerveState.SLOW) {
       x *= SLOW_MODE_MULTIPLIER;
       y *= SLOW_MODE_MULTIPLIER;
     }
@@ -298,7 +312,7 @@ public class Swerve extends SubsystemBase {
     driveChassisSpeedsRobotRelative(chassisSpeeds);
   }
 
-  public void driveChassisSpeedsRobotRelative(ChassisSpeeds chassisSpeeds){
+  public void driveChassisSpeedsRobotRelative(ChassisSpeeds chassisSpeeds) {
     //https://github.com/wpilibsuite/allwpilib/issues/7332
 
     //Convert to States and desat
@@ -384,7 +398,7 @@ public class Swerve extends SubsystemBase {
     return fr;
   }
 
-  public Command slowMode(){
+  public Command slowMode() {
     return new RunCommand(() -> current = SwerveState.SLOW, this).finallyDo(() -> current = SwerveState.FAST);
   }
 
@@ -394,18 +408,29 @@ public class Swerve extends SubsystemBase {
     }
   }
 
-  public void followTraj(SwerveSample sample){
-        // Get the current pose of the robot
-        Pose2d pose = getPose();
+  public void followTraj(SwerveSample sample) {
+    // Get the current pose of the robot
+    Pose2d pose = getPose();
 
-        // Generate the next speeds for the robot
-        ChassisSpeeds speeds = new ChassisSpeeds(
-            sample.vx + xController.calculate(pose.getX(), sample.x),
-            sample.vy + yController.calculate(pose.getY(), sample.y),
-            sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading)
-        );
+    // Generate the next speeds for the robot
+    ChassisSpeeds speeds = new ChassisSpeeds(
+        sample.vx + xController.calculate(pose.getX(), sample.x),
+        sample.vy + yController.calculate(pose.getY(), sample.y),
+        sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading));
 
-        // Apply the generated speeds
-        driveChassisSpeedsRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyroAngle()));
+    // Apply the generated speeds
+    driveChassisSpeedsRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyroAngle()));
+  }
+
+  public void sendDiagnositics() {
+    for (Module m : modules) {
+      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "Absolute", m.getAbsolutePosition().getDegrees() % 360);
+      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleRelative",
+          m.getAnglePosition().getDegrees() % 360);
+      SmartDashboard.putBoolean("Module" + m.getModuleNumber() + "AngleInverted", m.getAngleInverted());
+      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleP", m.getAngleP());
+      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleI", m.getAngleI());
+      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleD", m.getAngleD());
     }
+  }
 }
