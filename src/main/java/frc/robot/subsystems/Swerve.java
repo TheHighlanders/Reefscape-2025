@@ -40,10 +40,12 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
 
 class SwerveConstants {
@@ -58,6 +60,14 @@ class SwerveConstants {
   // Implict /sec
 
   static double accelLim = 1.5;
+
+  static double translateP = 0;
+  static double translateI = 0;
+  static double translateD = 0;
+
+  static double rotateP = 0;
+  static double rotateI = 0;
+  static double rotateD = 0;
 }
 
 public class Swerve extends SubsystemBase {
@@ -83,8 +93,8 @@ public class Swerve extends SubsystemBase {
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
   SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
-  private final PIDController xController = new PIDController(0, 0.0, 0.0);
-  private final PIDController yController = new PIDController(0, 0.0, 0.0);
+  private final PIDController xController       = new PIDController(SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
+  private final PIDController yController       = new PIDController(0, 0.0, 0.0);
   private final PIDController headingController = new PIDController(0, 0.0, 0.0);
 
   private final SysIdRoutine sysId;
@@ -139,7 +149,7 @@ public class Swerve extends SubsystemBase {
         new SysIdRoutine.Config(
             null,
             Volt.of(4),
-            Seconds.of(6),
+            Seconds.of(4),
             state -> {
               SmartDashboard.putString("Drive/SysIdState", state.toString());
             }),
@@ -212,15 +222,15 @@ public class Swerve extends SubsystemBase {
   public Command readAngleEncoders() {
     return new InstantCommand(() -> {
       for (Module m : modules) {
-        SmartDashboard.putNumber("Relative"+m.moduleNumber,m.getAnglePosition().getDegrees());
-        SmartDashboard.putNumber("Absolute"+m.moduleNumber,m.getAbsolutePosition().getDegrees());
+        SmartDashboard.putNumber("Relative" + m.moduleNumber, m.getAnglePosition().getDegrees());
+        SmartDashboard.putNumber("Absolute" + m.moduleNumber, m.getAbsolutePosition().getDegrees());
       }
     }, this).ignoringDisable(true);
   }
 
-  public void resetEncoders(){
+  public void resetEncoders() {
     for (Module m : modules) {
-      m.setIntegratedAngleToAbsolute();  
+      m.setIntegratedAngleToAbsolute();
     }
   }
 
@@ -257,6 +267,18 @@ public class Swerve extends SubsystemBase {
    */
   public Command sysIdDynamic(SysIdRoutine.Direction direction) {
     return sysId.dynamic(direction);
+  }
+
+  public Command sysId(){
+    return Commands.sequence(
+      sysIdDynamic(Direction.kForward),
+      Commands.waitSeconds(1),
+      sysIdDynamic(Direction.kReverse),
+      Commands.waitSeconds(1),
+      sysIdQuasistatic(Direction.kForward),
+      Commands.waitSeconds(1),
+      sysIdQuasistatic(Direction.kReverse)    
+    );
   }
 
   /*
@@ -328,7 +350,7 @@ public class Swerve extends SubsystemBase {
     SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
 
     for (int i = 0; i < modules.length; i++) {
-      // targetStates[i].optimize(getModulePostions()[i].angle);
+      targetStates[i].optimize(getModulePostions()[i].angle);
       modules[i].setModuleState(targetStates[i], false);
     }
   }
@@ -386,14 +408,14 @@ public class Swerve extends SubsystemBase {
     // fieldRelativeSpeeds =
     // allianceRelativeSpeeds.rotateBy(Rotation2d.fromDegrees(90));
     fieldRelativeSpeeds = new Translation2d(
-        allianceRelativeSpeeds.getY(),
+        -allianceRelativeSpeeds.getY(),
         -allianceRelativeSpeeds.getX());
 
     fr = new ChassisSpeeds(
         fieldRelativeSpeeds.getX(),
         fieldRelativeSpeeds.getY(),
         rot);
-    fr = ChassisSpeeds.fromFieldRelativeSpeeds(fr, getGyroAngle());
+    fr = ChassisSpeeds.fromFieldRelativeSpeeds(fr, getPose().getRotation());
 
     return fr;
   }
@@ -414,23 +436,48 @@ public class Swerve extends SubsystemBase {
 
     // Generate the next speeds for the robot
     ChassisSpeeds speeds = new ChassisSpeeds(
-        sample.vx + xController.calculate(pose.getX(), sample.x),
-        sample.vy + yController.calculate(pose.getY(), sample.y),
-        sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading));
+        -(sample.vx + xController.calculate(pose.getX(), sample.x)),
+        -(sample.vy + yController.calculate(pose.getY(), sample.y)),
+        -(sample.omega + headingController.calculate(pose.getRotation().getRadians(), sample.heading)));
 
+    SmartDashboard.putNumber("Trajectory/XError", xController.getError());
+    SmartDashboard.putNumber("Trajectory/YError", yController.getError());
+    SmartDashboard.putNumber("Trajectory/HeadingError", headingController.getError());
+
+    // SmartDashboard.putNumber("Trajectory/XOutput", xController.calculate(pose.getX(), sample.x));
+    // SmartDashboard.putNumber("Trajectory/YOutput", yController.calculate(pose.getX(), sample.x));
+    // SmartDashboard.putNumber("Trajectory/HeadingOutput", headingController.calculate(pose.getRotation().getRadians(), sample.heading));
+    sendDiagnositics();
     // Apply the generated speeds
-    driveChassisSpeedsRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyroAngle()));
+    driveChassisSpeedsRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getPose().getRotation()));
   }
 
   public void sendDiagnositics() {
     for (Module m : modules) {
-      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "Absolute", m.getAbsolutePosition().getDegrees() % 360);
-      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleRelative",
-          m.getAnglePosition().getDegrees() % 360);
-      SmartDashboard.putBoolean("Module" + m.getModuleNumber() + "AngleInverted", m.getAngleInverted());
-      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleP", m.getAngleP());
-      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleI", m.getAngleI());
-      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleD", m.getAngleD());
+      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "Absolute", m.getAbsolutePosition().getDegrees() % 360);
+      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "AngleRelative",
+      //     m.getAnglePosition().getDegrees() % 360);
+      // SmartDashboard.putBoolean("ModuleDebug/Module" + m.getModuleNumber() + "AngleInverted", m.getAngleInverted());
+      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "AngleP", m.getAngleP());
+      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "AngleI", m.getAngleI());
+      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "AngleD", m.getAngleD());
+
+      SmartDashboard.putNumber("ModuleDebug/Module"+m.getModuleNumber()+"FFoutput", m.getFFDriveOutput());
+      SmartDashboard.putNumber("ModuleDebug/Module"+m.getModuleNumber()+"MotorOutput", m.getAppliedOutputDrive());
     }
+  }
+
+  public Command resetGyro() {
+    return new InstantCommand(() -> {
+      poseEst.resetPosition(getGyroAngle(), getModulePostions(),
+          new Pose2d(poseEst.getEstimatedPosition().getX(), poseEst.getEstimatedPosition().getY(), new Rotation2d()));
+    }).ignoringDisable(true);
+  }
+
+  public Command resetOdometry(){
+    return new InstantCommand(()->{
+      poseEst.resetTranslation(new Translation2d());
+      resetGyro();
+    });
   }
 }

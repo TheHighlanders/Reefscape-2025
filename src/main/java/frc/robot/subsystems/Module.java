@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Volts;
 
-import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkAbsoluteEncoder;
@@ -13,9 +12,9 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkSim;
+import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -28,7 +27,6 @@ import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 class moduleConstants {
@@ -36,13 +34,13 @@ class moduleConstants {
     static double angleI = 0;
     static double angleD = 0.002;
 
-    static double driveP = 0.2;
+    static double driveP = 0.2;//2.1301;//0.2;
     static double driveI = 0;
-    static double driveD = 3;
+    static double driveD = 3;//3;
 
-    static double driveS = 0.375;
-    static double driveV = 2.5;
-    static double driveA = 0.;
+    static double driveS = 0.1718;//0.1718;//0.375;
+    static double driveV = 4;//3.2228;//2.5;
+    static double driveA = 8;//0.74971;//0;
 
     //TODO: Change to L2 (6.75) when we go to actual modules
     static double drivePCF = edu.wpi.first.math.util.Units.inchesToMeters(3 + 13d/16d) * Math.PI / 8.14d;
@@ -88,6 +86,8 @@ public class Module {
 
     DCMotorSim angleNeoSim;
     DCMotorSim driveNeoSim;
+
+    double ffOut = 0;
 
     // private Rotation2d lastAngle;
 
@@ -199,12 +199,13 @@ public class Module {
             double motorPercent = state.speedMetersPerSecond / moduleConstants.maxSpeed;
             driveMotor.set(motorPercent);
             driveReference = state.speedMetersPerSecond;
-        } else {
+        } else {;
+            ffOut = driveFeedforward.calculate(state.speedMetersPerSecond);
             driveController.setReference(
                     state.speedMetersPerSecond,
                     ControlType.kVelocity,
                     ClosedLoopSlot.kSlot0,
-                    driveFeedforward.calculate(state.speedMetersPerSecond)
+                    ffOut
                     );
             driveReference = state.speedMetersPerSecond;
         }
@@ -264,6 +265,14 @@ public class Module {
      */
     public double getDriveVelocity() {
         return driveEncoder.getVelocity();
+    }
+
+    public double getAppliedOutputDrive(){
+        return driveMotor.getAppliedOutput();
+    }
+
+    public double getFFDriveOutput(){
+        return ffOut;
     }
 
     /**

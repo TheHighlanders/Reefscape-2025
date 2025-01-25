@@ -4,6 +4,8 @@
 
 package frc.robot;
 import choreo.auto.AutoFactory;
+import choreo.auto.AutoRoutine;
+import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Swerve;
 
@@ -27,6 +29,15 @@ public class Autos {
 
     public Command testTraj(){
         return autoFactory.trajectoryCmd("Test");
+    }
+
+    public AutoRoutine testTrajRoutine(){
+        AutoRoutine routine = autoFactory.newRoutine("test");
+        AutoTrajectory test = routine.trajectory("Test");
+
+        routine.active().onTrue(test.cmd());
+
+        return routine;
     }
 
 }
