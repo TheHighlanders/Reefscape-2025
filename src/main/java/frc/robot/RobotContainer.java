@@ -31,8 +31,11 @@ public class RobotContainer {
 
     configureBindings();
   }
-
-  private void configureBindings() {}
+//these bindings will likely need to be changed
+  private void configureBindings() {
+    controller.a().onTrue(climber.createClimbCommand(1));
+    controller.b().onTrue(climber.createClimbCommand(-1));
+  }
 
   public Command getAutonomousCommand() {
     StateRequest.create(Superstructure.SuperstructureState.L1);
