@@ -12,6 +12,7 @@ import static edu.wpi.first.units.Units.Volts;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.DoubleSupplier;
 
 import com.studica.frc.AHRS;
@@ -30,6 +31,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoublePublisher;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
@@ -37,6 +39,11 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -96,6 +103,16 @@ public class Swerve extends SubsystemBase {
   private final PIDController xController       = new PIDController(SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
   private final PIDController yController       = new PIDController(0, 0.0, 0.0);
   private final PIDController headingController = new PIDController(0, 0.0, 0.0);
+
+  GenericEntry dP;
+  GenericEntry dI;
+  GenericEntry dD;
+  GenericEntry dS;
+  GenericEntry dV;
+  GenericEntry dA;
+  GenericEntry aP;
+  GenericEntry aI;
+  GenericEntry aD;
 
   private final SysIdRoutine sysId;
 
@@ -178,6 +195,9 @@ public class Swerve extends SubsystemBase {
                       MetersPerSecond.of(modules[1].getDriveVelocity()));
             },
             this));
+
+
+    smartDashboardGUI();
   }
 
   @Override
@@ -479,5 +499,38 @@ public class Swerve extends SubsystemBase {
       poseEst.resetTranslation(new Translation2d());
       resetGyro();
     });
+  }
+
+  public void setNewControlConstants(double[] drive, double[] angle){
+    for(Module m : modules){
+      m.setNewControlConstants(drive,angle);
+    }
+  }
+
+  public void smartDashboardGUI(){
+    ShuffleboardTab tab = Shuffleboard.getTab("Modules");
+    Module m=modules[0];
+
+    ShuffleboardLayout module = tab.getLayout("Tuning", BuiltInLayouts.kGrid).withSize(2,3).withProperties(Map.of("Label position", "LEFT","Number of columns",1,"Number of rows",9));
+      aP = module.add("AngleP", m.getAngleP()).withWidget(BuiltInWidgets.kTextView).withPosition(0,0).getEntry();
+      aI = module.add("AngleI", m.getAngleI()).withWidget(BuiltInWidgets.kTextView).withPosition(0,1).getEntry();
+      aD = module.add("AngleD", m.getAngleD()).withWidget(BuiltInWidgets.kTextView).withPosition(0,2).getEntry();
+      dP = module.add("DriveP", m.getDriveP()).withWidget(BuiltInWidgets.kTextView).withPosition(0,3).getEntry();
+      dI = module.add("DriveI", m.getDriveI()).withWidget(BuiltInWidgets.kTextView).withPosition(0,4).getEntry();
+      dD = module.add("DriveD", m.getDriveD()).withWidget(BuiltInWidgets.kTextView).withPosition(0,5).getEntry();
+      dS = module.add("DriveS", m.getDriveS()).withWidget(BuiltInWidgets.kTextView).withPosition(0,6).getEntry();
+      dV = module.add("DriveV", m.getDriveV()).withWidget(BuiltInWidgets.kTextView).withPosition(0,7).getEntry();
+      dA = module.add("DriveA", m.getDriveA()).withWidget(BuiltInWidgets.kTextView).withPosition(0,8).getEntry();
+  }
+
+  public void updateControlConstants(){
+    double[] drive = {dP.getDouble(moduleConstants.driveP),dI.getDouble(moduleConstants.driveI),dD.getDouble(moduleConstants.driveD),dS.getDouble(moduleConstants.driveS),dV.getDouble(moduleConstants.driveV),dA.getDouble(moduleConstants.driveA),};
+    double[] angle = {aP.getDouble(moduleConstants.angleP),aI.getDouble(moduleConstants.angleI),aD.getDouble(moduleConstants.angleD)};
+
+    for(Module m: modules){
+      m.setNewControlConstants(drive, angle);
+    }
+
+    smartDashboardGUI();
   }
 }

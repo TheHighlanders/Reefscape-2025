@@ -384,4 +384,43 @@ public class Module {
     public double getAngleD(){
         return angleMotor.configAccessor.closedLoop.getD();
     }
+
+    public double getDriveP(){
+        return driveMotor.configAccessor.closedLoop.getP();
+    }
+
+    public double getDriveI(){
+        return driveMotor.configAccessor.closedLoop.getI();
+    }
+
+    public double getDriveD(){
+        return driveMotor.configAccessor.closedLoop.getD();
+    }
+
+    public double getDriveS(){
+        return driveFeedforward.getKs();
+    }
+    
+    public double getDriveV(){
+        return driveFeedforward.getKv();
+    }
+    
+    public double getDriveA(){
+        return driveFeedforward.getKa();
+    }
+
+    public void setNewControlConstants(double[] drive, double[] angle){
+        SparkMaxConfig driveConfig = new SparkMaxConfig();
+        driveConfig.closedLoop.pid(drive[0],drive[1],drive[2]);
+
+        SparkMaxConfig angleConfig = new SparkMaxConfig();
+        angleConfig.closedLoop.pid(angle[0],angle[1],angle[2]);
+
+        driveMotor.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        angleMotor.configure(angleConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+        driveFeedforward = new SimpleMotorFeedforward(drive[3],drive[4], drive[5]);
+    }
+
+
 }
