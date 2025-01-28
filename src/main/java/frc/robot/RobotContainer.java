@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.SuperstructureExampleUse;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Vision;
 import frc.robot.utils.StateRequest;
 
 public class RobotContainer {
@@ -23,7 +24,8 @@ public class RobotContainer {
 
   CommandXboxController driver = new CommandXboxController(0);
 
-  Swerve drive = new Swerve();
+  Vision vision = new Vision();
+  Swerve drive = new Swerve(vision::getEstimatedRobotPose, vision::getEstimationStdDevs);
   Autos autos = new Autos(drive);
   AutoChooser chooser;
 
