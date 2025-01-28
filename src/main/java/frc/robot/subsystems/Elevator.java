@@ -24,7 +24,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.LimitSwitchConfig.Type;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard; ///// idk if this needs to be here but i think this is for the thing we use to monitor robot happenings
 
 public class Elevator extends SubsystemBase {
 
@@ -37,8 +37,8 @@ public class Elevator extends SubsystemBase {
 
   private double feedFoward = 8;
 
-  /** Creates a new Elevator. */
-  public enum ElevatorState {
+ 
+  public enum ElevatorState { //Creates a new Elevator.
     HOME,
     L1_POSITION,
     L2_POSITION,
@@ -62,7 +62,7 @@ public class Elevator extends SubsystemBase {
         .reverseLimitSwitchEnabled(true);
 
     elevatorMotorConfig.softLimit
-        .forwardSoftLimit(50)
+        .forwardSoftLimit(50)  // TODO: chanege limet value
         .forwardSoftLimitEnabled(true)
         .reverseSoftLimit(0)
         .reverseSoftLimitEnabled(true);
@@ -73,9 +73,9 @@ public class Elevator extends SubsystemBase {
     elevatorMotorConfig.closedLoop.maxMotion
         .maxVelocity(5) // TODO find these desigherd values
         .maxAcceleration(5)
-        .allowedClosedLoopError(5);
+        .allowedClosedLoopError(5);  
     // Set PID gains
-    config.closedLoop
+    config.closedLoop // pid loop to contoll elevator elevating rate
         .p(.1)
         .i(.029) // TODO find these desigherd values
         .d(.01)
