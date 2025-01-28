@@ -28,17 +28,18 @@ class climberConstants {
   
   static int climbMotorID= 3;
 
-  static double climber2PCF = 0;
+  /*static double climber2PCF = 0;
 
   static int climber2CurrentLimit = 0;
   
   static int climb2MotorID= 4;
+  */
 }
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
   public SparkMax climbMotor = new SparkMax(climberConstants.climbMotorID,MotorType.kBrushless);
-  public SparkMax climb2Motor = new SparkMax(climberConstants.climbMotorID,MotorType.kBrushless);
+  //public SparkMax climb2Motor = new SparkMax(climberConstants.climbMotorID,MotorType.kBrushless);
  //variable for the subsystem
   public Climber m_Climber;
 
@@ -46,8 +47,8 @@ public class Climber extends SubsystemBase {
   public Climber(DoubleSupplier climb1Control, DoubleSupplier climb2Control) {
     SparkMaxConfig climberConfig = createClimberConfig();
     climbMotor.configure(climberConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-    SparkMaxConfig climber2Config = createClimber2Config();
-    climb2Motor.configure(climber2Config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    //SparkMaxConfig climber2Config = createClimber2Config();
+    //climb2Motor.configure(climber2Config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
   }
 
    public Climber(Object object, Object object2) {
@@ -68,7 +69,7 @@ public class Climber extends SubsystemBase {
         return climberConfig;
     }
 
-    private SparkMaxConfig createClimber2Config() {
+    /*private SparkMaxConfig createClimber2Config() {
       SparkMaxConfig climber2Config = new SparkMaxConfig();
       climber2Config.encoder
               .positionConversionFactor(climberConstants.climberPCF)        //climber contants means the variables at the top :)
@@ -80,8 +81,9 @@ public class Climber extends SubsystemBase {
       climber2Config.smartCurrentLimit(climberConstants.climber2CurrentLimit).idleMode(IdleMode.kBrake);
 
       return climber2Config;
+      
   }
-
+*/
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
