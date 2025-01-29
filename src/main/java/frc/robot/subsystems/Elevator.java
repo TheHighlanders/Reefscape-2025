@@ -86,7 +86,7 @@ public class Elevator extends SubsystemBase {
     // Reset the position to 0 to start within the range of the soft limits
     elevatorEncoder.setPosition(0);
 
-  }
+  }//////////potatos
 
   @Override
   public void periodic() {
