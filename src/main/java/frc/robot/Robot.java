@@ -32,7 +32,7 @@ public class Robot extends TimedRobot {
     if (loops % 10 == 0) {
       m_robotContainer.drive.resetEncoders();
       loops = 0;
-    } else if(loops % 5 == 0){
+    } else if (loops % 5 == 0) {
       m_robotContainer.drive.updateControlConstants();
     }
     loops++;

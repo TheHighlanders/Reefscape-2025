@@ -4,9 +4,6 @@
 
 package frc.robot;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import choreo.auto.AutoChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -43,7 +40,7 @@ public class RobotContainer {
     driver.a().onTrue(drive.resetGyro());
   }
 
-  private void configureAutonomous(){
+  private void configureAutonomous() {
     chooser.addRoutine("Test Routine", autos::testTrajRoutine);
     chooser.addCmd("SYSID", drive::sysId);
 
