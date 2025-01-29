@@ -70,7 +70,7 @@ public class Module {
 
     public int moduleNumber;
 
-    private SimpleMotorFeedforward driveFeedforward;
+    private static SimpleMotorFeedforward driveFeedforward;
 
     public RelativeEncoder driveEncoder;
     public RelativeEncoder angleEncoder;
@@ -88,8 +88,6 @@ public class Module {
     DCMotorSim driveNeoSim;
 
     double ffOut = 0;
-
-    // private Rotation2d lastAngle;
 
     public Module(int moduleNumber) {
         this.KModuleAbsoluteOffset = Rotation2d.fromDegrees(Constants.absoluteOffsets[moduleNumber]);
@@ -160,9 +158,6 @@ public class Module {
 
         angleConfig.closedLoop
                  .pid(moduleConstants.angleP, moduleConstants.angleI, moduleConstants.angleD)
-                // .p(moduleConstants.angleP)
-                // .i(moduleConstants.angleI)
-                // .d(moduleConstants.angleD)
                 .positionWrappingEnabled(true)
                 .positionWrappingInputRange(-180.0d, 180.0d)
                 .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
@@ -179,9 +174,6 @@ public class Module {
      * @param isOpenLoop: Controls if the drive motor use a PID loop
      */
     public void setModuleState(SwerveModuleState state, boolean isOpenLoop) {
-        // state = SwerveModuleState.optimize(state, getAnglePosition());
-        // TODO: FIX THIS
-
         setAngleState(state);
         setDriveState(state, isOpenLoop);
     }
@@ -222,9 +214,6 @@ public class Module {
      * @param state: Desired module state
      */
     public void setAngleState(SwerveModuleState state) {
-        // Anti Jitter Code, not sure if it works, need to test and review
-        // Rotation2d angle = (Math.abs(state.speedMetersPerSecond) <=
-        // SwerveConst.kMaxAngularSpeedFast * 0.001) ? lastAngle : state.angle;
         Rotation2d angle = state.angle;
         if (angle != null) {
             angleController.setReference(angle.getDegrees(), ControlType.kPosition);
@@ -234,7 +223,6 @@ public class Module {
         if(Constants.sim){
             angleNeoSim.setInputVoltage(angleSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
         }
-        // lastAngle = state.angle;
     }
 
     /**
@@ -291,9 +279,6 @@ public class Module {
      */
     public Rotation2d getAbsolutePosition() {
         /* Gets Position from SparkMAX absol encoder * 360 to degrees */
-        // double positionDeg = avg * 360.0d;
-
-        /* Gets Position from SparkMAX absol encoder * 360 to degrees */
         double positionDeg = absoluteEncoder.getPosition() * 360.0d;
 
         /* Subtracts magnetic offset to get wheel position */
@@ -330,7 +315,7 @@ public class Module {
 
     //TODO: Investigate
     public Measure<VoltageUnit> getDriveVolts() {
-        return Volts.of(/* driveMotor.getBusVoltage() */ driveMotor.getAppliedOutput());
+        return Volts.of(driveMotor.getBusVoltage() * driveMotor.getAppliedOutput());
     }
 
     /**

@@ -101,18 +101,20 @@ public class Swerve extends SubsystemBase {
   SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
   private final PIDController xController       = new PIDController(SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
-  private final PIDController yController       = new PIDController(0, 0.0, 0.0);
-  private final PIDController headingController = new PIDController(0, 0.0, 0.0);
+  private final PIDController yController       = new PIDController(SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
+  private final PIDController headingController = new PIDController(SwerveConstants.rotateP, SwerveConstants.rotateI, SwerveConstants.rotateD);
 
-  GenericEntry dP;
-  GenericEntry dI;
-  GenericEntry dD;
-  GenericEntry dS;
-  GenericEntry dV;
-  GenericEntry dA;
-  GenericEntry aP;
-  GenericEntry aI;
-  GenericEntry aD;
+  GenericEntry drivePEntry;
+  GenericEntry driveIEntry;
+  GenericEntry driveDEntry;
+
+  GenericEntry driveSEntry;
+  GenericEntry driveVEntry;
+  GenericEntry driveAEntry;
+
+  GenericEntry anglePEntry;
+  GenericEntry angleIEntry;
+  GenericEntry angleDEntry;
 
   private final SysIdRoutine sysId;
 
@@ -473,14 +475,6 @@ public class Swerve extends SubsystemBase {
 
   public void sendDiagnositics() {
     for (Module m : modules) {
-      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "Absolute", m.getAbsolutePosition().getDegrees() % 360);
-      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "AngleRelative",
-      //     m.getAnglePosition().getDegrees() % 360);
-      // SmartDashboard.putBoolean("ModuleDebug/Module" + m.getModuleNumber() + "AngleInverted", m.getAngleInverted());
-      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "AngleP", m.getAngleP());
-      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "AngleI", m.getAngleI());
-      // SmartDashboard.putNumber("ModuleDebug/Module" + m.getModuleNumber() + "AngleD", m.getAngleD());
-
       SmartDashboard.putNumber("ModuleDebug/Module"+m.getModuleNumber()+"FFoutput", m.getFFDriveOutput());
       SmartDashboard.putNumber("ModuleDebug/Module"+m.getModuleNumber()+"MotorOutput", m.getAppliedOutputDrive());
     }
@@ -511,38 +505,48 @@ public class Swerve extends SubsystemBase {
     Module m=modules[0];
 
     ShuffleboardLayout module = tab.getLayout("Tuning", BuiltInLayouts.kGrid).withSize(2,3).withProperties(Map.of("Label position", "LEFT","Number of columns",1,"Number of rows",9));
-      aP = module.add("AngleP", m.getAngleP()).withWidget(BuiltInWidgets.kTextView).withPosition(0,0).getEntry();
-      aI = module.add("AngleI", m.getAngleI()).withWidget(BuiltInWidgets.kTextView).withPosition(0,1).getEntry();
-      aD = module.add("AngleD", m.getAngleD()).withWidget(BuiltInWidgets.kTextView).withPosition(0,2).getEntry();
+      anglePEntry = module.add("AngleP", m.getAngleP()).withWidget(BuiltInWidgets.kTextView).withPosition(0,0).getEntry();
+      angleIEntry = module.add("AngleI", m.getAngleI()).withWidget(BuiltInWidgets.kTextView).withPosition(0,1).getEntry();
+      angleDEntry = module.add("AngleD", m.getAngleD()).withWidget(BuiltInWidgets.kTextView).withPosition(0,2).getEntry();
       
-      dP = module.add("DriveP", m.getDriveP()).withWidget(BuiltInWidgets.kTextView).withPosition(0,3).getEntry();
-      dI = module.add("DriveI", m.getDriveI()).withWidget(BuiltInWidgets.kTextView).withPosition(0,4).getEntry();
-      dD = module.add("DriveD", m.getDriveD()).withWidget(BuiltInWidgets.kTextView).withPosition(0,5).getEntry();
+      drivePEntry = module.add("DriveP", m.getDriveP()).withWidget(BuiltInWidgets.kTextView).withPosition(0,3).getEntry();
+      driveIEntry = module.add("DriveI", m.getDriveI()).withWidget(BuiltInWidgets.kTextView).withPosition(0,4).getEntry();
+      driveDEntry = module.add("DriveD", m.getDriveD()).withWidget(BuiltInWidgets.kTextView).withPosition(0,5).getEntry();
       
-      dS = module.add("DriveS", m.getDriveS()).withWidget(BuiltInWidgets.kTextView).withPosition(0,6).getEntry();
-      dV = module.add("DriveV", m.getDriveV()).withWidget(BuiltInWidgets.kTextView).withPosition(0,7).getEntry();
-      dA = module.add("DriveA", m.getDriveA()).withWidget(BuiltInWidgets.kTextView).withPosition(0,8).getEntry();
+      driveSEntry = module.add("DriveS", m.getDriveS()).withWidget(BuiltInWidgets.kTextView).withPosition(0,6).getEntry();
+      driveVEntry = module.add("DriveV", m.getDriveV()).withWidget(BuiltInWidgets.kTextView).withPosition(0,7).getEntry();
+      driveAEntry = module.add("DriveA", m.getDriveA()).withWidget(BuiltInWidgets.kTextView).withPosition(0,8).getEntry();
   }
 
   public void updateDashboardGUI(){
     Module m = modules[0];
 
-    aP.setDouble(m.getAngleP());
-    aI.setDouble(m.getAngleI());
-    aD.setDouble(m.getAngleD()); 
+    anglePEntry.setDouble(m.getAngleP());
+    angleIEntry.setDouble(m.getAngleI());
+    angleDEntry.setDouble(m.getAngleD()); 
 
-    dP.setDouble(m.getDriveP()); 
-    dI.setDouble(m.getDriveI()); 
-    dD.setDouble(m.getDriveD());
+    drivePEntry.setDouble(m.getDriveP()); 
+    driveIEntry.setDouble(m.getDriveI()); 
+    driveDEntry.setDouble(m.getDriveD());
 
-    dS.setDouble(m.getDriveS());
-    dV.setDouble(m.getDriveV());
-    dA.setDouble(m.getDriveA());
+    driveSEntry.setDouble(m.getDriveS());
+    driveVEntry.setDouble(m.getDriveV());
+    driveAEntry.setDouble(m.getDriveA());
   }
 
   public void updateControlConstants(){
-    double[] drive = {dP.getDouble(moduleConstants.driveP),dI.getDouble(moduleConstants.driveI),dD.getDouble(moduleConstants.driveD),dS.getDouble(moduleConstants.driveS),dV.getDouble(moduleConstants.driveV),dA.getDouble(moduleConstants.driveA),};
-    double[] angle = {aP.getDouble(moduleConstants.angleP),aI.getDouble(moduleConstants.angleI),aD.getDouble(moduleConstants.angleD)};
+    double[] drive = {
+        drivePEntry.getDouble(moduleConstants.driveP),
+        driveIEntry.getDouble(moduleConstants.driveI),
+        driveDEntry.getDouble(moduleConstants.driveD),
+        driveSEntry.getDouble(moduleConstants.driveS),
+        driveVEntry.getDouble(moduleConstants.driveV),
+        driveAEntry.getDouble(moduleConstants.driveA),};
+
+    double[] angle = {
+        anglePEntry.getDouble(moduleConstants.angleP),
+        angleIEntry.getDouble(moduleConstants.angleI),
+        angleDEntry.getDouble(moduleConstants.angleD)};
 
     for(Module m: modules){
       m.setNewControlConstants(drive, angle);
