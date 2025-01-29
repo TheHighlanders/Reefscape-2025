@@ -20,7 +20,7 @@ jobs:
           distribution: 'zulu'
           java-version: 17
       - name: Run spotlessApply
-        run: ./gradlew spotlessApply
+        run: ./gradlew spotlessApply || true
       - name: Create Pull Request
         run: |
           git config user.name 'github-actions[bot]'
