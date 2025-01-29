@@ -27,7 +27,7 @@ public class Superstructure extends SubsystemBase {
   public final Map<Class<? extends Enum<?>>, Object> stateObjects = new HashMap<>();
   private Enum<?> lastState;
   public SuperstructureState currentState;
-  private final Trigger stateChangeTrigger; // This is used actually
+  private final Trigger stateChangeTrigger;
 
   public Superstructure(Map<String, Subsystem> subsystems) {
     currentState = SuperstructureState.INIT;
@@ -87,8 +87,8 @@ public class Superstructure extends SubsystemBase {
       e.printStackTrace();
     }
 
-    stateChangeTrigger = getEnumChangeTrigger(SuperstructureState.class)
-        .onTrue(getStateChangeCommand());
+    stateChangeTrigger = getEnumChangeTrigger(SuperstructureState.class);
+    stateChangeTrigger.onTrue(getStateChangeCommand());
   }
 
   @Override

@@ -8,8 +8,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  spotless:
-    name: Spotless apply
+  format:
+    name: Format Code
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +19,16 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 17
-      - run: ./gradlew spotlessApply
+      - name: Run spotlessApply
+        run: ./gradlew spotlessApply
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: 'style: format code with spotless'
+          title: 'style: format code with spotless'
+          body: 'Applied code formatting using spotless'
+          branch: format-code
+          delete-branch: true
   
   test:
     name: Run Tests
