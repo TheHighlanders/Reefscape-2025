@@ -74,7 +74,8 @@ public class StateRequest {
             e.printStackTrace();
           }
         } else {
-          System.out.println("State " + stateClass.getSimpleName() + " not found in Superstructure");
+          System.out.println(
+              "State " + stateClass.getSimpleName() + " not found in Superstructure");
           System.out.println(superstructure.states.keySet());
         }
       }
@@ -82,7 +83,8 @@ public class StateRequest {
   }
 
   /**
-   * Creates a new {@link IStateRequest} instance that represents a request to update the state of a subsystem.
+   * Creates a new {@link IStateRequest} instance that represents a request to update the state of a
+   * subsystem.
    *
    * @param <T> The enum type of the state being requested.
    * @param state The new state to be set.
