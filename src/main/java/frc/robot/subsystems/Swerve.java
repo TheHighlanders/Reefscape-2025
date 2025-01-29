@@ -13,12 +13,17 @@ import static edu.wpi.first.units.Units.Volts;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
+
+import org.photonvision.EstimatedRobotPose;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
 import choreo.trajectory.SwerveSample;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -29,6 +34,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.GenericEntry;
@@ -118,8 +125,11 @@ public class Swerve extends SubsystemBase {
 
   SwerveState current = SwerveState.FAST;
 
+  Supplier<Optional<EstimatedRobotPose>> estPoseSup;
+  Supplier<Matrix<N3,N1>> stdDevSup;
+
   /** Creates a new Swerve. */
-  public Swerve() {
+  public Swerve(Supplier<Optional<EstimatedRobotPose>> estPoseSup, Supplier<Matrix<N3,N1>> stdDevSup) {
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
@@ -196,6 +206,8 @@ public class Swerve extends SubsystemBase {
             },
             this));
 
+    this.estPoseSup = estPoseSup;
+    this.stdDevSup = stdDevSup;
 
     smartDashboardGUI();
   }
@@ -208,6 +220,11 @@ public class Swerve extends SubsystemBase {
         getGyroAngle(),
         getModulePostions());
 
+    var estPose = estPoseSup.get();
+    if(estPose.isPresent()){
+      poseEst.addVisionMeasurement(estPose.get().estimatedPose.toPose2d(), RobotController.getFPGATime(),stdDevSup.get());
+    }
+    
     sendNT();
   }
 
@@ -515,12 +532,30 @@ public class Swerve extends SubsystemBase {
       aP = module.add("AngleP", m.getAngleP()).withWidget(BuiltInWidgets.kTextView).withPosition(0,0).getEntry();
       aI = module.add("AngleI", m.getAngleI()).withWidget(BuiltInWidgets.kTextView).withPosition(0,1).getEntry();
       aD = module.add("AngleD", m.getAngleD()).withWidget(BuiltInWidgets.kTextView).withPosition(0,2).getEntry();
+      
       dP = module.add("DriveP", m.getDriveP()).withWidget(BuiltInWidgets.kTextView).withPosition(0,3).getEntry();
       dI = module.add("DriveI", m.getDriveI()).withWidget(BuiltInWidgets.kTextView).withPosition(0,4).getEntry();
       dD = module.add("DriveD", m.getDriveD()).withWidget(BuiltInWidgets.kTextView).withPosition(0,5).getEntry();
+      
       dS = module.add("DriveS", m.getDriveS()).withWidget(BuiltInWidgets.kTextView).withPosition(0,6).getEntry();
       dV = module.add("DriveV", m.getDriveV()).withWidget(BuiltInWidgets.kTextView).withPosition(0,7).getEntry();
       dA = module.add("DriveA", m.getDriveA()).withWidget(BuiltInWidgets.kTextView).withPosition(0,8).getEntry();
+  }
+
+  public void updateDashboardGUI(){
+    Module m = modules[0];
+
+    aP.setDouble(m.getAngleP());
+    aI.setDouble(m.getAngleI());
+    aD.setDouble(m.getAngleD()); 
+
+    dP.setDouble(m.getDriveP()); 
+    dI.setDouble(m.getDriveI()); 
+    dD.setDouble(m.getDriveD());
+
+    dS.setDouble(m.getDriveS());
+    dV.setDouble(m.getDriveV());
+    dA.setDouble(m.getDriveA());
   }
 
   public void updateControlConstants(){
@@ -531,6 +566,6 @@ public class Swerve extends SubsystemBase {
       m.setNewControlConstants(drive, angle);
     }
 
-    smartDashboardGUI();
+    updateDashboardGUI();
   }
 }
