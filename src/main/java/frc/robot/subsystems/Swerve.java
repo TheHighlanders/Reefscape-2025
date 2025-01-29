@@ -13,17 +13,12 @@ import static edu.wpi.first.units.Units.Volts;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
-
-import org.photonvision.EstimatedRobotPose;
 
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
 import choreo.trajectory.SwerveSample;
-import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -34,8 +29,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.GenericEntry;
@@ -125,11 +118,8 @@ public class Swerve extends SubsystemBase {
 
   SwerveState current = SwerveState.FAST;
 
-  Supplier<Optional<EstimatedRobotPose>> estPoseSup;
-  Supplier<Matrix<N3,N1>> stdDevSup;
-
   /** Creates a new Swerve. */
-  public Swerve(Supplier<Optional<EstimatedRobotPose>> estPoseSup, Supplier<Matrix<N3,N1>> stdDevSup) {
+  public Swerve() {
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
@@ -206,9 +196,6 @@ public class Swerve extends SubsystemBase {
             },
             this));
 
-    this.estPoseSup = estPoseSup;
-    this.stdDevSup = stdDevSup;
-
     smartDashboardGUI();
   }
 
@@ -219,11 +206,6 @@ public class Swerve extends SubsystemBase {
         RobotController.getFPGATime() * Math.pow(10, 6),
         getGyroAngle(),
         getModulePostions());
-
-    var estPose = estPoseSup.get();
-    if(estPose.isPresent()){
-      poseEst.addVisionMeasurement(estPose.get().estimatedPose.toPose2d(), RobotController.getFPGATime(),stdDevSup.get());
-    }
     
     sendNT();
   }
