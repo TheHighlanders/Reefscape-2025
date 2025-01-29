@@ -1,84 +1,96 @@
 package frc.robot.subsystems;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.utils.StateRequest;
 import java.util.HashMap;
 import java.util.Map;
-import edu.wpi.first.wpilibj2.command.Subsystem;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class SuperstructureTest {
-    private Superstructure superstructure;
-    private TestSubsystem testSubsystem;
+  private Superstructure superstructure;
+  private TestSubsystem testSubsystem;
 
-    public static class TestSubsystem extends SubsystemBase {
-        public enum FirstEnumState {
-            ONE, TWO, THREE, FOUR, FIVE
-        }
-
-        public enum SecondEnumState {
-            A, B, C
-        }
-
-        public FirstEnumState state = FirstEnumState.ONE;
-        public SecondEnumState testState = SecondEnumState.A;
+  public static class TestSubsystem extends SubsystemBase {
+    public enum FirstEnumState {
+      ONE,
+      TWO,
+      THREE,
+      FOUR,
+      FIVE
     }
 
-    @BeforeEach
-    void setUp() {
-        Map<String, Subsystem> subsystems = new HashMap<>();
-        testSubsystem = new TestSubsystem();
-        subsystems.put("test", testSubsystem);
-        superstructure = new Superstructure(subsystems);
-        StateRequest.init(superstructure);
+    public enum SecondEnumState {
+      A,
+      B,
+      C
     }
 
-    @Test
-    void testForwardExclusion() {
-        StateRequest.addOneWayExclusion(TestSubsystem.FirstEnumState.ONE, TestSubsystem.FirstEnumState.THREE);
-        StateRequest.create(TestSubsystem.FirstEnumState.ONE);
-        StateRequest.create(TestSubsystem.FirstEnumState.THREE);
+    public FirstEnumState state = FirstEnumState.ONE;
+    public SecondEnumState testState = SecondEnumState.A;
+  }
 
-        assertEquals(TestSubsystem.FirstEnumState.ONE,
-                StateRequest.getCurrentState(TestSubsystem.FirstEnumState.class));
-    }
+  @BeforeEach
+  void setUp() {
+    Map<String, Subsystem> subsystems = new HashMap<>();
+    testSubsystem = new TestSubsystem();
+    subsystems.put("test", testSubsystem);
+    superstructure = new Superstructure(subsystems);
+    StateRequest.init(superstructure);
+  }
 
-    @Test
-    void testReverseDirection() {
-        StateRequest.addOneWayExclusion(TestSubsystem.FirstEnumState.ONE, TestSubsystem.FirstEnumState.THREE);
-        StateRequest.create(TestSubsystem.FirstEnumState.THREE);
-        StateRequest.create(TestSubsystem.FirstEnumState.ONE);
+  @Test
+  void testForwardExclusion() {
+    StateRequest.addOneWayExclusion(
+        TestSubsystem.FirstEnumState.ONE, TestSubsystem.FirstEnumState.THREE);
+    StateRequest.create(TestSubsystem.FirstEnumState.ONE);
+    StateRequest.create(TestSubsystem.FirstEnumState.THREE);
 
-        assertEquals(TestSubsystem.FirstEnumState.ONE,
-                StateRequest.getCurrentState(TestSubsystem.FirstEnumState.class));
-    }
+    assertEquals(
+        TestSubsystem.FirstEnumState.ONE,
+        StateRequest.getCurrentState(TestSubsystem.FirstEnumState.class));
+  }
 
-    @Test
-    void testStateChange() {
-        var stateChanged = StateRequest.createStateChangeSupplier(TestSubsystem.FirstEnumState.class);
-        StateRequest.create(TestSubsystem.FirstEnumState.TWO);
+  @Test
+  void testReverseDirection() {
+    StateRequest.addOneWayExclusion(
+        TestSubsystem.FirstEnumState.ONE, TestSubsystem.FirstEnumState.THREE);
+    StateRequest.create(TestSubsystem.FirstEnumState.THREE);
+    StateRequest.create(TestSubsystem.FirstEnumState.ONE);
 
-        assertTrue(stateChanged.getAsBoolean());
-    }
+    assertEquals(
+        TestSubsystem.FirstEnumState.ONE,
+        StateRequest.getCurrentState(TestSubsystem.FirstEnumState.class));
+  }
 
-    @Test
-    void testNoStateChange() {
-        var stateChanged = StateRequest.createStateChangeSupplier(TestSubsystem.FirstEnumState.class);
-        StateRequest.create(TestSubsystem.FirstEnumState.ONE);
+  @Test
+  void testStateChange() {
+    var stateChanged = StateRequest.createStateChangeSupplier(TestSubsystem.FirstEnumState.class);
+    StateRequest.create(TestSubsystem.FirstEnumState.TWO);
 
-        assertFalse(stateChanged.getAsBoolean());
-    }
+    assertTrue(stateChanged.getAsBoolean());
+  }
 
-    @Test
-    void testCrossEnumExclusion() {
-        StateRequest.addOneWayExclusion(TestSubsystem.FirstEnumState.ONE, TestSubsystem.SecondEnumState.B);
-        StateRequest.create(TestSubsystem.FirstEnumState.ONE);
-        StateRequest.create(TestSubsystem.SecondEnumState.B);
+  @Test
+  void testNoStateChange() {
+    var stateChanged = StateRequest.createStateChangeSupplier(TestSubsystem.FirstEnumState.class);
+    StateRequest.create(TestSubsystem.FirstEnumState.ONE);
 
-        assertEquals(TestSubsystem.SecondEnumState.A,
-                StateRequest.getCurrentState(TestSubsystem.SecondEnumState.class));
-    }
+    assertFalse(stateChanged.getAsBoolean());
+  }
+
+  @Test
+  void testCrossEnumExclusion() {
+    StateRequest.addOneWayExclusion(
+        TestSubsystem.FirstEnumState.ONE, TestSubsystem.SecondEnumState.B);
+    StateRequest.create(TestSubsystem.FirstEnumState.ONE);
+    StateRequest.create(TestSubsystem.SecondEnumState.B);
+
+    assertEquals(
+        TestSubsystem.SecondEnumState.A,
+        StateRequest.getCurrentState(TestSubsystem.SecondEnumState.class));
+  }
 }

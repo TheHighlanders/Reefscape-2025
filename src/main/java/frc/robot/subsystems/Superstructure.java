@@ -5,7 +5,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -59,7 +58,8 @@ public class Superstructure extends SubsystemBase {
                     if (value instanceof Enum<?>) {
                       Enum<?> enumValue = (Enum<?>) value;
                       @SuppressWarnings("unchecked")
-                      Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) enumValue.getClass();
+                      Class<? extends Enum<?>> enumClass =
+                          (Class<? extends Enum<?>>) enumValue.getClass();
                       if (states.containsKey(enumClass)) {
                         System.err.println(
                             "ERROR: Duplicate enum type found: " + enumClass.getName());
@@ -92,18 +92,18 @@ public class Superstructure extends SubsystemBase {
   }
 
   @Override
-  public void periodic() {
-  }
+  public void periodic() {}
 
   public Trigger getEnumChangeTrigger(Class<? extends Enum<?>> enumClass) {
-    return new Trigger(() -> {
-      Enum<?> currentState = states.get(enumClass);
-      if (currentState != lastState) {
-        lastState = currentState;
-        return true;
-      }
-      return false;
-    });
+    return new Trigger(
+        () -> {
+          Enum<?> currentState = states.get(enumClass);
+          if (currentState != lastState) {
+            lastState = currentState;
+            return true;
+          }
+          return false;
+        });
   }
 
   public Command getStateChangeCommand() {
