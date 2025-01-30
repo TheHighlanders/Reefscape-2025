@@ -60,9 +60,9 @@ public class Climber extends SubsystemBase {
     // This method will be called once per scheduler run
   }
 
-    public Command createClimbCommand(double targetPosition) {
+    public Command createClimbCommand(double dutyCycle) {
     return Commands.startEnd(
-      () -> climbMotor.set(targetPosition),
+      () -> climbMotor.set(dutyCycle),
       // Stop the flywheel at the end of the command
       () -> climbMotor.set(0.0),
       this
