@@ -508,43 +508,49 @@ public class Swerve extends SubsystemBase {
         tab.getLayout("Tuning", BuiltInLayouts.kGrid)
             .withSize(2, 3)
             .withProperties(
-                Map.of("Label position", "LEFT", "Number of columns", 1, "Number of rows", 9));
+                Map.of("Label position", "LEFT", "Number of columns", 1, "Number of rows", 9, "Retained", true));
     anglePEntry =
         module
             .add("AngleP", m.getAngleP())
             .withWidget(BuiltInWidgets.kTextView)
             .withPosition(0, 0)
+            .withProperties(Map.of("retained", true))
             .getEntry();
     angleIEntry =
         module
             .add("AngleI", m.getAngleI())
             .withWidget(BuiltInWidgets.kTextView)
             .withPosition(0, 1)
+            .withProperties(Map.of("retained", true))
             .getEntry();
     angleDEntry =
         module
             .add("AngleD", m.getAngleD())
             .withWidget(BuiltInWidgets.kTextView)
             .withPosition(0, 2)
+            .withProperties(Map.of("retained", true))
             .getEntry();
 
     drivePEntry =
         module
             .add("DriveP", m.getDriveP())
-            .withWidget(BuiltInWidgets.kTextView)
+            .withWidget(BuiltInWidgets.kNumberSlider)
             .withPosition(0, 3)
+            .withProperties(Map.of("retained", true))
             .getEntry();
     driveIEntry =
         module
             .add("DriveI", m.getDriveI())
             .withWidget(BuiltInWidgets.kTextView)
             .withPosition(0, 4)
+            .withProperties(Map.of("retained", true))
             .getEntry();
     driveDEntry =
         module
             .add("DriveD", m.getDriveD())
             .withWidget(BuiltInWidgets.kTextView)
             .withPosition(0, 5)
+            .withProperties(Map.of("retained", true))
             .getEntry();
 
     driveSEntry =
@@ -552,18 +558,21 @@ public class Swerve extends SubsystemBase {
             .add("DriveS", m.getDriveS())
             .withWidget(BuiltInWidgets.kTextView)
             .withPosition(0, 6)
+            .withProperties(Map.of("retained", true))
             .getEntry();
     driveVEntry =
         module
             .add("DriveV", m.getDriveV())
             .withWidget(BuiltInWidgets.kTextView)
             .withPosition(0, 7)
+            .withProperties(Map.of("retained", true))
             .getEntry();
     driveAEntry =
         module
             .add("DriveA", m.getDriveA())
             .withWidget(BuiltInWidgets.kTextView)
             .withPosition(0, 8)
+            .withProperties(Map.of("retained", true))
             .getEntry();
   }
 

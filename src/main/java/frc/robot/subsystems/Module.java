@@ -13,8 +13,10 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
+import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -23,9 +25,12 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants;
 
 class moduleConstants {
@@ -398,17 +403,38 @@ public class Module {
   }
 
   public void setNewControlConstants(double[] drive, double[] angle) {
-    SparkMaxConfig driveConfig = new SparkMaxConfig();
-    driveConfig.closedLoop.pid(drive[0], drive[1], drive[2]);
-
-    SparkMaxConfig angleConfig = new SparkMaxConfig();
-    angleConfig.closedLoop.pid(angle[0], angle[1], angle[2]);
-
-    driveMotor.configure(
-        driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    angleMotor.configure(
-        angleConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    updateDriveConstants(drive);
+    updateAngleConstants(angle);
 
     driveFeedforward = new SimpleMotorFeedforward(drive[3], drive[4], drive[5]);
+  }
+
+  public void updateDriveConstants(double[] drive){
+    ClosedLoopConfigAccessor config = driveMotor.configAccessor.closedLoop;
+
+    double p = config.getP();
+    double i = config.getI();
+    double d = config.getD();
+
+    if(drive[0] != p || drive[1] != i || drive[2] != d){
+
+      SparkMaxConfig newConfig = new SparkMaxConfig();
+      newConfig.closedLoop.pid(drive[0], drive[1], drive[2]);
+      driveMotor.configure(newConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    }
+  }
+
+  public void updateAngleConstants(double[] angle){
+    ClosedLoopConfigAccessor config = angleMotor.configAccessor.closedLoop;
+
+    double p = config.getP();
+    double i = config.getI();
+    double d = config.getD();
+
+    if(angle[0] != p || angle[1] != i || angle[2] != d){
+      SparkMaxConfig newConfig = new SparkMaxConfig();
+      newConfig.closedLoop.pid(angle[0], angle[1], angle[2]);
+      driveMotor.configure(newConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    }
   }
 }
