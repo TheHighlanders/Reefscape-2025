@@ -17,9 +17,8 @@ import java.util.Map;
 
 public class RobotContainer {
   private final Map<String, Subsystem> subsystems = new HashMap<String, Subsystem>();
-  private final CommandXboxController controller = new CommandXboxController(0);
-  private final CommandXboxController controller2 = new CommandXboxController(1);
-  private final Climber climber = new Climber(controller::getRightY, controller::getRightX); 
+  private final CommandXboxController controller = new CommandXboxController(0);;
+  private final Climber climber = new Climber(); 
 
   public RobotContainer() {
     subsystems.put("climber", climber);

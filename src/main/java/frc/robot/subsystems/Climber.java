@@ -27,32 +27,18 @@ class climberConstants {
   static int climberCurrentLimit = 0;
   
   static int climbMotorID= 3;
-
-  /*static double climber2PCF = 0;
-
-  static int climber2CurrentLimit = 0;
-  
-  static int climb2MotorID= 4;
-  */
 }
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
   public SparkMax climbMotor = new SparkMax(climberConstants.climbMotorID,MotorType.kBrushless);
-  //public SparkMax climb2Motor = new SparkMax(climberConstants.climbMotorID,MotorType.kBrushless);
  //variable for the subsystem
-  public Climber m_Climber;
+
 
   
-  public Climber(DoubleSupplier climb1Control, DoubleSupplier climb2Control) {
+  public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
     climbMotor.configure(climberConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-    //SparkMaxConfig climber2Config = createClimber2Config();
-    //climb2Motor.configure(climber2Config, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
-  }
-
-   public Climber(Object object, Object object2) {
-    //TODO Auto-generated constructor stub
   }
 
   private SparkMaxConfig createClimberConfig() {
@@ -69,21 +55,6 @@ public class Climber extends SubsystemBase {
         return climberConfig;
     }
 
-    /*private SparkMaxConfig createClimber2Config() {
-      SparkMaxConfig climber2Config = new SparkMaxConfig();
-      climber2Config.encoder
-              .positionConversionFactor(climberConstants.climberPCF)        //climber contants means the variables at the top :)
-              .velocityConversionFactor(climberConstants.climberPCF / 60.0d);
-
-      climber2Config.closedLoop
-              .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
-
-      climber2Config.smartCurrentLimit(climberConstants.climber2CurrentLimit).idleMode(IdleMode.kBrake);
-
-      return climber2Config;
-      
-  }
-*/
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
@@ -94,7 +65,7 @@ public class Climber extends SubsystemBase {
       () -> climbMotor.set(targetPosition),
       // Stop the flywheel at the end of the command
       () -> climbMotor.set(0.0),
-      m_Climber
+      this
 );
 
   }
