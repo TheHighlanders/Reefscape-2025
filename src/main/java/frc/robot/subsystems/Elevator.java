@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 // PLACEHOLDER FOR SUPERSTRUCTURE EXAMPLE
 
@@ -47,15 +48,25 @@ public class Elevator extends SubsystemBase {
     CORAL_POSITION
   }
 
+  double homeTarget = 0;
+  double l1Target = 0;
+  double l2Target = 10;
+  double l3Target = 20;
+  double l4Target = 30;
+  double coral_positionTarget = 40;
+
+  double targetPosition;
+
+
   private ElevatorState uppydowny = ElevatorState.HOME;
 
   public Elevator() {
-
-    m_controller = elevatorMotor.getClosedLoopController();
     elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(1, MotorType.kBrushless);
     reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
-    elevatorEncoder = elevatorMotor.getEncoder();
+    elevatorEncoder = elevatorMotor.getEncoder();//TODO:Encoder should be configured (position conversion factor), based on cad, in order to use the feedback
+
+    m_controller = elevatorMotor.getClosedLoopController();
     elevatorMotorConfig.idleMode(IdleMode.kBrake);
     elevatorMotorConfig.limitSwitch
         .reverseLimitSwitchType(Type.kNormallyOpen)
@@ -86,6 +97,8 @@ public class Elevator extends SubsystemBase {
     // Reset the position to 0 to start within the range of the soft limits
     elevatorEncoder.setPosition(0);
 
+
+
   }
 
   @Override
@@ -98,26 +111,80 @@ public class Elevator extends SubsystemBase {
 
     switch (uppydowny) {
       case HOME:
-        m_controller.setReference(0, ControlType.kPosition, ClosedLoopSlot.kSlot0, feedFoward); // the first value is
-                                                                                                // the set point
+        targetPosition = homeTarget;                                                                            // the set point
         break;
       case L1_POSITION:
-        m_controller.setReference(0, ControlType.kPosition, ClosedLoopSlot.kSlot0, feedFoward); // the first value is
-                                                                                                // the set point
+        targetPosition = l1Target;                                                                                  // the set point
         break;
       case L2_POSITION:
-        m_controller.setReference(0, ControlType.kPosition, ClosedLoopSlot.kSlot0, feedFoward); // the first value is
-                                                                                                // the set point
+         targetPosition = l2Target;                                                                                                // the set point
         break;
       case L3_POSITION:
-        m_controller.setReference(0, ControlType.kPosition, ClosedLoopSlot.kSlot0, feedFoward); // the first value is
-                                                                                                // the set point
+        targetPosition = l3Target;                                                                                     // the set point
         break;
       case L4_POSITION:
-        m_controller.setReference(0, ControlType.kPosition, ClosedLoopSlot.kSlot0, feedFoward); // the first value is
-                                                                                                // the set point
+        targetPosition = l4Target;                                                                                    // the set point
+        break;
+      case CORAL_POSITION:
+        targetPosition = coral_positionTarget;                                                                                    // the set point
         break;
     }
-
+    m_controller.setReference(targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, feedFoward);
   }
+  public void L1(){
+    uppydowny = ElevatorState.L1_POSITION;
+  }
+  public void L2(){
+    uppydowny = ElevatorState.L2_POSITION;
+  }
+  public void L3(){
+    uppydowny = ElevatorState.L3_POSITION;
+  }
+  public void L4(){
+    uppydowny = ElevatorState.L4_POSITION;
+  }
+  public void HOME(){
+    uppydowny = ElevatorState.HOME;
+  }
+  public void coral_position(){
+    uppydowny = ElevatorState.CORAL_POSITION;
+  }
+
+  public Command getL1Command() {
+    return new RunCommand(
+      ()->{
+        L1();
+      })
+      .finallyDo(()-> L1());
+    }  
+  public Command getL2Command() {
+      return new RunCommand(
+      ()->{
+        L2();
+      })
+      .finallyDo(()-> L2());
+    } 
+  public Command getL3Command() {
+      return new RunCommand(
+    ()->{
+      L3();
+    })
+      .finallyDo(()-> L3());
+    } 
+  public Command getL4Command() {
+      return new RunCommand(
+    ()->{
+      L4();
+    })
+      .finallyDo(()-> L4());
+    } 
+  public Command getCoral_positoonCommand() {
+      return new RunCommand(
+    ()->{
+      coral_position();
+    })
+      .finallyDo(()-> coral_position());
+    } 
+
 }
+
