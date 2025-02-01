@@ -32,8 +32,8 @@ public class RobotContainer {
   }
 //these bindings will likely need to be changed
   private void configureBindings() {
-    controller.a().onTrue(climber.createClimbInCommand());
-    controller.b().onTrue(climber.createClimbOutCommand());
+    controller.a().whileTrue(climber.createClimbInCommand());
+    controller.b().whileTrue(climber.createClimbOutCommand());
   }
 
   public Command getAutonomousCommand() {
