@@ -1,5 +1,3 @@
 package frc.robot.subsystems;
 
-public class MotorType {
-
-}
+public class MotorType {}
