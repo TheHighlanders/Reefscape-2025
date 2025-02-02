@@ -18,13 +18,9 @@ public class Superstructure extends SubsystemBase {
     DRIVING,
 
     L1,
-
     L2,
-
     L3,
-
     L4,
-
     CLIMBING,
   }
 

@@ -1,0 +1,4 @@
+#!/bin/bash
+echo "Running spotlessApply in pre-commit hook"
+./gradlew spotlessApply
+git add -u
