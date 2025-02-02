@@ -12,11 +12,8 @@ import java.util.Map;
 public class Superstructure extends SubsystemBase {
   public enum SuperstructureState {
     INIT,
-
     LOADING,
-
     DRIVING,
-
     L1,
     L2,
     L3,
