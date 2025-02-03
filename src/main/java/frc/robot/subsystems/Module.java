@@ -16,7 +16,6 @@ import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -406,32 +405,34 @@ public class Module {
     driveFeedforward = new SimpleMotorFeedforward(drive[3], drive[4], drive[5]);
   }
 
-  public void updateDriveConstants(double[] drive){
+  public void updateDriveConstants(double[] drive) {
     ClosedLoopConfigAccessor config = driveMotor.configAccessor.closedLoop;
 
     double p = config.getP();
     double i = config.getI();
     double d = config.getD();
 
-    if(drive[0] != p || drive[1] != i || drive[2] != d){
+    if (drive[0] != p || drive[1] != i || drive[2] != d) {
 
       SparkMaxConfig newConfig = new SparkMaxConfig();
       newConfig.closedLoop.pid(drive[0], drive[1], drive[2]);
-      driveMotor.configure(newConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+      driveMotor.configure(
+          newConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
     }
   }
 
-  public void updateAngleConstants(double[] angle){
+  public void updateAngleConstants(double[] angle) {
     ClosedLoopConfigAccessor config = angleMotor.configAccessor.closedLoop;
 
     double p = config.getP();
     double i = config.getI();
     double d = config.getD();
 
-    if(angle[0] != p || angle[1] != i || angle[2] != d){
+    if (angle[0] != p || angle[1] != i || angle[2] != d) {
       SparkMaxConfig newConfig = new SparkMaxConfig();
       newConfig.closedLoop.pid(angle[0], angle[1], angle[2]);
-      angleMotor.configure(newConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+      angleMotor.configure(
+          newConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
     }
   }
 }
