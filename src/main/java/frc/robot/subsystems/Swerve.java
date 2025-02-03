@@ -38,6 +38,7 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.shuffleboard.SimpleWidget;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -98,14 +99,12 @@ public class Swerve extends SubsystemBase {
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
   SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
-  private final PIDController xController =
-      new PIDController(
-          SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
-  private final PIDController yController =
-      new PIDController(
-          SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
-  private final PIDController headingController =
-      new PIDController(SwerveConstants.rotateP, SwerveConstants.rotateI, SwerveConstants.rotateD);
+  private final PIDController xController = new PIDController(
+      SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
+  private final PIDController yController = new PIDController(
+      SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
+  private final PIDController headingController = new PIDController(SwerveConstants.rotateP, SwerveConstants.rotateI,
+      SwerveConstants.rotateD);
 
   GenericEntry drivePEntry;
   GenericEntry driveIEntry;
@@ -136,64 +135,58 @@ public class Swerve extends SubsystemBase {
     double y = SwerveConstants.width / 2.0d;
     double x = SwerveConstants.length / 2.0d;
 
-    kinematics =
-        new SwerveDriveKinematics(
-            new Translation2d(x, y),
-            new Translation2d(x, -y),
-            new Translation2d(-x, y),
-            new Translation2d(-x, -y));
+    kinematics = new SwerveDriveKinematics(
+        new Translation2d(x, y),
+        new Translation2d(x, -y),
+        new Translation2d(-x, y),
+        new Translation2d(-x, -y));
 
     // Default Port is MXP
     gyro = new AHRS(NavXComType.kMXP_SPI);
 
-    poseEst =
-        new SwerveDrivePoseEstimator(
-            kinematics, startPose.getRotation(), getModulePostions(), startPose);
+    poseEst = new SwerveDrivePoseEstimator(
+        kinematics, startPose.getRotation(), getModulePostions(), startPose);
 
-    statePublisher =
-        NetworkTableInstance.getDefault()
-            .getStructArrayTopic("/Swerve/States", SwerveModuleState.struct)
-            .publish();
-    setpointPublisher =
-        NetworkTableInstance.getDefault()
-            .getStructArrayTopic("/Swerve/Setpoints", SwerveModuleState.struct)
-            .publish();
+    statePublisher = NetworkTableInstance.getDefault()
+        .getStructArrayTopic("/Swerve/States", SwerveModuleState.struct)
+        .publish();
+    setpointPublisher = NetworkTableInstance.getDefault()
+        .getStructArrayTopic("/Swerve/Setpoints", SwerveModuleState.struct)
+        .publish();
 
-    posePublisher =
-        NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
+    posePublisher = NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
 
     voltagePublisher = NetworkTableInstance.getDefault().getDoubleTopic("/Voltage").publish();
 
-    sysId =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                Volt.of(4),
-                Seconds.of(4),
-                state -> {
-                  SmartDashboard.putString("Drive/SysIdState", state.toString());
-                }),
-            new SysIdRoutine.Mechanism(
-                voltage -> {
-                  driveVoltage(voltage);
-                },
-                log -> {
-                  log.motor("Front-Left")
-                      .voltage(
-                          Volts.of(
-                              modules[0].getDriveVolts().in(Volts)
-                                  * RobotController.getBatteryVoltage()))
-                      .linearPosition(Meters.of(modules[0].getDrivePosition()))
-                      .linearVelocity(MetersPerSecond.of(modules[0].getDriveVelocity()));
-                  log.motor("Front-Right")
-                      .voltage(
-                          Volts.of(
-                              modules[1].getDriveVolts().in(Volts)
-                                  * RobotController.getBatteryVoltage()))
-                      .linearPosition(Meters.of(modules[1].getDrivePosition()))
-                      .linearVelocity(MetersPerSecond.of(modules[1].getDriveVelocity()));
-                },
-                this));
+    sysId = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            null,
+            Volt.of(4),
+            Seconds.of(4),
+            state -> {
+              SmartDashboard.putString("Drive/SysIdState", state.toString());
+            }),
+        new SysIdRoutine.Mechanism(
+            voltage -> {
+              driveVoltage(voltage);
+            },
+            log -> {
+              log.motor("Front-Left")
+                  .voltage(
+                      Volts.of(
+                          modules[0].getDriveVolts().in(Volts)
+                              * RobotController.getBatteryVoltage()))
+                  .linearPosition(Meters.of(modules[0].getDrivePosition()))
+                  .linearVelocity(MetersPerSecond.of(modules[0].getDriveVelocity()));
+              log.motor("Front-Right")
+                  .voltage(
+                      Volts.of(
+                          modules[1].getDriveVolts().in(Volts)
+                              * RobotController.getBatteryVoltage()))
+                  .linearPosition(Meters.of(modules[1].getDrivePosition()))
+                  .linearVelocity(MetersPerSecond.of(modules[1].getDriveVelocity()));
+            },
+            this));
 
     smartDashboardGUI();
   }
@@ -238,15 +231,15 @@ public class Swerve extends SubsystemBase {
 
   public Command readAngleEncoders() {
     return new InstantCommand(
-            () -> {
-              for (Module m : modules) {
-                SmartDashboard.putNumber(
-                    "Relative" + m.moduleNumber, m.getAnglePosition().getDegrees());
-                SmartDashboard.putNumber(
-                    "Absolute" + m.moduleNumber, m.getAbsolutePosition().getDegrees());
-              }
-            },
-            this)
+        () -> {
+          for (Module m : modules) {
+            SmartDashboard.putNumber(
+                "Relative" + m.moduleNumber, m.getAnglePosition().getDegrees());
+            SmartDashboard.putNumber(
+                "Absolute" + m.moduleNumber, m.getAbsolutePosition().getDegrees());
+          }
+        },
+        this)
         .ignoringDisable(true);
   }
 
@@ -273,7 +266,8 @@ public class Swerve extends SubsystemBase {
   }
 
   /**
-   * Returns a command that will execute a quasistatic test in the given direction.
+   * Returns a command that will execute a quasistatic test in the given
+   * direction.
    *
    * @param direction The direction (forward or reverse) to run the test in
    */
@@ -315,18 +309,18 @@ public class Swerve extends SubsystemBase {
   public Command driveCMD(DoubleSupplier x, DoubleSupplier y, DoubleSupplier omega) {
 
     return new RunCommand(
-            () -> {
-              drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble());
-            },
-            this)
+        () -> {
+          drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble());
+        },
+        this)
         .withName("Swerve Drive Command");
   }
 
   /**
    * Method to drive the robot
    *
-   * @param x Alliance Relative X Speed, as defined above (m/s)
-   * @param y Alliance Relative Y Speed, as defined above (m/s)
+   * @param x     Alliance Relative X Speed, as defined above (m/s)
+   * @param y     Alliance Relative Y Speed, as defined above (m/s)
    * @param omega Rotational Speed (rad/s)
    */
   public void drive(double x, double y, double omega) {
@@ -337,11 +331,10 @@ public class Swerve extends SubsystemBase {
       y *= SLOW_MODE_MULTIPLIER;
     }
 
-    ChassisSpeeds chassisSpeeds =
-        fromAllianceRelativeSpeeds(
-            xLim.calculate(x),
-            yLim.calculate(y),
-            omega); // Takes in Alliance Relative, returns Field Relative
+    ChassisSpeeds chassisSpeeds = fromAllianceRelativeSpeeds(
+        xLim.calculate(x),
+        yLim.calculate(y),
+        omega); // Takes in Alliance Relative, returns Field Relative
 
     chassisSpeeds.vxMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
@@ -384,7 +377,8 @@ public class Swerve extends SubsystemBase {
   }
 
   /**
-   * Create Field Relative IN CHASSIS SPEEDS COORD SYSTEM Chassis Speeds from Alliance Relative
+   * Create Field Relative IN CHASSIS SPEEDS COORD SYSTEM Chassis Speeds from
+   * Alliance Relative
    * desired speeds
    *
    * @param arx Alliance relative desired X speed
@@ -410,15 +404,13 @@ public class Swerve extends SubsystemBase {
 
     if (isRedAlliance) {
     } else { // RED ALLIANCE CASE //BLUE ALLIANCE CASE
-      allianceRelativeSpeeds =
-          new Translation2d(-allianceRelativeSpeeds.getX(), -allianceRelativeSpeeds.getY());
+      allianceRelativeSpeeds = new Translation2d(-allianceRelativeSpeeds.getX(), -allianceRelativeSpeeds.getY());
     }
 
     // Convert Blue Alliance Relative to Field Relative
     // fieldRelativeSpeeds =
     // allianceRelativeSpeeds.rotateBy(Rotation2d.fromDegrees(90));
-    fieldRelativeSpeeds =
-        new Translation2d(-allianceRelativeSpeeds.getY(), -allianceRelativeSpeeds.getX());
+    fieldRelativeSpeeds = new Translation2d(-allianceRelativeSpeeds.getY(), -allianceRelativeSpeeds.getX());
 
     fr = new ChassisSpeeds(fieldRelativeSpeeds.getX(), fieldRelativeSpeeds.getY(), rot);
     fr = ChassisSpeeds.fromFieldRelativeSpeeds(fr, getPose().getRotation());
@@ -442,21 +434,23 @@ public class Swerve extends SubsystemBase {
     Pose2d pose = getPose();
 
     // Generate the next speeds for the robot
-    ChassisSpeeds speeds =
-        new ChassisSpeeds(
-            -(sample.vx + xController.calculate(pose.getX(), sample.x)),
-            -(sample.vy + yController.calculate(pose.getY(), sample.y)),
-            -(sample.omega
-                + headingController.calculate(pose.getRotation().getRadians(), sample.heading)));
+    ChassisSpeeds speeds = new ChassisSpeeds(
+        -(sample.vx + xController.calculate(pose.getX(), sample.x)),
+        -(sample.vy + yController.calculate(pose.getY(), sample.y)),
+        -(sample.omega
+            + headingController.calculate(pose.getRotation().getRadians(), sample.heading)));
 
     SmartDashboard.putNumber("Trajectory/XError", xController.getError());
     SmartDashboard.putNumber("Trajectory/YError", yController.getError());
     SmartDashboard.putNumber("Trajectory/HeadingError", headingController.getError());
 
-    // SmartDashboard.putNumber("Trajectory/XOutput", xController.calculate(pose.getX(), sample.x));
-    // SmartDashboard.putNumber("Trajectory/YOutput", yController.calculate(pose.getX(), sample.x));
+    // SmartDashboard.putNumber("Trajectory/XOutput",
+    // xController.calculate(pose.getX(), sample.x));
+    // SmartDashboard.putNumber("Trajectory/YOutput",
+    // yController.calculate(pose.getX(), sample.x));
     // SmartDashboard.putNumber("Trajectory/HeadingOutput",
-    // headingController.calculate(pose.getRotation().getRadians(), sample.heading));
+    // headingController.calculate(pose.getRotation().getRadians(),
+    // sample.heading));
     sendDiagnositics();
     // Apply the generated speeds
     driveChassisSpeedsRobotRelative(
@@ -474,15 +468,15 @@ public class Swerve extends SubsystemBase {
 
   public Command resetGyro() {
     return new InstantCommand(
-            () -> {
-              poseEst.resetPosition(
-                  getGyroAngle(),
-                  getModulePostions(),
-                  new Pose2d(
-                      poseEst.getEstimatedPosition().getX(),
-                      poseEst.getEstimatedPosition().getY(),
-                      new Rotation2d()));
-            })
+        () -> {
+          poseEst.resetPosition(
+              getGyroAngle(),
+              getModulePostions(),
+              new Pose2d(
+                  poseEst.getEstimatedPosition().getX(),
+                  poseEst.getEstimatedPosition().getY(),
+                  new Rotation2d()));
+        })
         .ignoringDisable(true);
   }
 
@@ -504,76 +498,37 @@ public class Swerve extends SubsystemBase {
     ShuffleboardTab tab = Shuffleboard.getTab("Modules");
     Module m = modules[0];
 
-    ShuffleboardLayout module =
-        tab.getLayout("Tuning", BuiltInLayouts.kGrid)
-            .withSize(2, 3)
-            .withProperties(
-                Map.of("Label position", "LEFT", "Number of columns", 1, "Number of rows", 9, "Retained", true));
-    anglePEntry =
-        module
-            .add("AngleP", m.getAngleP())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 0)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
-    angleIEntry =
-        module
-            .add("AngleI", m.getAngleI())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 1)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
-    angleDEntry =
-        module
-            .add("AngleD", m.getAngleD())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 2)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
+    ShuffleboardLayout module = tab.getLayout("Tuning", BuiltInLayouts.kGrid)
+        .withSize(2, 3)
+        .withProperties(
+            Map.of("Label position", "LEFT", "Number of columns", 1, "Number of rows", 9, "Retained", true));
 
-    drivePEntry =
-        module
-            .add("DriveP", m.getDriveP())
-            .withWidget(BuiltInWidgets.kNumberSlider)
-            .withPosition(0, 3)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
-    driveIEntry =
-        module
-            .add("DriveI", m.getDriveI())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 4)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
-    driveDEntry =
-        module
-            .add("DriveD", m.getDriveD())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 5)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
+    anglePEntry = configureWidget(module
+        .add("AngleP", m.getAngleP()), 0);
+    angleIEntry = configureWidget(module
+        .add("AngleI", m.getAngleI()), 1);
 
-    driveSEntry =
-        module
-            .add("DriveS", m.getDriveS())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 6)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
-    driveVEntry =
-        module
-            .add("DriveV", m.getDriveV())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 7)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
-    driveAEntry =
-        module
-            .add("DriveA", m.getDriveA())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 8)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
+    angleDEntry = configureWidget(module
+        .add("AngleD", m.getAngleD()), 2);
+
+    drivePEntry = configureWidget(module
+        .add("DriveP", m.getDriveP()), 3);
+
+    driveIEntry = configureWidget(module
+        .add("DriveI", m.getDriveI()), 4);
+
+    driveDEntry = configureWidget(module
+        .add("DriveD", m.getDriveD()), 5);
+
+    driveSEntry = configureWidget(module
+        .add("DriveS", m.getDriveS()), 6);
+
+    driveVEntry = configureWidget(module
+        .add("DriveV", m.getDriveV()), 7);
+
+    driveAEntry = configureWidget(module
+        .add("DriveA", m.getDriveA()), 8);
+
   }
 
   public void updateDashboardGUI() {
@@ -594,18 +549,18 @@ public class Swerve extends SubsystemBase {
 
   public void updateControlConstants() {
     double[] drive = {
-      drivePEntry.getDouble(moduleConstants.driveP),
-      driveIEntry.getDouble(moduleConstants.driveI),
-      driveDEntry.getDouble(moduleConstants.driveD),
-      driveSEntry.getDouble(moduleConstants.driveS),
-      driveVEntry.getDouble(moduleConstants.driveV),
-      driveAEntry.getDouble(moduleConstants.driveA),
+        drivePEntry.getDouble(moduleConstants.driveP),
+        driveIEntry.getDouble(moduleConstants.driveI),
+        driveDEntry.getDouble(moduleConstants.driveD),
+        driveSEntry.getDouble(moduleConstants.driveS),
+        driveVEntry.getDouble(moduleConstants.driveV),
+        driveAEntry.getDouble(moduleConstants.driveA),
     };
 
     double[] angle = {
-      anglePEntry.getDouble(moduleConstants.angleP),
-      angleIEntry.getDouble(moduleConstants.angleI),
-      angleDEntry.getDouble(moduleConstants.angleD)
+        anglePEntry.getDouble(moduleConstants.angleP),
+        angleIEntry.getDouble(moduleConstants.angleI),
+        angleDEntry.getDouble(moduleConstants.angleD)
     };
 
     for (Module m : modules) {
@@ -613,5 +568,12 @@ public class Swerve extends SubsystemBase {
     }
 
     updateDashboardGUI();
+  }
+
+  public GenericEntry configureWidget(SimpleWidget widget, int row) {
+    return widget.withWidget(BuiltInWidgets.kTextView)
+        .withPosition(0, row)
+        .withProperties(Map.of("retained", true))
+        .getEntry();
   }
 }
