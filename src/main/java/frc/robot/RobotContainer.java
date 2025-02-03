@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
+import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import frc.robot.utils.StateRequest;
@@ -23,8 +24,11 @@ public class RobotContainer {
   Swerve drive = new Swerve();
   Autos autos = new Autos(drive);
   Climber climber = new Climber();
+  Elevator elevator = new Elevator();
 
   public RobotContainer() {
+    subsystems.put("climber", climber);
+    subsystems.put("elevator", elevator);
     // This needs to be the last subsystem added
     Superstructure superstructure = new Superstructure(subsystems);
     subsystems.put("superstructure", superstructure);
