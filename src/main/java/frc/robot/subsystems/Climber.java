@@ -11,6 +11,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SoftLimitConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -19,11 +20,13 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 class climberConstants {
 
-  static double climberPCF = 0;
+  static double climberPCF = 12.8;
 
   static int climberCurrentLimit = 0;
 
   static int climbMotorID = 3;
+  
+  static double elevatorSoftLimit = 30;
 }
 
 public class Climber extends SubsystemBase {
@@ -33,6 +36,7 @@ public class Climber extends SubsystemBase {
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
     climbMotor.configure(climberConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+    climbMotor.getEncoder().setPosition(0);
   }
 
   private SparkMaxConfig createClimberConfig() {
@@ -40,11 +44,14 @@ public class Climber extends SubsystemBase {
     climberConfig.encoder
         .positionConversionFactor(climberConstants.climberPCF)
         .velocityConversionFactor(climberConstants.climberPCF / 60.0d);
+       
 
+        
     climberConfig.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
     climberConfig.smartCurrentLimit(climberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
+    climberConfig.softLimit.forwardSoftLimit(climberConstants.elevatorSoftLimit).forwardSoftLimitEnabled(true);
 
     return climberConfig;
   }
