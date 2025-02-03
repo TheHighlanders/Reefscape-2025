@@ -4,9 +4,7 @@
 
 package frc.robot.subsystems;
 
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 
@@ -51,7 +49,7 @@ class elevatorConstants {
 }
 
 public class Elevator extends SubsystemBase {
-  public enum ElevatorState { //Creates a new Elevator.
+  public enum ElevatorState { 
     HOME,
     L1_POSITION,
     L2_POSITION,
@@ -71,7 +69,7 @@ public class Elevator extends SubsystemBase {
 
   private ElevatorState uppydowny = ElevatorState.HOME;
 
-  public Elevator() {
+  public Elevator() { //Creates a new Elevator.
     elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(elevatorConstants.elevMotorID, MotorType.kBrushless);
     reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
