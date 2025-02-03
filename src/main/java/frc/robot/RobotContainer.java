@@ -7,7 +7,6 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
@@ -17,16 +16,13 @@ import java.util.Map;
 
 public class RobotContainer {
 
-  public RobotContainer() {
-
   private final Map<String, Subsystem> subsystems = new HashMap<>();
 
   CommandXboxController driver = new CommandXboxController(0);
 
   Swerve drive = new Swerve();
   Autos autos = new Autos(drive);
-  Climber climber = new Climber(); 
-
+  Climber climber = new Climber();
 
   public RobotContainer() {
     // This needs to be the last subsystem added
@@ -38,7 +34,8 @@ public class RobotContainer {
 
     drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
-//these bindings will likely need to be changed
+
+  // these bindings will likely need to be changed
   private void configureBindings() {
     driver.a().whileTrue(climber.createClimbInCommand());
     driver.b().whileTrue(climber.createClimbOutCommand());
