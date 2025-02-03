@@ -31,7 +31,7 @@ class elevatorConstants {
   static final double l2Target = 10;
   static final double l3Target = 20;
   static final double l4Target = 30;
-  static final double coral_positionTarget = 40;
+  static final double coralPositionTarget = 40;
 
   static final double feedFoward = 8;
   static final double elevP = 1;
@@ -63,7 +63,7 @@ public class Elevator extends SubsystemBase {
   private SparkLimitSwitch reverseLimitSwitch;
   private RelativeEncoder elevatorEncoder;
 
-  SparkClosedLoopController m_controller;
+  SparkClosedLoopController elevatorController;
 
   double targetPosition;
 
@@ -78,7 +78,7 @@ public class Elevator extends SubsystemBase {
         .positionConversionFactor(elevatorConstants.elevPCF)
         .velocityConversionFactor(elevatorConstants.elevPCF / 60.0d);
 
-    m_controller = elevatorMotor.getClosedLoopController();
+    elevatorController = elevatorMotor.getClosedLoopController();
     elevatorMotorConfig.idleMode(IdleMode.kBrake);
 
     elevatorMotorConfig.limitSwitch
@@ -139,10 +139,10 @@ public class Elevator extends SubsystemBase {
         targetPosition = elevatorConstants.l4Target; // the set point
         break;
       case CORAL_POSITION:
-        targetPosition = elevatorConstants.coral_positionTarget; // the set point
+        targetPosition = elevatorConstants.coralPositionTarget; // the set point
         break;
     }
-    m_controller.setReference(targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0,
+    elevatorController.setReference(targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0,
         elevatorConstants.feedFoward);
   }
 
@@ -166,7 +166,7 @@ public class Elevator extends SubsystemBase {
     uppydowny = ElevatorState.HOME;
   }
 
-  public void coral_position() {
+  public void coralPosition() {
     uppydowny = ElevatorState.CORAL_POSITION;
   }
 
@@ -186,7 +186,7 @@ public class Elevator extends SubsystemBase {
     return new InstantCommand(this::L4);
   }
 
-  public Command getCoral_positionCommand() {
-    return new InstantCommand(this::coral_position);
+  public Command getCoralPositionCommand() {
+    return new InstantCommand(this::coralPosition);
   }
 }
