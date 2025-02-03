@@ -11,7 +11,6 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SoftLimitConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.wpilibj2.command.Command;
@@ -22,7 +21,7 @@ class climberConstants {
 
   static double climberPCF = 12.8;
 
-  static int climberCurrentLimit = 0;
+  static int climberCurrentLimit = 20;
 
   static int climbMotorID = 3;
   
@@ -44,8 +43,6 @@ public class Climber extends SubsystemBase {
     climberConfig.encoder
         .positionConversionFactor(climberConstants.climberPCF) //Rot to deg conversion
         .velocityConversionFactor(climberConstants.climberPCF / 60.0d); //RPM to deg/s conversion
-       
-
         
     climberConfig.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
@@ -57,13 +54,12 @@ public class Climber extends SubsystemBase {
   }
 
   @Override
-  public void periodic() {
-  }
+  public void periodic() {}
 
   public Command createClimbOutCommand() {
-    //TODO make sure 1 is correct direction
+    //TODO: make sure 1 is correct direction
     return Commands.startEnd(
-        () -> climbMotor.set(1),  
+        () -> climbMotor.set(-1),  
         // Stop the climber at the end of the command
         () -> climbMotor.set(0.0),
         this);
@@ -72,7 +68,7 @@ public class Climber extends SubsystemBase {
 
   public Command createClimbInCommand() {
     return Commands.startEnd(
-        () -> climbMotor.set(-1),
+        () -> climbMotor.set(1),
         () -> climbMotor.set(0.0),
         this);
 
