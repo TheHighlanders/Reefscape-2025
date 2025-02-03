@@ -142,7 +142,7 @@ public class Elevator extends SubsystemBase {
         targetPosition = elevatorConstants.coralPositionTarget; // the set point
         break;
     }
-    elevatorController.setReference(targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0,
+    elevatorController.setReference(targetPosition, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0,
         elevatorConstants.feedFoward);
   }
 
