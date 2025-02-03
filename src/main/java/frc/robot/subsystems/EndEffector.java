@@ -11,9 +11,9 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkSim;
-import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.math.util.Units;
@@ -31,15 +31,12 @@ class endEffectorConstants {
   static final int motorID = 50;
   static final int currentLimit = 40;
 
-  // (Radius * 2 * PI) / (10 to 1 gearing)
-  static final double effectorPCF = (Units.inchesToMeters(3) * 2 * Math.PI) / 10;
-
-  static final double effectP = 1;
-  static final double effectI = 0;
-  static final double effectD = 0;
-
   class simulation {
     static final double effectorMOI = 0.004;
+
+    // (Radius * 2 * PI) / (10 to 1 gearing)
+    static final double effectorPCF = (Units.inchesToMeters(3) * 2 * Math.PI) / 10;
+
   }
 }
 
@@ -57,13 +54,12 @@ public class EndEffector extends SubsystemBase {
     photoSensor = new DigitalInput(endEffectorConstants.intakePhotoSensorDIOPin);
     effector = new SparkMax(endEffectorConstants.motorID, MotorType.kBrushless);
     effectorNeo = DCMotor.getNEO(1);
-    effectorNeoSim =
-        new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(
-                effectorNeo,
-                endEffectorConstants.simulation.effectorMOI,
-                endEffectorConstants.effectorPCF),
-            effectorNeo);
+    effectorNeoSim = new DCMotorSim(
+        LinearSystemId.createDCMotorSystem(
+            effectorNeo,
+            endEffectorConstants.simulation.effectorMOI,
+            endEffectorConstants.simulation.effectorPCF),
+        effectorNeo);
 
     if (Constants.sim) {
       effectorSim = new SparkSim(effector, effectorNeo);
@@ -76,26 +72,13 @@ public class EndEffector extends SubsystemBase {
   }
 
   private SparkMaxConfig effectorConfg() {
-    SparkMaxConfig angleConfig = new SparkMaxConfig();
+    SparkMaxConfig effectorConfig = new SparkMaxConfig();
 
-    angleConfig.inverted(false);
+    effectorConfig.inverted(false);
 
-    angleConfig
-        .encoder
-        .positionConversionFactor(endEffectorConstants.effectorPCF)
-        .velocityConversionFactor(endEffectorConstants.effectorPCF / 60d);
+    effectorConfig.smartCurrentLimit(endEffectorConstants.currentLimit).idleMode(IdleMode.kCoast);
 
-    angleConfig
-        .closedLoop
-        .pid(
-            endEffectorConstants.effectP,
-            endEffectorConstants.effectI,
-            endEffectorConstants.effectD)
-        .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
-
-    angleConfig.smartCurrentLimit(endEffectorConstants.currentLimit).idleMode(IdleMode.kCoast);
-
-    return angleConfig;
+    return effectorConfig;
   }
 
   @Override
@@ -119,8 +102,8 @@ public class EndEffector extends SubsystemBase {
 
   public Command effectorForwardUntilBrakeCMD() {
     return new RunCommand(this::effectorForward, this)
-      .finallyDo(this::intakeStop)
-      .until(() -> !hasGamePiece());
+        .finallyDo(this::intakeStop)
+        .until(this::hasGamePiece);
   }
 
   public void effectorReverse() {
