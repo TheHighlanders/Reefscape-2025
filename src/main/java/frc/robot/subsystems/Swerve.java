@@ -4,10 +4,16 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volt;
+import static edu.wpi.first.units.Units.Volts;
 
+import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -18,6 +24,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
@@ -25,8 +32,10 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -51,16 +60,12 @@ class SwerveConstants {
 
 public class Swerve extends SubsystemBase {
 
-  // This is the state handler bit for consistency purposes
-  // <------------ State Handler Stuff ------------>
   enum SwerveState {
     FAST,
     SLOW
   }
 
   private static final double SLOW_MODE_MULTIPLIER = 0.3;
-  private final SwerveState stateHandler;
-  // <------------ Non State Handler Stuff ------------>
 
   Module[] modules = new Module[4];
   AHRS gyro;
@@ -70,17 +75,22 @@ public class Swerve extends SubsystemBase {
 
   StructArrayPublisher<SwerveModuleState> statePublisher;
   StructArrayPublisher<SwerveModuleState> setpointPublisher;
+  DoublePublisher voltagePublisher;
   StructPublisher<Pose2d> posePublisher;
 
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
   SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
+  private final PIDController xController = new PIDController(0, 0.0, 0.0);
+  private final PIDController yController = new PIDController(0, 0.0, 0.0);
+  private final PIDController headingController = new PIDController(0, 0.0, 0.0);
+
   private final SysIdRoutine sysId;
+
+  SwerveState current = SwerveState.FAST;
 
   /** Creates a new Swerve. */
   public Swerve() {
-
-    stateHandler = SwerveState.FAST;
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
@@ -117,6 +127,8 @@ public class Swerve extends SubsystemBase {
 
     posePublisher =
         NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
+
+    voltagePublisher = NetworkTableInstance.getDefault().getDoubleTopic("/Voltage").publish();
 
     sysId =
         new SysIdRoutine(
@@ -159,6 +171,19 @@ public class Swerve extends SubsystemBase {
     sendNT();
   }
 
+  @Override
+  public void simulationPeriodic() {
+    for (Module m : modules) {
+      m.updateSimMotors();
+      SmartDashboard.putNumber(
+          "Drive Voltage Module" + m.getModuleNumber(), m.getAppliedVoltageDrive());
+    }
+  }
+
+  public Pose2d getPose() {
+    return poseEst.getEstimatedPosition();
+  }
+
   public SwerveModulePosition[] getModulePostions() {
     List<SwerveModulePosition> out = new ArrayList<SwerveModulePosition>();
     for (Module mod : modules) {
@@ -175,6 +200,26 @@ public class Swerve extends SubsystemBase {
     return out.toArray(new SwerveModuleState[0]);
   }
 
+  public Command readAngleEncoders() {
+    return new InstantCommand(
+            () -> {
+              for (Module m : modules) {
+                SmartDashboard.putNumber(
+                    "Relative" + m.moduleNumber, m.getAnglePosition().getDegrees());
+                SmartDashboard.putNumber(
+                    "Absolute" + m.moduleNumber, m.getAbsolutePosition().getDegrees());
+              }
+            },
+            this)
+        .ignoringDisable(true);
+  }
+
+  public void resetEncoders() {
+    for (Module m : modules) {
+      m.setIntegratedAngleToAbsolute();
+    }
+  }
+
   public SwerveModuleState[] getModuleSetpoints() {
     List<SwerveModuleState> out = new ArrayList<SwerveModuleState>();
     for (Module mod : modules) {
@@ -185,6 +230,10 @@ public class Swerve extends SubsystemBase {
 
   public Rotation2d getGyroAngle() {
     return gyro.getRotation2d();
+  }
+
+  public void resetOdometry(Pose2d pose) {
+    poseEst.resetPosition(pose.getRotation(), getModulePostions(), pose);
   }
 
   /**
@@ -220,12 +269,7 @@ public class Swerve extends SubsystemBase {
 
     return new RunCommand(
             () -> {
-              double speedMultiplier =
-                  stateHandler == SwerveState.SLOW ? SLOW_MODE_MULTIPLIER : 1.0;
-              drive(
-                  x.getAsDouble() * speedMultiplier,
-                  y.getAsDouble() * speedMultiplier,
-                  omega.getAsDouble() * speedMultiplier);
+              drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble());
             },
             this)
         .withName("Swerve Drive Command");
@@ -241,6 +285,11 @@ public class Swerve extends SubsystemBase {
   public void drive(double x, double y, double omega) {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
 
+    if (current == SwerveState.SLOW) {
+      x *= SLOW_MODE_MULTIPLIER;
+      y *= SLOW_MODE_MULTIPLIER;
+    }
+
     ChassisSpeeds chassisSpeeds =
         fromAllianceRelativeSpeeds(
             xLim.calculate(x),
@@ -251,14 +300,26 @@ public class Swerve extends SubsystemBase {
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.omegaRadiansPerSecond *= SwerveConstants.maxRotSpeed;
 
-    // TODO: make 0.02 measured instead of a constant.
+    driveChassisSpeedsRobotRelative(chassisSpeeds);
+  }
+
+  public void driveChassisSpeedsRobotRelative(ChassisSpeeds chassisSpeeds) {
+    // https://github.com/wpilibsuite/allwpilib/issues/7332
+
+    // Convert to States and desat
+    SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
+    SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
+
+    // Convert to ChassisSpeeds and discretize
+    chassisSpeeds = kinematics.toChassisSpeeds(targetStates);
     chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
 
-    SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
-
+    // Convert back to States, and desat, again
+    targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
     SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
 
     for (int i = 0; i < modules.length; i++) {
+      // targetStates[i].optimize(getModulePostions()[i].angle);
       modules[i].setModuleState(targetStates[i], false);
     }
   }
@@ -271,6 +332,8 @@ public class Swerve extends SubsystemBase {
         "Hypot",
         Math.pow(poseEst.getEstimatedPosition().getX(), 2)
             + Math.pow(poseEst.getEstimatedPosition().getY(), 2));
+
+    voltagePublisher.set(RoboRioSim.getVInVoltage());
   }
 
   /**
@@ -297,15 +360,12 @@ public class Swerve extends SubsystemBase {
     } else {
       DriverStation.reportError("No Alliance Present, Defaulting to RED", false);
     }
-    SmartDashboard.putNumber("Alliance Relative X BEFORE", allianceRelativeSpeeds.getX());
 
     if (isRedAlliance) {
     } else { // RED ALLIANCE CASE //BLUE ALLIANCE CASE
       allianceRelativeSpeeds =
           new Translation2d(-allianceRelativeSpeeds.getX(), -allianceRelativeSpeeds.getY());
     }
-
-    SmartDashboard.putNumber("Alliance Relative X AFTER", allianceRelativeSpeeds.getX());
 
     // Convert Blue Alliance Relative to Field Relative
     // fieldRelativeSpeeds =
@@ -319,9 +379,45 @@ public class Swerve extends SubsystemBase {
     return fr;
   }
 
+  public Command slowMode() {
+    return new RunCommand(() -> current = SwerveState.SLOW, this)
+        .finallyDo(() -> current = SwerveState.FAST);
+  }
+
   public void driveVoltage(Measure<VoltageUnit> voltage) {
     for (Module m : modules) {
       m.driveVolts(voltage);
+    }
+  }
+
+  public void followTraj(SwerveSample sample) {
+    // Get the current pose of the robot
+    Pose2d pose = getPose();
+
+    // Generate the next speeds for the robot
+    ChassisSpeeds speeds =
+        new ChassisSpeeds(
+            sample.vx + xController.calculate(pose.getX(), sample.x),
+            sample.vy + yController.calculate(pose.getY(), sample.y),
+            sample.omega
+                + headingController.calculate(pose.getRotation().getRadians(), sample.heading));
+
+    // Apply the generated speeds
+    driveChassisSpeedsRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyroAngle()));
+  }
+
+  public void sendDiagnositics() {
+    for (Module m : modules) {
+      SmartDashboard.putNumber(
+          "Module" + m.getModuleNumber() + "Absolute", m.getAbsolutePosition().getDegrees() % 360);
+      SmartDashboard.putNumber(
+          "Module" + m.getModuleNumber() + "AngleRelative",
+          m.getAnglePosition().getDegrees() % 360);
+      SmartDashboard.putBoolean(
+          "Module" + m.getModuleNumber() + "AngleInverted", m.getAngleInverted());
+      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleP", m.getAngleP());
+      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleI", m.getAngleI());
+      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleD", m.getAngleD());
     }
   }
 }

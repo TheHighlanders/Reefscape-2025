@@ -11,6 +11,7 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
@@ -18,9 +19,13 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.util.Units;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
+import edu.wpi.first.wpilibj.simulation.BatterySim;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import frc.robot.Constants;
 
 class moduleConstants {
@@ -36,14 +41,14 @@ class moduleConstants {
   static double driveV = 2.5;
   static double driveA = 0.;
 
-  static double drivePCF = Units.inchesToMeters(4) * Math.PI / 8.14d;
+  // TODO: Change to L2 (6.75) when we go to actual modules
+  static double drivePCF =
+      edu.wpi.first.math.util.Units.inchesToMeters(3 + 13d / 16d) * Math.PI / 8.14d;
   static double anglePCF = 360.0 / 12.8d;
 
   static int driveCurrentLimit = 40;
   static int angleCurrentLimit = 20;
 
-  static boolean driveInverted = false;
-  static boolean angleInverted = false;
   static boolean absolInverted = false;
 
   static double maxSpeed = Constants.maxSpeed;
@@ -53,6 +58,12 @@ public class Module {
 
   public SparkMax angleMotor;
   public SparkMax driveMotor;
+
+  public SparkSim driveSim;
+  public SparkSim angleSim;
+
+  public DCMotorSim angleMotorSim;
+  public DCMotorSim driveMotorSim;
 
   public SparkClosedLoopController driveController;
   public SparkClosedLoopController angleController;
@@ -70,6 +81,12 @@ public class Module {
 
   private Rotation2d KModuleAbsoluteOffset;
 
+  DCMotor angleNeo;
+  DCMotor driveNeo;
+
+  DCMotorSim angleNeoSim;
+  DCMotorSim driveNeoSim;
+
   // private Rotation2d lastAngle;
 
   public Module(int moduleNumber) {
@@ -79,8 +96,20 @@ public class Module {
     driveMotor = new SparkMax(Constants.driveMotorIDs[moduleNumber], MotorType.kBrushless);
     angleMotor = new SparkMax(Constants.angleMotorIDs[moduleNumber], MotorType.kBrushless);
 
-    driveEncoder = driveMotor.getEncoder();
-    angleEncoder = angleMotor.getEncoder();
+    angleNeo = DCMotor.getNEO(1);
+    driveNeo = DCMotor.getNEO(1);
+
+    angleNeoSim =
+        new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(angleNeo, 0.004, moduleConstants.anglePCF),
+            angleNeo);
+    driveNeoSim =
+        new DCMotorSim(LinearSystemId.createDCMotorSystem(driveNeo, 0.025, 1 / 8.14), driveNeo);
+
+    if (Constants.sim) {
+      driveSim = new SparkSim(driveMotor, driveNeo);
+      angleSim = new SparkSim(angleMotor, angleNeo);
+    }
 
     SparkMaxConfig driveConfig = createDriveConfig();
     SparkMaxConfig angleConfig = createAngleConfig();
@@ -91,27 +120,35 @@ public class Module {
             moduleConstants.driveS, moduleConstants.driveV, moduleConstants.driveA);
 
     angleMotor.configure(
-        angleConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        angleConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     driveMotor.configure(
-        driveConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    driveEncoder = driveMotor.getEncoder();
+    angleEncoder = angleMotor.getEncoder();
 
     absoluteEncoder = angleMotor.getAbsoluteEncoder();
 
+    angleController = angleMotor.getClosedLoopController();
+    driveController = driveMotor.getClosedLoopController();
+
     driveEncoder.setPosition(0);
+
     angleEncoder.setPosition(getAbsolutePosition().getDegrees());
   }
 
   private SparkMaxConfig createDriveConfig() {
     SparkMaxConfig driveConfig = new SparkMaxConfig();
+
+    driveConfig.inverted(false);
+
     driveConfig
         .encoder
         .positionConversionFactor(moduleConstants.drivePCF)
         .velocityConversionFactor(moduleConstants.drivePCF / 60.0d);
 
-    driveConfig
-        .closedLoop
-        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(moduleConstants.driveP, moduleConstants.driveI, moduleConstants.driveD);
+    driveConfig.closedLoop.pid(
+        moduleConstants.driveP, moduleConstants.driveI, moduleConstants.driveD);
 
     driveConfig.smartCurrentLimit(moduleConstants.driveCurrentLimit).idleMode(IdleMode.kBrake);
 
@@ -121,6 +158,8 @@ public class Module {
   private SparkMaxConfig createAngleConfig() {
     SparkMaxConfig angleConfig = new SparkMaxConfig();
 
+    angleConfig.inverted(false);
+
     angleConfig
         .encoder
         .positionConversionFactor(moduleConstants.anglePCF)
@@ -129,8 +168,12 @@ public class Module {
     angleConfig
         .closedLoop
         .pid(moduleConstants.angleP, moduleConstants.angleI, moduleConstants.angleD)
+        // .p(moduleConstants.angleP)
+        // .i(moduleConstants.angleI)
+        // .d(moduleConstants.angleD)
         .positionWrappingEnabled(true)
-        .positionWrappingInputRange(-180.0d, 180.0d);
+        .positionWrappingInputRange(-180.0d, 180.0d)
+        .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
     angleConfig.smartCurrentLimit(moduleConstants.angleCurrentLimit).idleMode(IdleMode.kCoast);
 
@@ -171,6 +214,10 @@ public class Module {
           driveFeedforward.calculate(state.speedMetersPerSecond));
       driveReference = state.speedMetersPerSecond;
     }
+
+    if (Constants.sim) {
+      driveNeoSim.setInputVoltage(driveSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
+    }
   }
 
   /**
@@ -188,6 +235,10 @@ public class Module {
       angleController.setReference(angle.getDegrees(), ControlType.kPosition);
       angleReference = angle.getDegrees();
     }
+
+    if (Constants.sim) {
+      angleNeoSim.setInputVoltage(angleSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
+    }
     // lastAngle = state.angle;
   }
 
@@ -198,6 +249,19 @@ public class Module {
    */
   public Rotation2d getAnglePosition() {
     return Rotation2d.fromDegrees(angleEncoder.getPosition());
+  }
+
+  public double getAppliedVoltageDrive() {
+    return driveSim.getAppliedOutput() * RoboRioSim.getVInVoltage();
+  }
+
+  /**
+   * SIM ONLY
+   *
+   * @return
+   */
+  public double getAngleSimP() {
+    return angleMotor.configAccessor.closedLoop.getP();
   }
 
   /**
@@ -261,6 +325,7 @@ public class Module {
     driveMotor.setVoltage(voltage.in(Volts));
   }
 
+  // TODO: Investigate
   public Measure<VoltageUnit> getDriveVolts() {
     return Volts.of(/* driveMotor.getBusVoltage() */ driveMotor.getAppliedOutput());
   }
@@ -281,8 +346,36 @@ public class Module {
     return moduleNumber;
   }
 
+  public void updateSimMotors() {
+    angleNeoSim.update(0.02);
+    driveNeoSim.update(0.02);
+
+    angleSim.iterate(angleNeoSim.getAngularVelocityRPM(), RoboRioSim.getVInVoltage(), 0.02);
+    driveSim.iterate(driveNeoSim.getAngularVelocityRPM() / 60.0d, RoboRioSim.getVInVoltage(), 0.02);
+
+    RoboRioSim.setVInVoltage(
+        BatterySim.calculateDefaultBatteryLoadedVoltage(
+            angleNeoSim.getCurrentDrawAmps(), driveNeoSim.getCurrentDrawAmps()));
+  }
+
   /** Resets the Angle Motor to the position of the absolute position */
   public void setIntegratedAngleToAbsolute() {
     angleEncoder.setPosition(getAbsolutePosition().getDegrees());
+  }
+
+  public boolean getAngleInverted() {
+    return angleMotor.configAccessor.getInverted();
+  }
+
+  public double getAngleP() {
+    return angleMotor.configAccessor.closedLoop.getP();
+  }
+
+  public double getAngleI() {
+    return angleMotor.configAccessor.closedLoop.getI();
+  }
+
+  public double getAngleD() {
+    return angleMotor.configAccessor.closedLoop.getD();
   }
 }
