@@ -68,6 +68,8 @@ public class Elevator extends SubsystemBase {
 
   double targetPosition;
 
+  double arbFF;
+
   private ElevatorState uppydowny = ElevatorState.HOME;
 
   public Elevator() { // Creates a new Elevator.
@@ -95,8 +97,6 @@ public class Elevator extends SubsystemBase {
         .reverseSoftLimit(elevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
-    SparkMaxConfig config = new SparkMaxConfig();
-
     // Set Smart Motion and Smart Velocity parameters.
     elevatorMotorConfig
         .closedLoop
@@ -105,7 +105,7 @@ public class Elevator extends SubsystemBase {
         .maxAcceleration(elevatorConstants.maxAccel)
         .allowedClosedLoopError(elevatorConstants.maxClosedLoopError);
     // Set PID gains
-    config
+    elevatorMotorConfig
         .closedLoop // pid loop to control elevator elevating rate
         .p(elevatorConstants.elevP)
         .i(elevatorConstants.elevI) // TODO find these desirerd values
@@ -118,6 +118,8 @@ public class Elevator extends SubsystemBase {
     // TODO: Encoder should be configured (position conversion factor), based on cad, in order to
     // use the feedback
     elevatorEncoder = elevatorMotor.getEncoder();
+
+    arbFF = elevatorConstants.feedFoward;
 
     // Reset the position to 0 to start within the range of the soft limits
     elevatorEncoder.setPosition(0);
@@ -152,10 +154,7 @@ public class Elevator extends SubsystemBase {
         break;
     }
     elevatorController.setReference(
-        targetPosition,
-        ControlType.kMAXMotionPositionControl,
-        ClosedLoopSlot.kSlot0,
-        elevatorConstants.feedFoward);
+        targetPosition, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, arbFF);
   }
 
   public void L1() {
@@ -222,7 +221,8 @@ public class Elevator extends SubsystemBase {
     double f = SmartDashboard.getNumber("Tuning/Elevator/Elevator F", elevatorConstants.feedFoward);
 
     SparkMaxConfig config = new SparkMaxConfig();
-    config.closedLoop.pidf(p, i, d, f);
+    config.closedLoop.pid(p, i, d);
+    arbFF = f;
     elevatorMotor.configure(
         config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
