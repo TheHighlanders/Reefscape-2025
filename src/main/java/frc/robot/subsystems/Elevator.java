@@ -13,9 +13,11 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLimitSwitch;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.LimitSwitchConfig.Type;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -198,5 +200,26 @@ public class Elevator extends SubsystemBase {
 
   public Command getCoralPositionCommand() {
     return new InstantCommand(this::coralPosition);
+  }
+
+  public void sendTuningConstants() {
+    ClosedLoopConfigAccessor config = elevatorMotor.configAccessor.closedLoop;
+    SmartDashboard.putNumber("Tuning/Elevator/Elevator P", config.getP());
+    SmartDashboard.putNumber("Tuning/Elevator/Elevator I", config.getI());
+    SmartDashboard.putNumber("Tuning/Elevator/Elevator D", config.getD());
+    SmartDashboard.putNumber("Tuning/Elevator/Elevator F", config.getFF());
+  }
+
+  public void updateTuningConstants() {
+
+    double p = SmartDashboard.getNumber("Tuning/Elevator/Elevator P", elevatorConstants.elevP);
+    double i = SmartDashboard.getNumber("Tuning/Elevator/Elevator I", elevatorConstants.elevI);
+    double d = SmartDashboard.getNumber("Tuning/Elevator/Elevator D", elevatorConstants.elevD);
+    double f = SmartDashboard.getNumber("Tuning/Elevator/Elevator F", elevatorConstants.feedFoward);
+
+    SparkMaxConfig config = new SparkMaxConfig();
+    config.closedLoop.pidf(p, i, d, f);
+    elevatorMotor.configure(
+        config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 }
