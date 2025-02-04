@@ -208,6 +208,10 @@ public class Elevator extends SubsystemBase {
     SmartDashboard.putNumber("Tuning/Elevator/Elevator I", config.getI());
     SmartDashboard.putNumber("Tuning/Elevator/Elevator D", config.getD());
     SmartDashboard.putNumber("Tuning/Elevator/Elevator F", config.getFF());
+
+    SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
+    SmartDashboard.putNumber(
+        "Tuning/Elevator/Error", targetPosition - elevatorEncoder.getPosition());
   }
 
   public void updateTuningConstants() {
