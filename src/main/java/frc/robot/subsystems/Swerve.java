@@ -24,22 +24,14 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoublePublisher;
-import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.wpilibj.shuffleboard.SimpleWidget;
-import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -51,8 +43,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 class SwerveConstants {
 
@@ -91,9 +83,6 @@ public class Swerve extends SubsystemBase {
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
 
-  StructArrayPublisher<SwerveModuleState> statePublisher;
-  StructArrayPublisher<SwerveModuleState> setpointPublisher;
-  DoublePublisher voltagePublisher;
   StructPublisher<Pose2d> posePublisher;
 
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
@@ -108,19 +97,9 @@ public class Swerve extends SubsystemBase {
   private final PIDController headingController =
       new PIDController(SwerveConstants.rotateP, SwerveConstants.rotateI, SwerveConstants.rotateD);
 
-  GenericEntry drivePEntry;
-  GenericEntry driveIEntry;
-  GenericEntry driveDEntry;
-
-  GenericEntry driveSEntry;
-  GenericEntry driveVEntry;
-  GenericEntry driveAEntry;
-
-  GenericEntry anglePEntry;
-  GenericEntry angleIEntry;
-  GenericEntry angleDEntry;
-
   private final SysIdRoutine sysId;
+
+  Field2d field = new Field2d();
 
   SwerveState current = SwerveState.FAST;
 
@@ -150,19 +129,21 @@ public class Swerve extends SubsystemBase {
         new SwerveDrivePoseEstimator(
             kinematics, startPose.getRotation(), getModulePostions(), startPose);
 
-    statePublisher =
-        NetworkTableInstance.getDefault()
-            .getStructArrayTopic("/Swerve/States", SwerveModuleState.struct)
-            .publish();
-    setpointPublisher =
-        NetworkTableInstance.getDefault()
-            .getStructArrayTopic("/Swerve/Setpoints", SwerveModuleState.struct)
-            .publish();
-
     posePublisher =
         NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
 
-    voltagePublisher = NetworkTableInstance.getDefault().getDoubleTopic("/Voltage").publish();
+    SmartDashboard.putData(
+        "Swerve/States", builder -> swerveStatesBuild(builder, () -> getModuleStates()));
+    SmartDashboard.putData(
+        "Swerve/Setpoints", builder -> swerveStatesBuild(builder, () -> getModuleSetpoints()));
+    SmartDashboard.putData(
+        "Swerve/Gyro",
+        builder -> {
+          builder.setSmartDashboardType("Gyro");
+          builder.addDoubleProperty("Value", () -> getPose().getRotation().getDegrees(), null);
+        });
+
+    SmartDashboard.putData("Swerve/Field", field);
 
     sysId =
         new SysIdRoutine(
@@ -194,8 +175,6 @@ public class Swerve extends SubsystemBase {
                       .linearVelocity(MetersPerSecond.of(modules[1].getDriveVelocity()));
                 },
                 this));
-
-    smartDashboardGUI();
   }
 
   @Override
@@ -203,8 +182,7 @@ public class Swerve extends SubsystemBase {
     // This method will be called once per scheduler run
     poseEst.updateWithTime(
         RobotController.getFPGATime() * Math.pow(10, 6), getGyroAngle(), getModulePostions());
-
-    sendNT();
+    field.setRobotPose(getPose());
   }
 
   @Override
@@ -371,16 +349,25 @@ public class Swerve extends SubsystemBase {
     }
   }
 
-  public void sendNT() {
-    statePublisher.set(getModuleStates());
-    setpointPublisher.set(getModuleSetpoints());
-    posePublisher.set(poseEst.getEstimatedPosition());
-    SmartDashboard.putNumber(
-        "Hypot",
-        Math.pow(poseEst.getEstimatedPosition().getX(), 2)
-            + Math.pow(poseEst.getEstimatedPosition().getY(), 2));
+  public SendableBuilder swerveStatesBuild(
+      SendableBuilder builder, Supplier<SwerveModuleState[]> states) {
+    builder.setSmartDashboardType("SwerveDrive");
 
-    voltagePublisher.set(RoboRioSim.getVInVoltage());
+    builder.addDoubleProperty("Front Left Angle", () -> states.get()[0].angle.getDegrees(), null);
+    builder.addDoubleProperty("Front Left Speed", () -> states.get()[0].speedMetersPerSecond, null);
+
+    builder.addDoubleProperty("Front Right Angle", () -> states.get()[1].angle.getDegrees(), null);
+    builder.addDoubleProperty(
+        "Front Right Speed", () -> states.get()[1].speedMetersPerSecond, null);
+
+    builder.addDoubleProperty("Back Left Angle", () -> states.get()[2].angle.getDegrees(), null);
+    builder.addDoubleProperty("Back Left Speed", () -> states.get()[2].speedMetersPerSecond, null);
+
+    builder.addDoubleProperty("Back Right Angle", () -> states.get()[3].angle.getDegrees(), null);
+    builder.addDoubleProperty("Back Right Speed", () -> states.get()[3].speedMetersPerSecond, null);
+
+    builder.addDoubleProperty("Robot Angle", () -> getPose().getRotation().getDegrees(), null);
+    return builder;
   }
 
   /**
@@ -503,93 +490,36 @@ public class Swerve extends SubsystemBase {
     }
   }
 
-  public void smartDashboardGUI() {
-    ShuffleboardTab tab = Shuffleboard.getTab("Modules");
-    Module m = modules[0];
-
-    ShuffleboardLayout module =
-        tab.getLayout("Tuning", BuiltInLayouts.kGrid)
-            .withSize(2, 3)
-            .withProperties(
-                Map.of(
-                    "Label position",
-                    "LEFT",
-                    "Number of columns",
-                    1,
-                    "Number of rows",
-                    9,
-                    "Retained",
-                    true));
-    anglePEntry =
-        module
-            .add("AngleP", m.getAngleP())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 0)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
-    angleIEntry =
-        module
-            .add("AngleI", m.getAngleI())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 1)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
-    angleDEntry =
-        module
-            .add("AngleD", m.getAngleD())
-            .withWidget(BuiltInWidgets.kTextView)
-            .withPosition(0, 2)
-            .withProperties(Map.of("retained", true))
-            .getEntry();
-
-    anglePEntry = configureWidget(module.add("AngleP", m.getAngleP()), 0);
-    angleIEntry = configureWidget(module.add("AngleI", m.getAngleI()), 1);
-
-    angleDEntry = configureWidget(module.add("AngleD", m.getAngleD()), 2);
-
-    drivePEntry = configureWidget(module.add("DriveP", m.getDriveP()), 3);
-
-    driveIEntry = configureWidget(module.add("DriveI", m.getDriveI()), 4);
-
-    driveDEntry = configureWidget(module.add("DriveD", m.getDriveD()), 5);
-
-    driveSEntry = configureWidget(module.add("DriveS", m.getDriveS()), 6);
-
-    driveVEntry = configureWidget(module.add("DriveV", m.getDriveV()), 7);
-
-    driveAEntry = configureWidget(module.add("DriveA", m.getDriveA()), 8);
-  }
-
   public void updateDashboardGUI() {
     Module m = modules[0];
 
-    anglePEntry.setDouble(m.getAngleP());
-    angleIEntry.setDouble(m.getAngleI());
-    angleDEntry.setDouble(m.getAngleD());
+    SmartDashboard.putNumber("Tuning/Angle P", m.getAngleP());
+    SmartDashboard.putNumber("Tuning/Angle I", m.getAngleI());
+    SmartDashboard.putNumber("Tuning/Angle D", m.getAngleD());
 
-    drivePEntry.setDouble(m.getDriveP());
-    driveIEntry.setDouble(m.getDriveI());
-    driveDEntry.setDouble(m.getDriveD());
+    SmartDashboard.putNumber("Tuning/Drive P", m.getDriveP());
+    SmartDashboard.putNumber("Tuning/Drive I", m.getDriveI());
+    SmartDashboard.putNumber("Tuning/Drive D", m.getDriveD());
 
-    driveSEntry.setDouble(m.getDriveS());
-    driveVEntry.setDouble(m.getDriveV());
-    driveAEntry.setDouble(m.getDriveA());
+    SmartDashboard.putNumber("Tuning/Drive S", m.getDriveS());
+    SmartDashboard.putNumber("Tuning/Drive V", m.getDriveV());
+    SmartDashboard.putNumber("Tuning/Drive A", m.getDriveA());
   }
 
   public void updateControlConstants() {
     double[] drive = {
-      drivePEntry.getDouble(moduleConstants.driveP),
-      driveIEntry.getDouble(moduleConstants.driveI),
-      driveDEntry.getDouble(moduleConstants.driveD),
-      driveSEntry.getDouble(moduleConstants.driveS),
-      driveVEntry.getDouble(moduleConstants.driveV),
-      driveAEntry.getDouble(moduleConstants.driveA),
+      SmartDashboard.getNumber("Tuning/Drive P", moduleConstants.driveP),
+      SmartDashboard.getNumber("Tuning/Drive I", moduleConstants.driveI),
+      SmartDashboard.getNumber("Tuning/Drive D", moduleConstants.driveD),
+      SmartDashboard.getNumber("Tuning/Drive S", moduleConstants.driveS),
+      SmartDashboard.getNumber("Tuning/Drive V", moduleConstants.driveV),
+      SmartDashboard.getNumber("Tuning/Drive A", moduleConstants.driveA),
     };
 
     double[] angle = {
-      anglePEntry.getDouble(moduleConstants.angleP),
-      angleIEntry.getDouble(moduleConstants.angleI),
-      angleDEntry.getDouble(moduleConstants.angleD)
+      SmartDashboard.getNumber("Tuning/Angle P", moduleConstants.angleP),
+      SmartDashboard.getNumber("Tuning/Angle I", moduleConstants.angleI),
+      SmartDashboard.getNumber("Tuning/Angle D", moduleConstants.angleD)
     };
 
     for (Module m : modules) {
@@ -597,13 +527,5 @@ public class Swerve extends SubsystemBase {
     }
 
     updateDashboardGUI();
-  }
-
-  public GenericEntry configureWidget(SimpleWidget widget, int row) {
-    return widget
-        .withWidget(BuiltInWidgets.kTextView)
-        .withPosition(0, row)
-        .withProperties(Map.of("retained", true))
-        .getEntry();
   }
 }
