@@ -1,6 +1,7 @@
 package frc.robot;
 
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotBase;
 
 public class Constants {
   // FL, FR, BL, BR
@@ -11,7 +12,6 @@ public class Constants {
   };
 
   public static final double maxSpeed = Units.feetToMeters(13);
-  // {347.1482491493225, 307, 237.8471857309, 256.65536928176877}
 
-  public static boolean sim = Robot.isSimulation();
+  public static boolean sim = RobotBase.isSimulation();
 }

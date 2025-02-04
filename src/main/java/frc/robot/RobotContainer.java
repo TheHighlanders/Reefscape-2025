@@ -29,6 +29,7 @@ public class RobotContainer {
   Climber climber = new Climber();
   Elevator elevator = new Elevator();
 
+
   AutoChooser chooser;
 
   public RobotContainer() {
@@ -50,8 +51,11 @@ public class RobotContainer {
     drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
+
   private void configureBindings() {
-    driver.a().onTrue(drive.resetGyro());
+    driver.x().onTrue(drive.resetGyro());
+    driver.a().whileTrue(climber.createClimbInCommand());
+    driver.b().whileTrue(climber.createClimbOutCommand());
   }
 
   private void configureAutonomous() {

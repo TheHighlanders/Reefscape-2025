@@ -1,4 +1,7 @@
 #!/bin/bash
+
+set PATH="%PATH%;C:/Program Files/Git/bin"
+
 echo "Running spotlessApply in pre-commit hook"
 ./gradlew spotlessApply
 git add -u
