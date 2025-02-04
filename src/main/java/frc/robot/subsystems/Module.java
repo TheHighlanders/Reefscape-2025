@@ -11,7 +11,6 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -20,13 +19,8 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
-import edu.wpi.first.wpilibj.simulation.BatterySim;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
-import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import frc.robot.Constants;
 
 class moduleConstants {
@@ -60,12 +54,6 @@ public class Module {
   public SparkMax angleMotor;
   public SparkMax driveMotor;
 
-  public SparkSim driveSim;
-  public SparkSim angleSim;
-
-  public DCMotorSim angleMotorSim;
-  public DCMotorSim driveMotorSim;
-
   public SparkClosedLoopController driveController;
   public SparkClosedLoopController angleController;
 
@@ -82,12 +70,6 @@ public class Module {
 
   private Rotation2d KModuleAbsoluteOffset;
 
-  DCMotor angleNeo;
-  DCMotor driveNeo;
-
-  DCMotorSim angleNeoSim;
-  DCMotorSim driveNeoSim;
-
   double ffOut = 0;
 
   public Module(int moduleNumber) {
@@ -96,21 +78,6 @@ public class Module {
 
     driveMotor = new SparkMax(Constants.driveMotorIDs[moduleNumber], MotorType.kBrushless);
     angleMotor = new SparkMax(Constants.angleMotorIDs[moduleNumber], MotorType.kBrushless);
-
-    angleNeo = DCMotor.getNEO(1);
-    driveNeo = DCMotor.getNEO(1);
-
-    angleNeoSim =
-        new DCMotorSim(
-            LinearSystemId.createDCMotorSystem(angleNeo, 0.004, moduleConstants.anglePCF),
-            angleNeo);
-    driveNeoSim =
-        new DCMotorSim(LinearSystemId.createDCMotorSystem(driveNeo, 0.025, 1 / 8.14), driveNeo);
-
-    if (Constants.sim) {
-      driveSim = new SparkSim(driveMotor, driveNeo);
-      angleSim = new SparkSim(angleMotor, angleNeo);
-    }
 
     SparkMaxConfig driveConfig = createDriveConfig();
     SparkMaxConfig angleConfig = createAngleConfig();
@@ -208,10 +175,6 @@ public class Module {
           state.speedMetersPerSecond, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ffOut);
       driveReference = state.speedMetersPerSecond;
     }
-
-    if (Constants.sim) {
-      driveNeoSim.setInputVoltage(driveSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
-    }
   }
 
   /**
@@ -226,10 +189,6 @@ public class Module {
       angleController.setReference(angle.getDegrees(), ControlType.kPosition);
       angleReference = angle.getDegrees();
     }
-
-    if (Constants.sim) {
-      angleNeoSim.setInputVoltage(angleSim.getAppliedOutput() * RoboRioSim.getVInVoltage());
-    }
   }
 
   /**
@@ -239,19 +198,6 @@ public class Module {
    */
   public Rotation2d getAnglePosition() {
     return Rotation2d.fromDegrees(angleEncoder.getPosition());
-  }
-
-  public double getAppliedVoltageDrive() {
-    return driveSim.getAppliedOutput() * RoboRioSim.getVInVoltage();
-  }
-
-  /**
-   * SIM ONLY
-   *
-   * @return
-   */
-  public double getAngleSimP() {
-    return angleMotor.configAccessor.closedLoop.getP();
   }
 
   /**
@@ -339,18 +285,6 @@ public class Module {
   /** Returns the assigned module number */
   public int getModuleNumber() {
     return moduleNumber;
-  }
-
-  public void updateSimMotors() {
-    angleNeoSim.update(0.02);
-    driveNeoSim.update(0.02);
-
-    angleSim.iterate(angleNeoSim.getAngularVelocityRPM(), RoboRioSim.getVInVoltage(), 0.02);
-    driveSim.iterate(driveNeoSim.getAngularVelocityRPM() / 60.0d, RoboRioSim.getVInVoltage(), 0.02);
-
-    RoboRioSim.setVInVoltage(
-        BatterySim.calculateDefaultBatteryLoadedVoltage(
-            angleNeoSim.getCurrentDrawAmps(), driveNeoSim.getCurrentDrawAmps()));
   }
 
   /** Resets the Angle Motor to the position of the absolute position */

@@ -185,15 +185,6 @@ public class Swerve extends SubsystemBase {
     field.setRobotPose(getPose());
   }
 
-  @Override
-  public void simulationPeriodic() {
-    for (Module m : modules) {
-      m.updateSimMotors();
-      SmartDashboard.putNumber(
-          "Drive Voltage Module" + m.getModuleNumber(), m.getAppliedVoltageDrive());
-    }
-  }
-
   public Pose2d getPose() {
     return poseEst.getEstimatedPosition();
   }
