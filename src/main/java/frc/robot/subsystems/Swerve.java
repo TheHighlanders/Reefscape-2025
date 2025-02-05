@@ -78,6 +78,7 @@ public class Swerve extends SubsystemBase {
   }
 
   private static final double SLOW_MODE_MULTIPLIER = 0.3;
+  static final double TIME_CONVERSION_FACTOR = Math.pow(10, 6);
 
   Module[] modules = new Module[4];
   AHRS gyro;
@@ -179,7 +180,9 @@ public class Swerve extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     poseEst.updateWithTime(
-        RobotController.getFPGATime() * Math.pow(10, 6), getGyroAngle(), getModulePostions());
+        RobotController.getFPGATime() * TIME_CONVERSION_FACTOR,
+        getGyroAngle(),
+        getModulePostions());
     field.setRobotPose(getPose());
   }
 

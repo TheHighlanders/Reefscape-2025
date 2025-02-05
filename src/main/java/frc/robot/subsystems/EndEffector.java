@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 final class endEffectorConstants {
@@ -93,7 +93,7 @@ public class EndEffector extends SubsystemBase {
   }
 
   public Command effectorForwardUntilBrakeCMD() {
-    return new RunCommand(this::effectorForward, this)
+    return Commands.run(this::effectorForward, this)
         .finallyDo(this::effectorStop)
         .until(this::hasGamePiece);
   }
