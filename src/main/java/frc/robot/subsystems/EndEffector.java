@@ -25,17 +25,21 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
-class endEffectorConstants {
+final class endEffectorConstants {
   static final int intakePhotoSensorDIOPin = 0;
   static final int motorID = 50;
   static final int currentLimit = 40;
 
-  class simulation {
+  final class simulation {
     static final double effectorMOI = 0.004;
 
     // (Radius * 2 * PI) / (10 to 1 gearing)
     static final double effectorPCF = (Units.inchesToMeters(3) * 2 * Math.PI) / 10;
+
+    simulation() {}
   }
+
+  endEffectorConstants() {}
 }
 
 public class EndEffector extends SubsystemBase {
@@ -46,7 +50,7 @@ public class EndEffector extends SubsystemBase {
   DCMotor effectorNeo;
   DCMotorSim effectorNeoSim;
 
-  private DigitalInput photoSensor;
+  private final DigitalInput photoSensor;
 
   public EndEffector() {
     photoSensor = new DigitalInput(endEffectorConstants.intakePhotoSensorDIOPin);

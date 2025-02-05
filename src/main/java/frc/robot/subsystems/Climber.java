@@ -15,20 +15,21 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-class climberConstants {
+final class climberConstants {
+  static final int climberCurrentLimit = 20;
 
-  static double climberPCF = 12.8;
+  static final int climbMotorID = 3;
 
-  static int climberCurrentLimit = 20;
+  static final double climberPCF = 12.8;
 
-  static int climbMotorID = 3;
+  static final double elevatorSoftLimit = 30;
 
-  static double elevatorSoftLimit = 30;
+  climberConstants() {}
 }
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
-  public SparkMax climbMotor = new SparkMax(climberConstants.climbMotorID, MotorType.kBrushless);
+  private SparkMax climbMotor = new SparkMax(climberConstants.climbMotorID, MotorType.kBrushless);
 
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
