@@ -24,25 +24,27 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.simulation.RoboRioSim;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 class SwerveConstants {
 
@@ -56,6 +58,14 @@ class SwerveConstants {
   // Implict /sec
 
   static double accelLim = 1.5;
+
+  static double translateP = 0;
+  static double translateI = 0;
+  static double translateD = 0;
+
+  static double rotateP = 0;
+  static double rotateI = 0;
+  static double rotateD = 0;
 }
 
 public class Swerve extends SubsystemBase {
@@ -73,25 +83,28 @@ public class Swerve extends SubsystemBase {
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
 
-  StructArrayPublisher<SwerveModuleState> statePublisher;
-  StructArrayPublisher<SwerveModuleState> setpointPublisher;
-  DoublePublisher voltagePublisher;
   StructPublisher<Pose2d> posePublisher;
 
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
   SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
-  private final PIDController xController = new PIDController(0, 0.0, 0.0);
-  private final PIDController yController = new PIDController(0, 0.0, 0.0);
-  private final PIDController headingController = new PIDController(0, 0.0, 0.0);
+  private final PIDController xController =
+      new PIDController(
+          SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
+  private final PIDController yController =
+      new PIDController(
+          SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
+  private final PIDController headingController =
+      new PIDController(SwerveConstants.rotateP, SwerveConstants.rotateI, SwerveConstants.rotateD);
 
   private final SysIdRoutine sysId;
+
+  Field2d field = new Field2d();
 
   SwerveState current = SwerveState.FAST;
 
   /** Creates a new Swerve. */
   public Swerve() {
-
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
     }
@@ -116,26 +129,28 @@ public class Swerve extends SubsystemBase {
         new SwerveDrivePoseEstimator(
             kinematics, startPose.getRotation(), getModulePostions(), startPose);
 
-    statePublisher =
-        NetworkTableInstance.getDefault()
-            .getStructArrayTopic("/Swerve/States", SwerveModuleState.struct)
-            .publish();
-    setpointPublisher =
-        NetworkTableInstance.getDefault()
-            .getStructArrayTopic("/Swerve/Setpoints", SwerveModuleState.struct)
-            .publish();
-
     posePublisher =
         NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
 
-    voltagePublisher = NetworkTableInstance.getDefault().getDoubleTopic("/Voltage").publish();
+    SmartDashboard.putData(
+        "Swerve/States", builder -> swerveStatesBuild(builder, this::getModuleStates));
+    SmartDashboard.putData(
+        "Swerve/Setpoints", builder -> swerveStatesBuild(builder, this::getModuleSetpoints));
+    SmartDashboard.putData(
+        "Swerve/Gyro",
+        builder -> {
+          builder.setSmartDashboardType("Gyro");
+          builder.addDoubleProperty("Value", () -> getPose().getRotation().getDegrees(), null);
+        });
+
+    SmartDashboard.putData("Swerve/Field", field);
 
     sysId =
         new SysIdRoutine(
             new SysIdRoutine.Config(
                 null,
                 Volt.of(4),
-                Seconds.of(6),
+                Seconds.of(4),
                 state -> {
                   SmartDashboard.putString("Drive/SysIdState", state.toString());
                 }),
@@ -167,17 +182,7 @@ public class Swerve extends SubsystemBase {
     // This method will be called once per scheduler run
     poseEst.updateWithTime(
         RobotController.getFPGATime() * Math.pow(10, 6), getGyroAngle(), getModulePostions());
-
-    sendNT();
-  }
-
-  @Override
-  public void simulationPeriodic() {
-    for (Module m : modules) {
-      m.updateSimMotors();
-      SmartDashboard.putNumber(
-          "Drive Voltage Module" + m.getModuleNumber(), m.getAppliedVoltageDrive());
-    }
+    field.setRobotPose(getPose());
   }
 
   public Pose2d getPose() {
@@ -254,6 +259,17 @@ public class Swerve extends SubsystemBase {
     return sysId.dynamic(direction);
   }
 
+  public Command sysId() {
+    return Commands.sequence(
+        sysIdDynamic(Direction.kForward),
+        Commands.waitSeconds(1),
+        sysIdDynamic(Direction.kReverse),
+        Commands.waitSeconds(1),
+        sysIdQuasistatic(Direction.kForward),
+        Commands.waitSeconds(1),
+        sysIdQuasistatic(Direction.kReverse));
+  }
+
   /*
    * Alliance Relative Coords
    * +X is to the driver behind the glass's right
@@ -319,21 +335,30 @@ public class Swerve extends SubsystemBase {
     SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
 
     for (int i = 0; i < modules.length; i++) {
-      // targetStates[i].optimize(getModulePostions()[i].angle);
+      targetStates[i].optimize(getModulePostions()[i].angle);
       modules[i].setModuleState(targetStates[i], false);
     }
   }
 
-  public void sendNT() {
-    statePublisher.set(getModuleStates());
-    setpointPublisher.set(getModuleSetpoints());
-    posePublisher.set(poseEst.getEstimatedPosition());
-    SmartDashboard.putNumber(
-        "Hypot",
-        Math.pow(poseEst.getEstimatedPosition().getX(), 2)
-            + Math.pow(poseEst.getEstimatedPosition().getY(), 2));
+  public SendableBuilder swerveStatesBuild(
+      SendableBuilder builder, Supplier<SwerveModuleState[]> states) {
+    builder.setSmartDashboardType("SwerveDrive");
 
-    voltagePublisher.set(RoboRioSim.getVInVoltage());
+    builder.addDoubleProperty("Front Left Angle", () -> states.get()[0].angle.getDegrees(), null);
+    builder.addDoubleProperty("Front Left Speed", () -> states.get()[0].speedMetersPerSecond, null);
+
+    builder.addDoubleProperty("Front Right Angle", () -> states.get()[1].angle.getDegrees(), null);
+    builder.addDoubleProperty(
+        "Front Right Speed", () -> states.get()[1].speedMetersPerSecond, null);
+
+    builder.addDoubleProperty("Back Left Angle", () -> states.get()[2].angle.getDegrees(), null);
+    builder.addDoubleProperty("Back Left Speed", () -> states.get()[2].speedMetersPerSecond, null);
+
+    builder.addDoubleProperty("Back Right Angle", () -> states.get()[3].angle.getDegrees(), null);
+    builder.addDoubleProperty("Back Right Speed", () -> states.get()[3].speedMetersPerSecond, null);
+
+    builder.addDoubleProperty("Robot Angle", () -> getPose().getRotation().getDegrees(), null);
+    return builder;
   }
 
   /**
@@ -349,11 +374,7 @@ public class Swerve extends SubsystemBase {
     boolean isRedAlliance = true;
     ChassisSpeeds fr; // Field Relative
 
-    // Rotation2d deg180 = Rotation2d.fromDegrees(180);
-
     Translation2d allianceRelativeSpeeds = new Translation2d(arx, ary);
-
-    Translation2d fieldRelativeSpeeds;
 
     if (DriverStation.getAlliance().isPresent()) {
       isRedAlliance = DriverStation.getAlliance().get() == DriverStation.Alliance.Red;
@@ -361,20 +382,17 @@ public class Swerve extends SubsystemBase {
       DriverStation.reportError("No Alliance Present, Defaulting to RED", false);
     }
 
-    if (isRedAlliance) {
-    } else { // RED ALLIANCE CASE //BLUE ALLIANCE CASE
-      allianceRelativeSpeeds =
-          new Translation2d(-allianceRelativeSpeeds.getX(), -allianceRelativeSpeeds.getY());
+    if (isRedAlliance) { // RED ALLIANCE CASE
+    } else { // BLUE ALLIANCE CASE
+      allianceRelativeSpeeds = allianceRelativeSpeeds.rotateBy(Rotation2d.fromDegrees(180));
     }
 
-    // Convert Blue Alliance Relative to Field Relative
-    // fieldRelativeSpeeds =
-    // allianceRelativeSpeeds.rotateBy(Rotation2d.fromDegrees(90));
-    fieldRelativeSpeeds =
-        new Translation2d(allianceRelativeSpeeds.getY(), -allianceRelativeSpeeds.getX());
+    // Convert to Field Relative
+    Translation2d fieldRelativeSpeeds =
+        new Translation2d(-allianceRelativeSpeeds.getY(), -allianceRelativeSpeeds.getX());
 
     fr = new ChassisSpeeds(fieldRelativeSpeeds.getX(), fieldRelativeSpeeds.getY(), rot);
-    fr = ChassisSpeeds.fromFieldRelativeSpeeds(fr, getGyroAngle());
+    fr = ChassisSpeeds.fromFieldRelativeSpeeds(fr, getPose().getRotation());
 
     return fr;
   }
@@ -397,27 +415,88 @@ public class Swerve extends SubsystemBase {
     // Generate the next speeds for the robot
     ChassisSpeeds speeds =
         new ChassisSpeeds(
-            sample.vx + xController.calculate(pose.getX(), sample.x),
-            sample.vy + yController.calculate(pose.getY(), sample.y),
-            sample.omega
-                + headingController.calculate(pose.getRotation().getRadians(), sample.heading));
+            -(sample.vx + xController.calculate(pose.getX(), sample.x)),
+            -(sample.vy + yController.calculate(pose.getY(), sample.y)),
+            -(sample.omega
+                + headingController.calculate(pose.getRotation().getRadians(), sample.heading)));
 
+    SmartDashboard.putNumber("Trajectory/XError", xController.getError());
+    SmartDashboard.putNumber("Trajectory/YError", yController.getError());
+    SmartDashboard.putNumber("Trajectory/HeadingError", headingController.getError());
+
+    sendDiagnostics();
     // Apply the generated speeds
-    driveChassisSpeedsRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getGyroAngle()));
+    driveChassisSpeedsRobotRelative(
+        ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getPose().getRotation()));
   }
 
-  public void sendDiagnositics() {
+  public void sendDiagnostics() {
     for (Module m : modules) {
       SmartDashboard.putNumber(
-          "Module" + m.getModuleNumber() + "Absolute", m.getAbsolutePosition().getDegrees() % 360);
+          "ModuleDebug/Module" + m.getModuleNumber() + "FFoutput", m.getFFDriveOutput());
       SmartDashboard.putNumber(
-          "Module" + m.getModuleNumber() + "AngleRelative",
-          m.getAnglePosition().getDegrees() % 360);
-      SmartDashboard.putBoolean(
-          "Module" + m.getModuleNumber() + "AngleInverted", m.getAngleInverted());
-      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleP", m.getAngleP());
-      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleI", m.getAngleI());
-      SmartDashboard.putNumber("Module" + m.getModuleNumber() + "AngleD", m.getAngleD());
+          "ModuleDebug/Module" + m.getModuleNumber() + "MotorOutput", m.getAppliedOutputDrive());
     }
+  }
+
+  public Command resetGyro() {
+    return new InstantCommand(
+            () -> {
+              poseEst.resetPosition(
+                  getGyroAngle(),
+                  getModulePostions(),
+                  new Pose2d(
+                      poseEst.getEstimatedPosition().getX(),
+                      poseEst.getEstimatedPosition().getY(),
+                      new Rotation2d()));
+            })
+        .ignoringDisable(true);
+  }
+
+  public Command resetOdometry() {
+    return new InstantCommand(
+        () -> {
+          poseEst.resetTranslation(new Translation2d());
+          resetGyro();
+        });
+  }
+
+  public void updateDashboardGUI() {
+    Module m = modules[0];
+
+    SmartDashboard.putNumber("Tuning/Swerve/Angle P", m.getAngleP());
+    SmartDashboard.putNumber("Tuning/Swerve/Angle I", m.getAngleI());
+    SmartDashboard.putNumber("Tuning/Swerve/Angle D", m.getAngleD());
+
+    SmartDashboard.putNumber("Tuning/Swerve/Drive P", m.getDriveP());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive I", m.getDriveI());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive D", m.getDriveD());
+
+    SmartDashboard.putNumber("Tuning/Swerve/Drive S", m.getDriveS());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive V", m.getDriveV());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive A", m.getDriveA());
+  }
+
+  public void updateControlConstants() {
+    double[] drive = {
+      SmartDashboard.getNumber("Tuning/Swerve/Drive P", moduleConstants.driveP),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive I", moduleConstants.driveI),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive D", moduleConstants.driveD),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive S", moduleConstants.driveS),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive V", moduleConstants.driveV),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive A", moduleConstants.driveA),
+    };
+
+    double[] angle = {
+      SmartDashboard.getNumber("Tuning/Swerve/Angle P", moduleConstants.angleP),
+      SmartDashboard.getNumber("Tuning/Swerve/Angle I", moduleConstants.angleI),
+      SmartDashboard.getNumber("Tuning/Swerve/Angle D", moduleConstants.angleD)
+    };
+
+    for (Module m : modules) {
+      m.setNewControlConstants(drive, angle);
+    }
+
+    updateDashboardGUI();
   }
 }

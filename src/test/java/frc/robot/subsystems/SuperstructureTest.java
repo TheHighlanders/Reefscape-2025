@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.SuperstructureTest.TestSubsystem.FirstEnumState;
 import frc.robot.utils.StateRequest;
 import java.util.HashMap;
 import java.util.Map;
@@ -92,5 +93,13 @@ public class SuperstructureTest {
     assertEquals(
         TestSubsystem.SecondEnumState.A,
         StateRequest.getCurrentState(TestSubsystem.SecondEnumState.class));
+  }
+
+  @Test
+  void testStateRequest() {
+
+    StateRequest.create(FirstEnumState.ONE);
+    assertEquals(
+        FirstEnumState.ONE, StateRequest.getCurrentState(TestSubsystem.FirstEnumState.class));
   }
 }
