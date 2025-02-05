@@ -133,9 +133,9 @@ public class Swerve extends SubsystemBase {
         NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
 
     SmartDashboard.putData(
-        "Swerve/States", builder -> swerveStatesBuild(builder, () -> getModuleStates()));
+        "Swerve/States", builder -> swerveStatesBuild(builder, this::getModuleStates));
     SmartDashboard.putData(
-        "Swerve/Setpoints", builder -> swerveStatesBuild(builder, () -> getModuleSetpoints()));
+        "Swerve/Setpoints", builder -> swerveStatesBuild(builder, this::getModuleSetpoints));
     SmartDashboard.putData(
         "Swerve/Gyro",
         builder -> {
@@ -374,11 +374,7 @@ public class Swerve extends SubsystemBase {
     boolean isRedAlliance = true;
     ChassisSpeeds fr; // Field Relative
 
-    // Rotation2d deg180 = Rotation2d.fromDegrees(180);
-
     Translation2d allianceRelativeSpeeds = new Translation2d(arx, ary);
-
-    Translation2d fieldRelativeSpeeds;
 
     if (DriverStation.getAlliance().isPresent()) {
       isRedAlliance = DriverStation.getAlliance().get() == DriverStation.Alliance.Red;
@@ -386,16 +382,13 @@ public class Swerve extends SubsystemBase {
       DriverStation.reportError("No Alliance Present, Defaulting to RED", false);
     }
 
-    if (isRedAlliance) {
-    } else { // RED ALLIANCE CASE //BLUE ALLIANCE CASE
-      allianceRelativeSpeeds =
-          new Translation2d(-allianceRelativeSpeeds.getX(), -allianceRelativeSpeeds.getY());
+    if (isRedAlliance) { // RED ALLIANCE CASE
+    } else { // BLUE ALLIANCE CASE
+      allianceRelativeSpeeds = allianceRelativeSpeeds.rotateBy(Rotation2d.fromDegrees(180));
     }
 
-    // Convert Blue Alliance Relative to Field Relative
-    // fieldRelativeSpeeds =
-    // allianceRelativeSpeeds.rotateBy(Rotation2d.fromDegrees(90));
-    fieldRelativeSpeeds =
+    // Convert to Field Relative
+    Translation2d fieldRelativeSpeeds =
         new Translation2d(-allianceRelativeSpeeds.getY(), -allianceRelativeSpeeds.getX());
 
     fr = new ChassisSpeeds(fieldRelativeSpeeds.getX(), fieldRelativeSpeeds.getY(), rot);
@@ -431,20 +424,13 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putNumber("Trajectory/YError", yController.getError());
     SmartDashboard.putNumber("Trajectory/HeadingError", headingController.getError());
 
-    // SmartDashboard.putNumber("Trajectory/XOutput",
-    // xController.calculate(pose.getX(), sample.x));
-    // SmartDashboard.putNumber("Trajectory/YOutput",
-    // yController.calculate(pose.getX(), sample.x));
-    // SmartDashboard.putNumber("Trajectory/HeadingOutput",
-    // headingController.calculate(pose.getRotation().getRadians(),
-    // sample.heading));
-    sendDiagnositics();
+    sendDiagnostics();
     // Apply the generated speeds
     driveChassisSpeedsRobotRelative(
         ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getPose().getRotation()));
   }
 
-  public void sendDiagnositics() {
+  public void sendDiagnostics() {
     for (Module m : modules) {
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "FFoutput", m.getFFDriveOutput());
@@ -475,42 +461,36 @@ public class Swerve extends SubsystemBase {
         });
   }
 
-  public void setNewControlConstants(double[] drive, double[] angle) {
-    for (Module m : modules) {
-      m.setNewControlConstants(drive, angle);
-    }
-  }
-
   public void updateDashboardGUI() {
     Module m = modules[0];
 
-    SmartDashboard.putNumber("Tuning/Angle P", m.getAngleP());
-    SmartDashboard.putNumber("Tuning/Angle I", m.getAngleI());
-    SmartDashboard.putNumber("Tuning/Angle D", m.getAngleD());
+    SmartDashboard.putNumber("Tuning/Swerve/Angle P", m.getAngleP());
+    SmartDashboard.putNumber("Tuning/Swerve/Angle I", m.getAngleI());
+    SmartDashboard.putNumber("Tuning/Swerve/Angle D", m.getAngleD());
 
-    SmartDashboard.putNumber("Tuning/Drive P", m.getDriveP());
-    SmartDashboard.putNumber("Tuning/Drive I", m.getDriveI());
-    SmartDashboard.putNumber("Tuning/Drive D", m.getDriveD());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive P", m.getDriveP());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive I", m.getDriveI());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive D", m.getDriveD());
 
-    SmartDashboard.putNumber("Tuning/Drive S", m.getDriveS());
-    SmartDashboard.putNumber("Tuning/Drive V", m.getDriveV());
-    SmartDashboard.putNumber("Tuning/Drive A", m.getDriveA());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive S", m.getDriveS());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive V", m.getDriveV());
+    SmartDashboard.putNumber("Tuning/Swerve/Drive A", m.getDriveA());
   }
 
   public void updateControlConstants() {
     double[] drive = {
-      SmartDashboard.getNumber("Tuning/Drive P", moduleConstants.driveP),
-      SmartDashboard.getNumber("Tuning/Drive I", moduleConstants.driveI),
-      SmartDashboard.getNumber("Tuning/Drive D", moduleConstants.driveD),
-      SmartDashboard.getNumber("Tuning/Drive S", moduleConstants.driveS),
-      SmartDashboard.getNumber("Tuning/Drive V", moduleConstants.driveV),
-      SmartDashboard.getNumber("Tuning/Drive A", moduleConstants.driveA),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive P", moduleConstants.driveP),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive I", moduleConstants.driveI),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive D", moduleConstants.driveD),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive S", moduleConstants.driveS),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive V", moduleConstants.driveV),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive A", moduleConstants.driveA),
     };
 
     double[] angle = {
-      SmartDashboard.getNumber("Tuning/Angle P", moduleConstants.angleP),
-      SmartDashboard.getNumber("Tuning/Angle I", moduleConstants.angleI),
-      SmartDashboard.getNumber("Tuning/Angle D", moduleConstants.angleD)
+      SmartDashboard.getNumber("Tuning/Swerve/Angle P", moduleConstants.angleP),
+      SmartDashboard.getNumber("Tuning/Swerve/Angle I", moduleConstants.angleI),
+      SmartDashboard.getNumber("Tuning/Swerve/Angle D", moduleConstants.angleD)
     };
 
     for (Module m : modules) {

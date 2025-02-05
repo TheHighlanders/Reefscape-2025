@@ -28,17 +28,19 @@ class moduleConstants {
   static double angleI = 0;
   static double angleD = 0.002;
 
-  static double driveP = 0.2; // 2.1301;//0.2;
+  static double driveP = 0.2;
   static double driveI = 0;
-  static double driveD = 3; // 3;
+  static double driveD = 3;
 
-  static double driveS = 0.1718; // 0.1718;//0.375;
-  static double driveV = 4; // 3.2228;//2.5;
-  static double driveA = 8; // 0.74971;//0;
+  static double driveS = 0.1718;
+  static double driveV = 4;
+  static double driveA = 8;
 
   // TODO: Change to L2 (6.75) when we go to actual modules
+  // Wheel diameter * pi / gear ratio
   static double drivePCF =
       edu.wpi.first.math.util.Units.inchesToMeters(3 + 13d / 16d) * Math.PI / 8.14d;
+
   static double anglePCF = 360.0 / 12.8d;
 
   static int driveCurrentLimit = 40;
@@ -169,7 +171,6 @@ public class Module {
       driveMotor.set(motorPercent);
       driveReference = state.speedMetersPerSecond;
     } else {
-      ;
       ffOut = driveFeedforward.calculate(state.speedMetersPerSecond);
       driveController.setReference(
           state.speedMetersPerSecond, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ffOut);
