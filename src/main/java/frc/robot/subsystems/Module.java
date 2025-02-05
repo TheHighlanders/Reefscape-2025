@@ -333,11 +333,15 @@ public class Module {
     return driveFeedforward.getKa();
   }
 
+  private static void updateDriveFeedforward(double s, double v, double a) {
+    driveFeedforward = new SimpleMotorFeedforward(s, v, a);
+  }
+
   public void setNewControlConstants(double[] drive, double[] angle) {
     updateDriveConstants(drive);
     updateAngleConstants(angle);
 
-    driveFeedforward = new SimpleMotorFeedforward(drive[3], drive[4], drive[5]);
+    updateDriveFeedforward(drive[3], drive[4], drive[5]);
   }
 
   public void updateDriveConstants(double[] drive) {
