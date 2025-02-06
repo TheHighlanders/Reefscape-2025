@@ -25,7 +25,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -41,10 +40,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 final class swerveConstants {
 
@@ -85,8 +83,6 @@ public class Swerve extends SubsystemBase {
   SwerveDrivePoseEstimator poseEst;
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
-
-  StructPublisher<Pose2d> posePublisher;
 
   SlewRateLimiter xLim = new SlewRateLimiter(swerveConstants.accelLim);
   SlewRateLimiter yLim = new SlewRateLimiter(swerveConstants.accelLim);
@@ -132,8 +128,7 @@ public class Swerve extends SubsystemBase {
         new SwerveDrivePoseEstimator(
             kinematics, startPose.getRotation(), getModulePostions(), startPose);
 
-    posePublisher =
-        NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
+    NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
 
     SmartDashboard.putData(
         "Swerve/States", builder -> swerveStatesBuild(builder, this::getModuleStates));
@@ -191,19 +186,15 @@ public class Swerve extends SubsystemBase {
   }
 
   public SwerveModulePosition[] getModulePostions() {
-    List<SwerveModulePosition> out = new ArrayList<>();
-    for (Module mod : modules) {
-      out.add(mod.getPosition());
-    }
-    return out.toArray(new SwerveModulePosition[0]);
+    return Stream.of(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
   }
 
   public SwerveModuleState[] getModuleStates() {
-    List<SwerveModuleState> out = new ArrayList<>();
-    for (Module mod : modules) {
-      out.add(mod.getState());
-    }
-    return out.toArray(new SwerveModuleState[0]);
+    return Stream.of(modules).map(Module::getState).toArray(SwerveModuleState[]::new);
+  }
+
+  public SwerveModuleState[] getModuleSetpoints() {
+    return Stream.of(modules).map(Module::getSetpoint).toArray(SwerveModuleState[]::new);
   }
 
   public Command readAngleEncoders() {
@@ -224,14 +215,6 @@ public class Swerve extends SubsystemBase {
     for (Module m : modules) {
       m.setIntegratedAngleToAbsolute();
     }
-  }
-
-  public SwerveModuleState[] getModuleSetpoints() {
-    List<SwerveModuleState> out = new ArrayList<>();
-    for (Module mod : modules) {
-      out.add(mod.getSetpoint());
-    }
-    return out.toArray(new SwerveModuleState[0]);
   }
 
   public Rotation2d getGyroAngle() {
