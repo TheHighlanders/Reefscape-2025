@@ -74,7 +74,7 @@ public class Swerve extends SubsystemBase {
   }
 
   private static final double SLOW_MODE_MULTIPLIER = 0.3;
-  static final double MICROS_SECONDS_CONVERSION = Math.pow(10, 6);
+  private static final double MICROS_SECONDS_CONVERSION = Math.pow(10, 6);
 
   Module[] modules = new Module[4];
   AHRS gyro;
