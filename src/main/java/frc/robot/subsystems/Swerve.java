@@ -24,7 +24,6 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -34,7 +33,6 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -76,7 +74,7 @@ public class Swerve extends SubsystemBase {
   }
 
   private static final double SLOW_MODE_MULTIPLIER = 0.3;
-  static final double TIME_CONVERSION_FACTOR = Math.pow(10, 6);
+  static final double MICROS_SECONDS_CONVERSION = Math.pow(10, 6);
 
   Module[] modules = new Module[4];
   AHRS gyro;
@@ -128,8 +126,6 @@ public class Swerve extends SubsystemBase {
         new SwerveDrivePoseEstimator(
             kinematics, startPose.getRotation(), getModulePostions(), startPose);
 
-    NetworkTableInstance.getDefault().getStructTopic("/Swerve/Poses", Pose2d.struct).publish();
-
     SmartDashboard.putData(
         "Swerve/States", builder -> swerveStatesBuild(builder, this::getModuleStates));
     SmartDashboard.putData(
@@ -175,7 +171,7 @@ public class Swerve extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     poseEst.updateWithTime(
-        RobotController.getFPGATime() * TIME_CONVERSION_FACTOR,
+        RobotController.getFPGATime() * MICROS_SECONDS_CONVERSION,
         getGyroAngle(),
         getModulePostions());
     field.setRobotPose(getPose());
@@ -198,7 +194,7 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command readAngleEncoders() {
-    return new InstantCommand(
+    return Commands.runOnce(
             () -> {
               for (Module m : modules) {
                 SmartDashboard.putNumber(
@@ -419,7 +415,7 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command resetGyro() {
-    return new InstantCommand(
+    return Commands.runOnce(
             () ->
                 poseEst.resetPosition(
                     getGyroAngle(),
@@ -432,7 +428,7 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command resetOdometry() {
-    return new InstantCommand(
+    return Commands.runOnce(
         () -> {
           poseEst.resetTranslation(new Translation2d());
           resetGyro();

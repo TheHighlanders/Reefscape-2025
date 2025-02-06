@@ -22,6 +22,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants;
 
 final class moduleConstants {
@@ -245,7 +246,11 @@ public class Module {
     return Rotation2d.fromDegrees(positionDeg);
   }
 
-  public Rotation2d getAbsolutePositionNoOffset() {
+  // DO NOT USE THIS WITHOUT A GOOD REASON!
+  public Rotation2d findAbsoluteOffsetCalibrations() {
+    DriverStation.reportError(
+        "CALLING NO OFFSET ABSOL POSITION, if not calibrating wheels, you have done something very wrong",
+        false);
     /* Gets Position from SparkMAX absol encoder * 360 to degrees */
     double positionDeg = absoluteEncoder.getPosition() * 360.0d;
 
