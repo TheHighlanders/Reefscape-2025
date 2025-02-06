@@ -42,7 +42,7 @@ public class Climber extends SubsystemBase {
     SparkMaxConfig climberConfig = new SparkMaxConfig();
     climberConfig
         .encoder
-        .positionConversionFactor(climberConstants.climberPCF) // Rot to deg conversion
+        .positionConversionFactor(climberConstants.climberPCF) // Rotations to degrees conversion
         .velocityConversionFactor(climberConstants.climberPCF / 60.0d); // RPM to deg/s conversion
 
     climberConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
