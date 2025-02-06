@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.math.util.Units.inchesToMeters;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.revrobotics.RelativeEncoder;
@@ -21,34 +22,36 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants;
 
-class moduleConstants {
-  static double angleP = 0.05;
-  static double angleI = 0;
-  static double angleD = 0.002;
+final class moduleConstants {
+  static final double angleP = 0.05;
+  static final double angleI = 0;
+  static final double angleD = 0.002;
 
-  static double driveP = 0.2;
-  static double driveI = 0;
-  static double driveD = 3;
+  static final double driveP = 0.2;
+  static final double driveI = 0;
+  static final double driveD = 3;
 
-  static double driveS = 0.1718;
-  static double driveV = 4;
-  static double driveA = 8;
+  static final double driveS = 0.1718;
+  static final double driveV = 4;
+  static final double driveA = 8;
 
   // TODO: Change to L2 (6.75) when we go to actual modules
   // Wheel diameter * pi / gear ratio
-  static double drivePCF =
-      edu.wpi.first.math.util.Units.inchesToMeters(3 + 13d / 16d) * Math.PI / 8.14d;
+  static final double drivePCF = inchesToMeters(3 + 13d / 16d) * Math.PI / 8.14d;
 
-  static double anglePCF = 360.0 / 12.8d;
+  static final double anglePCF = 360.0 / 12.8d;
 
-  static int driveCurrentLimit = 40;
-  static int angleCurrentLimit = 20;
+  static final int driveCurrentLimit = 40;
+  static final int angleCurrentLimit = 20;
 
-  static boolean absolInverted = false;
+  static final boolean absolInverted = false;
 
-  static double maxSpeed = Constants.maxSpeed;
+  static final double maxSpeed = Constants.maxSpeed;
+
+  moduleConstants() {}
 }
 
 public class Module {
@@ -61,8 +64,6 @@ public class Module {
 
   public int moduleNumber;
 
-  private static SimpleMotorFeedforward driveFeedforward;
-
   public RelativeEncoder driveEncoder;
   public RelativeEncoder angleEncoder;
   public double angleReference;
@@ -70,7 +71,12 @@ public class Module {
 
   public SparkAbsoluteEncoder absoluteEncoder;
 
-  private Rotation2d KModuleAbsoluteOffset;
+  private final Rotation2d KModuleAbsoluteOffset;
+
+  /* Creates an additional FF controller for extra drive motor control */
+  private static SimpleMotorFeedforward driveFeedforward =
+      new SimpleMotorFeedforward(
+          moduleConstants.driveS, moduleConstants.driveV, moduleConstants.driveA);
 
   double ffOut = 0;
 
@@ -83,11 +89,6 @@ public class Module {
 
     SparkMaxConfig driveConfig = createDriveConfig();
     SparkMaxConfig angleConfig = createAngleConfig();
-
-    /* Creates an additional FF controller for extra drive motor control */
-    driveFeedforward =
-        new SimpleMotorFeedforward(
-            moduleConstants.driveS, moduleConstants.driveV, moduleConstants.driveA);
 
     angleMotor.configure(
         angleConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -245,7 +246,11 @@ public class Module {
     return Rotation2d.fromDegrees(positionDeg);
   }
 
-  public Rotation2d getAbsolutePositionNoOffset() {
+  // DO NOT USE THIS WITHOUT A GOOD REASON!
+  public Rotation2d findAbsoluteOffsetCalibrations() {
+    DriverStation.reportError(
+        "CALLING NO OFFSET ABSOL POSITION, if not calibrating wheels, you have done something very wrong",
+        false);
     /* Gets Position from SparkMAX absol encoder * 360 to degrees */
     double positionDeg = absoluteEncoder.getPosition() * 360.0d;
 
@@ -333,11 +338,15 @@ public class Module {
     return driveFeedforward.getKa();
   }
 
+  private static void updateDriveFeedforward(double s, double v, double a) {
+    driveFeedforward = new SimpleMotorFeedforward(s, v, a);
+  }
+
   public void setNewControlConstants(double[] drive, double[] angle) {
     updateDriveConstants(drive);
     updateAngleConstants(angle);
 
-    driveFeedforward = new SimpleMotorFeedforward(drive[3], drive[4], drive[5]);
+    updateDriveFeedforward(drive[3], drive[4], drive[5]);
   }
 
   public void updateDriveConstants(double[] drive) {

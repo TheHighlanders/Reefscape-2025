@@ -12,12 +12,9 @@ import frc.robot.subsystems.Swerve;
 
 /** Add your docs here. */
 public class Autos {
-  Swerve drive;
   AutoFactory autoFactory;
 
   public Autos(Swerve drive) {
-    this.drive = drive;
-
     autoFactory =
         new AutoFactory(
             drive::getPose, // A function that returns the current robot pose
