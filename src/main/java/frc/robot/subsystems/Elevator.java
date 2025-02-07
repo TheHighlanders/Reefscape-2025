@@ -13,9 +13,11 @@ import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLimitSwitch;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.LimitSwitchConfig.Type;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -68,6 +70,8 @@ public class Elevator extends SubsystemBase {
 
   double targetPosition;
 
+  double arbFF;
+
   private ElevatorState uppydowny = ElevatorState.HOME;
 
   public Elevator() { // Creates a new Elevator.
@@ -95,8 +99,6 @@ public class Elevator extends SubsystemBase {
         .reverseSoftLimit(elevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
-    SparkMaxConfig config = new SparkMaxConfig();
-
     // Set Smart Motion and Smart Velocity parameters.
     elevatorMotorConfig
         .closedLoop
@@ -105,7 +107,7 @@ public class Elevator extends SubsystemBase {
         .maxAcceleration(elevatorConstants.maxAccel)
         .allowedClosedLoopError(elevatorConstants.maxClosedLoopError);
     // Set PID gains
-    config
+    elevatorMotorConfig
         .closedLoop // pid loop to control elevator elevating rate
         .p(elevatorConstants.elevP)
         .i(elevatorConstants.elevI) // TODO find these desirerd values
@@ -119,6 +121,8 @@ public class Elevator extends SubsystemBase {
     // cad, in order to
     // use the feedback
     elevatorEncoder = elevatorMotor.getEncoder();
+
+    arbFF = elevatorConstants.feedFoward;
 
     // Reset the position to 0 to start within the range of the soft limits
     elevatorEncoder.setPosition(0);
@@ -153,13 +157,36 @@ public class Elevator extends SubsystemBase {
         break;
     }
     elevatorController.setReference(
-        targetPosition,
-        ControlType.kMAXMotionPositionControl,
-        ClosedLoopSlot.kSlot0,
-        elevatorConstants.feedFoward);
+        targetPosition, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, arbFF);
   }
 
   public Command setPosition(ElevatorState position) {
     return Commands.runOnce(() -> uppydowny = position);
+  }
+
+  public void sendTuningConstants() {
+    ClosedLoopConfigAccessor config = elevatorMotor.configAccessor.closedLoop;
+    SmartDashboard.putNumber("Tuning/Elevator/Elevator P", config.getP());
+    SmartDashboard.putNumber("Tuning/Elevator/Elevator I", config.getI());
+    SmartDashboard.putNumber("Tuning/Elevator/Elevator D", config.getD());
+    SmartDashboard.putNumber("Tuning/Elevator/Elevator F", config.getFF());
+
+    SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
+    SmartDashboard.putNumber(
+        "Tuning/Elevator/Error", targetPosition - elevatorEncoder.getPosition());
+  }
+
+  public void updateTuningConstants() {
+
+    double p = SmartDashboard.getNumber("Tuning/Elevator/Elevator P", elevatorConstants.elevP);
+    double i = SmartDashboard.getNumber("Tuning/Elevator/Elevator I", elevatorConstants.elevI);
+    double d = SmartDashboard.getNumber("Tuning/Elevator/Elevator D", elevatorConstants.elevD);
+    double f = SmartDashboard.getNumber("Tuning/Elevator/Elevator F", elevatorConstants.feedFoward);
+
+    SparkMaxConfig config = new SparkMaxConfig();
+    config.closedLoop.pid(p, i, d);
+    arbFF = f;
+    elevatorMotor.configure(
+        config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 }
