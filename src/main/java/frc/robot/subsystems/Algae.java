@@ -4,11 +4,15 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 final class algaeConstants {
@@ -20,15 +24,19 @@ final class algaeConstants {
 }
 
 public class Algae extends SubsystemBase {
-
   private SparkMax algaeBendMotor =
       new SparkMax(algaeConstants.algaeBendMotorID, MotorType.kBrushless);
   private SparkMax algaeSpinMotor =
       new SparkMax(algaeConstants.algaeSpinMotorID, MotorType.kBrushed);
 
+  public enum bendState {
+    UP,
+    DOWN
+  }
+
   public Algae() {}
 
-  private SparkMaxConfig createAlgaeBendConfig() {
+  private SparkMaxConfig algaeBendConfig(boolean coast) {
     SparkMaxConfig algaeBendConfig = new SparkMaxConfig();
     algaeBendConfig
         .encoder
@@ -39,7 +47,7 @@ public class Algae extends SubsystemBase {
 
     algaeBendConfig
         .smartCurrentLimit(algaeConstants.algaeBendCurrentLimit)
-        .idleMode(IdleMode.kCoast);
+        .idleMode(coast ? IdleMode.kCoast : IdleMode.kBrake);
     algaeBendConfig
         .softLimit
         .forwardSoftLimit(algaeConstants.bendSoftLimit)
@@ -51,5 +59,31 @@ public class Algae extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+
+  }
+
+  public Command intakeAlgae() {
+    return Commands.parallel(
+        Commands.runOnce(() -> algaeSpinMotor.set(1)),
+        Commands.sequence(
+            Commands.runOnce(
+                () ->
+                    algaeBendMotor
+                        .getClosedLoopController()
+                        .setReference(72, ControlType.kMAXMotionPositionControl)),
+            Commands.waitSeconds(1),
+            Commands.runOnce(
+                () ->
+                    algaeBendMotor.configure(
+                        algaeBendConfig(true),
+                        SparkBase.ResetMode.kResetSafeParameters,
+                        SparkBase.PersistMode.kPersistParameters))));
+  }
+
+  // TODO fill out command below
+  public Command outputAlgae() {
+    // Run spin motor outward
+    // raise arm a bit
+    // once algae is entirely out, raise arm back up to vertical
   }
 }
