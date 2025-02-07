@@ -15,7 +15,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-final class climberConstants {
+final class ClimberConstants {
   static final int climberCurrentLimit = 20;
 
   static final int climbMotorID = 3;
@@ -23,13 +23,11 @@ final class climberConstants {
   static final double climberPCF = 12.8;
 
   static final double elevatorSoftLimit = 30;
-
-  climberConstants() {}
 }
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
-  private SparkMax climbMotor = new SparkMax(climberConstants.climbMotorID, MotorType.kBrushless);
+  private SparkMax climbMotor = new SparkMax(ClimberConstants.climbMotorID, MotorType.kBrushless);
 
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
@@ -42,15 +40,15 @@ public class Climber extends SubsystemBase {
     SparkMaxConfig climberConfig = new SparkMaxConfig();
     climberConfig
         .encoder
-        .positionConversionFactor(climberConstants.climberPCF) // Rot to deg conversion
-        .velocityConversionFactor(climberConstants.climberPCF / 60.0d); // RPM to deg/s conversion
+        .positionConversionFactor(ClimberConstants.climberPCF) // Rot to deg conversion
+        .velocityConversionFactor(ClimberConstants.climberPCF / 60.0d); // RPM to deg/s conversion
 
     climberConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
-    climberConfig.smartCurrentLimit(climberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
+    climberConfig.smartCurrentLimit(ClimberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
     climberConfig
         .softLimit
-        .forwardSoftLimit(climberConstants.elevatorSoftLimit)
+        .forwardSoftLimit(ClimberConstants.elevatorSoftLimit)
         .forwardSoftLimitEnabled(true);
 
     return climberConfig;

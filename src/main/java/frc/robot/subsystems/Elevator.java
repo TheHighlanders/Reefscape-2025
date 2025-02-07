@@ -20,7 +20,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-final class elevatorConstants {
+final class ElevatorConstants {
   static final int elevMotorID = 40;
 
   static final double elevPCF = 1;
@@ -45,8 +45,6 @@ final class elevatorConstants {
   static final double maxVelocity = 5;
   static final double maxAccel = 5;
   static final double maxClosedLoopError = 5;
-
-  private elevatorConstants() {}
 }
 
 public class Elevator extends SubsystemBase {
@@ -72,13 +70,13 @@ public class Elevator extends SubsystemBase {
 
   public Elevator() { // Creates a new Elevator.
     elevatorMotorConfig = new SparkMaxConfig();
-    elevatorMotor = new SparkMax(elevatorConstants.elevMotorID, MotorType.kBrushless);
+    elevatorMotor = new SparkMax(ElevatorConstants.elevMotorID, MotorType.kBrushless);
     reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
 
     elevatorMotorConfig
         .encoder
-        .positionConversionFactor(elevatorConstants.elevPCF)
-        .velocityConversionFactor(elevatorConstants.elevPCF / 60.0d);
+        .positionConversionFactor(ElevatorConstants.elevPCF)
+        .velocityConversionFactor(ElevatorConstants.elevPCF / 60.0d);
 
     elevatorController = elevatorMotor.getClosedLoopController();
     elevatorMotorConfig.idleMode(IdleMode.kBrake);
@@ -90,9 +88,9 @@ public class Elevator extends SubsystemBase {
 
     elevatorMotorConfig
         .softLimit
-        .forwardSoftLimit(elevatorConstants.forwardSoftLimit) // TODO: chanege limit value
+        .forwardSoftLimit(ElevatorConstants.forwardSoftLimit) // TODO: chanege limit value
         .forwardSoftLimitEnabled(true)
-        .reverseSoftLimit(elevatorConstants.backwardSoftLimit)
+        .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
     SparkMaxConfig config = new SparkMaxConfig();
@@ -101,16 +99,16 @@ public class Elevator extends SubsystemBase {
     elevatorMotorConfig
         .closedLoop
         .maxMotion
-        .maxVelocity(elevatorConstants.maxVelocity) // TODO find these desirerd values
-        .maxAcceleration(elevatorConstants.maxAccel)
-        .allowedClosedLoopError(elevatorConstants.maxClosedLoopError);
+        .maxVelocity(ElevatorConstants.maxVelocity) // TODO find these desirerd values
+        .maxAcceleration(ElevatorConstants.maxAccel)
+        .allowedClosedLoopError(ElevatorConstants.maxClosedLoopError);
     // Set PID gains
     config
         .closedLoop // pid loop to control elevator elevating rate
-        .p(elevatorConstants.elevP)
-        .i(elevatorConstants.elevI) // TODO find these desirerd values
-        .d(elevatorConstants.elevD)
-        .outputRange(elevatorConstants.outputRange[0], elevatorConstants.outputRange[1]);
+        .p(ElevatorConstants.elevP)
+        .i(ElevatorConstants.elevI) // TODO find these desirerd values
+        .d(ElevatorConstants.elevD)
+        .outputRange(ElevatorConstants.outputRange[0], ElevatorConstants.outputRange[1]);
 
     elevatorMotor.configure(
         elevatorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
@@ -134,29 +132,29 @@ public class Elevator extends SubsystemBase {
 
     switch (uppydowny) {
       case HOME:
-        targetPosition = elevatorConstants.homeTarget; // the set point
+        targetPosition = ElevatorConstants.homeTarget; // the set point
         break;
       case L1_POSITION:
-        targetPosition = elevatorConstants.l1Target; // the set point
+        targetPosition = ElevatorConstants.l1Target; // the set point
         break;
       case L2_POSITION:
-        targetPosition = elevatorConstants.l2Target; // the set point
+        targetPosition = ElevatorConstants.l2Target; // the set point
         break;
       case L3_POSITION:
-        targetPosition = elevatorConstants.l3Target; // the set point
+        targetPosition = ElevatorConstants.l3Target; // the set point
         break;
       case L4_POSITION:
-        targetPosition = elevatorConstants.l4Target; // the set point
+        targetPosition = ElevatorConstants.l4Target; // the set point
         break;
       case CORAL_POSITION:
-        targetPosition = elevatorConstants.coralPositionTarget; // the set point
+        targetPosition = ElevatorConstants.coralPositionTarget; // the set point
         break;
     }
     elevatorController.setReference(
         targetPosition,
         ControlType.kMAXMotionPositionControl,
         ClosedLoopSlot.kSlot0,
-        elevatorConstants.feedFoward);
+        ElevatorConstants.feedFoward);
   }
 
   public Command setPosition(ElevatorState position) {
