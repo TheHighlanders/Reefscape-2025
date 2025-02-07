@@ -19,10 +19,10 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-class elevatorConstants {
+final class elevatorConstants {
   static final int elevMotorID = 40;
 
   static final double elevPCF = 1;
@@ -47,6 +47,8 @@ class elevatorConstants {
   static final double maxVelocity = 5;
   static final double maxAccel = 5;
   static final double maxClosedLoopError = 5;
+
+  private elevatorConstants() {}
 }
 
 public class Elevator extends SubsystemBase {
@@ -115,7 +117,8 @@ public class Elevator extends SubsystemBase {
     elevatorMotor.configure(
         elevatorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
-    // TODO: Encoder should be configured (position conversion factor), based on cad, in order to
+    // TODO: Encoder should be configured (position conversion factor), based on
+    // cad, in order to
     // use the feedback
     elevatorEncoder = elevatorMotor.getEncoder();
 
@@ -157,48 +160,8 @@ public class Elevator extends SubsystemBase {
         targetPosition, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, arbFF);
   }
 
-  public void L1() {
-    uppydowny = ElevatorState.L1_POSITION;
-  }
-
-  public void L2() {
-    uppydowny = ElevatorState.L2_POSITION;
-  }
-
-  public void L3() {
-    uppydowny = ElevatorState.L3_POSITION;
-  }
-
-  public void L4() {
-    uppydowny = ElevatorState.L4_POSITION;
-  }
-
-  public void HOME() {
-    uppydowny = ElevatorState.HOME;
-  }
-
-  public void coralPosition() {
-    uppydowny = ElevatorState.CORAL_POSITION;
-  }
-
-  public Command getL1Command() {
-    return new InstantCommand(this::L1);
-  }
-
-  public Command getL2Command() {
-    return new InstantCommand(this::L2);
-  }
-
-  public Command getL3Command() {
-    return new InstantCommand(this::L3);
-  }
-
-  public Command getL4Command() {
-    return new InstantCommand(this::L4);
-  }
-
-  public Command getCoralPositionCommand() {
-    return new InstantCommand(this::coralPosition);
+  public Command setPosition(ElevatorState position) {
+    return Commands.runOnce(() -> uppydowny = position);
   }
 
   public void sendTuningConstants() {

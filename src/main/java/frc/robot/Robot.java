@@ -34,7 +34,11 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledPeriodic() {
     if (loops % 50 == 0) {
+      m_robotContainer.drive.updateControlConstants();
+
       loops = 0;
+    } else if (loops % 25 == 0) {
+      m_robotContainer.drive.resetEncoders();
     }
     if (loops % 50 == 12) {
       m_robotContainer.drive.resetEncoders();
@@ -56,6 +60,8 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
+
+    WebServer.stop(5800);
   }
 
   @Override
