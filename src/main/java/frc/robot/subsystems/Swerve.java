@@ -70,8 +70,12 @@ public class Swerve extends SubsystemBase {
     SLOW
   }
 
-  private static final double SLOW_MODE_MULTIPLIER = 0.3;
+  private static final double MAX_SLOW_MODE = 0.3;
   private static final double MICROS_SECONDS_CONVERSION = Math.pow(10, 6);
+
+  private static final double MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED = 0.25;
+
+  DoubleSupplier elevatorHeight;
 
   Module[] modules = new Module[4];
   AHRS gyro;
@@ -98,7 +102,7 @@ public class Swerve extends SubsystemBase {
   SwerveState current = SwerveState.FAST;
 
   /** Creates a new Swerve. */
-  public Swerve() {
+  public Swerve(DoubleSupplier elevatorHeight) {
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
     }
@@ -118,6 +122,8 @@ public class Swerve extends SubsystemBase {
 
     // Default Port is MXP
     gyro = new AHRS(NavXComType.kMXP_SPI);
+
+    this.elevatorHeight = elevatorHeight;
 
     poseEst =
         new SwerveDrivePoseEstimator(
@@ -274,8 +280,9 @@ public class Swerve extends SubsystemBase {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
 
     if (current == SwerveState.SLOW) {
-      x *= SLOW_MODE_MULTIPLIER;
-      y *= SLOW_MODE_MULTIPLIER;
+      double slowModeCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
+      x *= slowModeCoefficient;
+      y *= slowModeCoefficient;
     }
 
     ChassisSpeeds chassisSpeeds =
@@ -367,6 +374,31 @@ public class Swerve extends SubsystemBase {
     fr = ChassisSpeeds.fromFieldRelativeSpeeds(fr, getPose().getRotation());
 
     return fr;
+  }
+
+  public double getCurrentSlowModeCoefficient(double e) {
+    /* 0 to 1 value representing elevator position (0 is bottom, 1 is top) */
+    double elevatorHeightPercent = e / ElevatorConstants.forwardSoftLimit;
+
+    /* Don't limit at all if below some threshold */
+    if (elevatorHeightPercent >= MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED) {
+
+      double out =
+          (MAX_SLOW_MODE - 1)
+                  * Math.pow(e - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
+                  / Math.pow(1 - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
+              + 1;
+
+      /*
+       * Scale slow mode position based on height percent using a parabola
+       * y=\left\{0\le x\le h:1,h\le x\le1:\frac{l-1}{\left(1-h\right)^{2}}\left(x-h\right)^{2}+1\right\}
+       * where h = MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED
+       * & l = MAX_SLOW_MODE
+       */
+      return out;
+    }
+
+    return 1;
   }
 
   public Command slowMode() {

@@ -189,4 +189,8 @@ public class Elevator extends SubsystemBase {
     elevatorMotor.configure(
         config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
+
+  public double getElevatorPosition() {
+    return elevatorEncoder.getPosition();
+  }
 }
