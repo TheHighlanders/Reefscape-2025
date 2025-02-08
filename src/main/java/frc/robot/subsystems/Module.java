@@ -25,7 +25,7 @@ import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants;
 
-final class moduleConstants {
+final class ModuleConstants {
   static final double angleP = 0.05;
   static final double angleI = 0;
   static final double angleD = 0.002;
@@ -50,8 +50,6 @@ final class moduleConstants {
   static final boolean absolInverted = false;
 
   static final double maxSpeed = Constants.maxSpeed;
-
-  moduleConstants() {}
 }
 
 public class Module {
@@ -76,7 +74,7 @@ public class Module {
   /* Creates an additional FF controller for extra drive motor control */
   private static SimpleMotorFeedforward driveFeedforward =
       new SimpleMotorFeedforward(
-          moduleConstants.driveS, moduleConstants.driveV, moduleConstants.driveA);
+          ModuleConstants.driveS, ModuleConstants.driveV, ModuleConstants.driveA);
 
   double ffOut = 0;
 
@@ -115,13 +113,13 @@ public class Module {
 
     driveConfig
         .encoder
-        .positionConversionFactor(moduleConstants.drivePCF)
-        .velocityConversionFactor(moduleConstants.drivePCF / 60.0d);
+        .positionConversionFactor(ModuleConstants.drivePCF)
+        .velocityConversionFactor(ModuleConstants.drivePCF / 60.0d);
 
     driveConfig.closedLoop.pid(
-        moduleConstants.driveP, moduleConstants.driveI, moduleConstants.driveD);
+        ModuleConstants.driveP, ModuleConstants.driveI, ModuleConstants.driveD);
 
-    driveConfig.smartCurrentLimit(moduleConstants.driveCurrentLimit).idleMode(IdleMode.kBrake);
+    driveConfig.smartCurrentLimit(ModuleConstants.driveCurrentLimit).idleMode(IdleMode.kBrake);
 
     return driveConfig;
   }
@@ -133,17 +131,17 @@ public class Module {
 
     angleConfig
         .encoder
-        .positionConversionFactor(moduleConstants.anglePCF)
-        .velocityConversionFactor(moduleConstants.anglePCF / 60.0d);
+        .positionConversionFactor(ModuleConstants.anglePCF)
+        .velocityConversionFactor(ModuleConstants.anglePCF / 60.0d);
 
     angleConfig
         .closedLoop
-        .pid(moduleConstants.angleP, moduleConstants.angleI, moduleConstants.angleD)
+        .pid(ModuleConstants.angleP, ModuleConstants.angleI, ModuleConstants.angleD)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(-180.0d, 180.0d)
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
-    angleConfig.smartCurrentLimit(moduleConstants.angleCurrentLimit).idleMode(IdleMode.kCoast);
+    angleConfig.smartCurrentLimit(ModuleConstants.angleCurrentLimit).idleMode(IdleMode.kCoast);
 
     return angleConfig;
   }
@@ -168,7 +166,7 @@ public class Module {
    */
   public void setDriveState(SwerveModuleState state, boolean isOpenLoop) {
     if (isOpenLoop) {
-      double motorPercent = state.speedMetersPerSecond / moduleConstants.maxSpeed;
+      double motorPercent = state.speedMetersPerSecond / ModuleConstants.maxSpeed;
       driveMotor.set(motorPercent);
       driveReference = state.speedMetersPerSecond;
     } else {
@@ -241,7 +239,7 @@ public class Module {
     positionDeg -= KModuleAbsoluteOffset.getDegrees();
 
     /* Inverts if necesary */
-    positionDeg *= (moduleConstants.absolInverted ? -1 : 1);
+    positionDeg *= (ModuleConstants.absolInverted ? -1 : 1);
 
     return Rotation2d.fromDegrees(positionDeg);
   }
@@ -255,7 +253,7 @@ public class Module {
     double positionDeg = absoluteEncoder.getPosition() * 360.0d;
 
     /* Inverts if necesary */
-    positionDeg *= (moduleConstants.absolInverted ? -1 : 1);
+    positionDeg *= (ModuleConstants.absolInverted ? -1 : 1);
 
     return Rotation2d.fromDegrees(positionDeg);
   }

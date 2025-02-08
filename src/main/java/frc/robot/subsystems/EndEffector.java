@@ -18,21 +18,17 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-final class endEffectorConstants {
+final class EndEffectorConstants {
   static final int intakePhotoSensorDIOPin = 0;
   static final int motorID = 50;
   static final int currentLimit = 40;
 
-  final class simulation {
+  static final class Simulation {
     static final double effectorMOI = 0.004;
 
     // (Radius * 2 * PI) / (10 to 1 gearing)
     static final double effectorPCF = (Units.inchesToMeters(3) * 2 * Math.PI) / 10;
-
-    simulation() {}
   }
-
-  endEffectorConstants() {}
 }
 
 public class EndEffector extends SubsystemBase {
@@ -42,8 +38,8 @@ public class EndEffector extends SubsystemBase {
   private final DigitalInput photoSensor;
 
   public EndEffector() {
-    photoSensor = new DigitalInput(endEffectorConstants.intakePhotoSensorDIOPin);
-    effector = new SparkMax(endEffectorConstants.motorID, MotorType.kBrushless);
+    photoSensor = new DigitalInput(EndEffectorConstants.intakePhotoSensorDIOPin);
+    effector = new SparkMax(EndEffectorConstants.motorID, MotorType.kBrushless);
 
     SparkMaxConfig effectorConfig = effectorConfg();
 
@@ -56,7 +52,7 @@ public class EndEffector extends SubsystemBase {
 
     effectorConfig.inverted(false);
 
-    effectorConfig.smartCurrentLimit(endEffectorConstants.currentLimit).idleMode(IdleMode.kCoast);
+    effectorConfig.smartCurrentLimit(EndEffectorConstants.currentLimit).idleMode(IdleMode.kCoast);
 
     return effectorConfig;
   }

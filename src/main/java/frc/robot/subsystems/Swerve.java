@@ -41,7 +41,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-final class swerveConstants {
+final class SwerveConstants {
 
   public static final double maxRotSpeed = Units.degreesToRadians(180);
   // Implicit /sec
@@ -61,8 +61,6 @@ final class swerveConstants {
   static final double rotateP = 0;
   static final double rotateI = 0;
   static final double rotateD = 0;
-
-  swerveConstants() {}
 }
 
 public class Swerve extends SubsystemBase {
@@ -81,17 +79,17 @@ public class Swerve extends SubsystemBase {
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
 
-  SlewRateLimiter xLim = new SlewRateLimiter(swerveConstants.accelLim);
-  SlewRateLimiter yLim = new SlewRateLimiter(swerveConstants.accelLim);
+  SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
+  SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
   private final PIDController xController =
       new PIDController(
-          swerveConstants.translateP, swerveConstants.translateI, swerveConstants.translateD);
+          SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
   private final PIDController yController =
       new PIDController(
-          swerveConstants.translateP, swerveConstants.translateI, swerveConstants.translateD);
+          SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
   private final PIDController headingController =
-      new PIDController(swerveConstants.rotateP, swerveConstants.rotateI, swerveConstants.rotateD);
+      new PIDController(SwerveConstants.rotateP, SwerveConstants.rotateI, SwerveConstants.rotateD);
 
   private final SysIdRoutine sysId;
 
@@ -108,8 +106,8 @@ public class Swerve extends SubsystemBase {
     // Using +X as forward, and +Y as left, as per
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
     // FL, FR, BL, BR
-    double y = swerveConstants.width / 2.0d;
-    double x = swerveConstants.length / 2.0d;
+    double y = SwerveConstants.width / 2.0d;
+    double x = SwerveConstants.length / 2.0d;
 
     kinematics =
         new SwerveDriveKinematics(
@@ -286,9 +284,9 @@ public class Swerve extends SubsystemBase {
             yLim.calculate(y),
             omega); // Takes in Alliance Relative, returns Field Relative
 
-    chassisSpeeds.vxMetersPerSecond *= swerveConstants.maxSpeed;
-    chassisSpeeds.vyMetersPerSecond *= swerveConstants.maxSpeed;
-    chassisSpeeds.omegaRadiansPerSecond *= swerveConstants.maxRotSpeed;
+    chassisSpeeds.vxMetersPerSecond *= SwerveConstants.maxSpeed;
+    chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
+    chassisSpeeds.omegaRadiansPerSecond *= SwerveConstants.maxRotSpeed;
 
     driveChassisSpeedsRobotRelative(chassisSpeeds);
   }
@@ -298,7 +296,7 @@ public class Swerve extends SubsystemBase {
 
     // Convert to States and desat
     SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, swerveConstants.maxSpeed);
+    SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
 
     // Convert to ChassisSpeeds and discretize
     chassisSpeeds = kinematics.toChassisSpeeds(targetStates);
@@ -306,7 +304,7 @@ public class Swerve extends SubsystemBase {
 
     // Convert back to States, and desat, again
     targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
-    SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, swerveConstants.maxSpeed);
+    SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, SwerveConstants.maxSpeed);
 
     for (int i = 0; i < modules.length; i++) {
       targetStates[i].optimize(getModulePostions()[i].angle);
@@ -452,18 +450,18 @@ public class Swerve extends SubsystemBase {
 
   public void updateControlConstants() {
     double[] drive = {
-      SmartDashboard.getNumber("Tuning/Swerve/Drive P", moduleConstants.driveP),
-      SmartDashboard.getNumber("Tuning/Swerve/Drive I", moduleConstants.driveI),
-      SmartDashboard.getNumber("Tuning/Swerve/Drive D", moduleConstants.driveD),
-      SmartDashboard.getNumber("Tuning/Swerve/Drive S", moduleConstants.driveS),
-      SmartDashboard.getNumber("Tuning/Swerve/Drive V", moduleConstants.driveV),
-      SmartDashboard.getNumber("Tuning/Swerve/Drive A", moduleConstants.driveA),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive P", ModuleConstants.driveP),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive I", ModuleConstants.driveI),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive D", ModuleConstants.driveD),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive S", ModuleConstants.driveS),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive V", ModuleConstants.driveV),
+      SmartDashboard.getNumber("Tuning/Swerve/Drive A", ModuleConstants.driveA),
     };
 
     double[] angle = {
-      SmartDashboard.getNumber("Tuning/Swerve/Angle P", moduleConstants.angleP),
-      SmartDashboard.getNumber("Tuning/Swerve/Angle I", moduleConstants.angleI),
-      SmartDashboard.getNumber("Tuning/Swerve/Angle D", moduleConstants.angleD)
+      SmartDashboard.getNumber("Tuning/Swerve/Angle P", ModuleConstants.angleP),
+      SmartDashboard.getNumber("Tuning/Swerve/Angle I", ModuleConstants.angleI),
+      SmartDashboard.getNumber("Tuning/Swerve/Angle D", ModuleConstants.angleD)
     };
 
     for (Module m : modules) {
