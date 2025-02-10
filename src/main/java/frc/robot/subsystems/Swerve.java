@@ -13,6 +13,7 @@ import static edu.wpi.first.units.Units.Volts;
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -278,12 +279,14 @@ public class Swerve extends SubsystemBase {
    */
   public void drive(double x, double y, double omega) {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
+    double slowModeCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
 
     if (current == SwerveState.SLOW) {
-      double slowModeCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
-      x *= slowModeCoefficient;
-      y *= slowModeCoefficient;
+      slowModeCoefficient *= MathUtil.clamp(slowModeCoefficient * MAX_SLOW_MODE, MAX_SLOW_MODE, 1);
     }
+
+    x *= slowModeCoefficient;
+    y *= slowModeCoefficient;
 
     ChassisSpeeds chassisSpeeds =
         fromAllianceRelativeSpeeds(
@@ -383,18 +386,18 @@ public class Swerve extends SubsystemBase {
     /* Don't limit at all if below some threshold */
     if (elevatorHeightPercent >= MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED) {
 
-      double out =
-          (MAX_SLOW_MODE - 1)
-                  * Math.pow(e - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
-                  / Math.pow(1 - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
-              + 1;
-
       /*
        * Scale slow mode position based on height percent using a parabola
        * y=\left\{0\le x\le h:1,h\le x\le1:\frac{l-1}{\left(1-h\right)^{2}}\left(x-h\right)^{2}+1\right\}
        * where h = MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED
        * & l = MAX_SLOW_MODE
        */
+      double out =
+          (MAX_SLOW_MODE - 1)
+                  * Math.pow(e - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
+                  / Math.pow(1 - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
+              + 1;
+
       return out;
     }
 
