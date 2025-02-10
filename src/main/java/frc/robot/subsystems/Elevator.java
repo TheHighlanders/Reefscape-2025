@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 final class ElevatorConstants {
   static final int elevMotorID = 40;
@@ -74,7 +75,9 @@ public class Elevator extends SubsystemBase {
 
   private ElevatorState uppydowny = ElevatorState.HOME;
 
-  public Elevator() { // Creates a new Elevator.
+  public Elevator() {
+    if (Constants.onlyConstructSwerve) return;
+
     elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(ElevatorConstants.elevMotorID, MotorType.kBrushless);
     reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
@@ -130,30 +133,30 @@ public class Elevator extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
-
-    if (reverseLimitSwitch.isPressed()) { // when the switch is pressed stop the motor
+    // when the switch is pressed reset the encoder (the motor will be
+    // automatically stopped because we configured a limit switch)
+    if (reverseLimitSwitch.isPressed()) {
       elevatorEncoder.setPosition(0);
     }
 
     switch (uppydowny) {
       case HOME:
-        targetPosition = ElevatorConstants.homeTarget; // the set point
+        targetPosition = ElevatorConstants.homeTarget;
         break;
       case L1_POSITION:
-        targetPosition = ElevatorConstants.l1Target; // the set point
+        targetPosition = ElevatorConstants.l1Target;
         break;
       case L2_POSITION:
-        targetPosition = ElevatorConstants.l2Target; // the set point
+        targetPosition = ElevatorConstants.l2Target;
         break;
       case L3_POSITION:
-        targetPosition = ElevatorConstants.l3Target; // the set point
+        targetPosition = ElevatorConstants.l3Target;
         break;
       case L4_POSITION:
-        targetPosition = ElevatorConstants.l4Target; // the set point
+        targetPosition = ElevatorConstants.l4Target;
         break;
       case CORAL_POSITION:
-        targetPosition = ElevatorConstants.coralPositionTarget; // the set point
+        targetPosition = ElevatorConstants.coralPositionTarget;
         break;
     }
     elevatorController.setReference(

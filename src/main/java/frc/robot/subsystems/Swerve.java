@@ -280,9 +280,7 @@ public class Swerve extends SubsystemBase {
 
     ChassisSpeeds chassisSpeeds =
         fromAllianceRelativeSpeeds(
-            xLim.calculate(x),
-            yLim.calculate(y),
-            omega); // Takes in Alliance Relative, returns Field Relative
+            x, y, omega); // Takes in Alliance Relative, returns Field Relative
 
     chassisSpeeds.vxMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;

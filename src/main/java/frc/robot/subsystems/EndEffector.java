@@ -10,9 +10,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -22,17 +20,9 @@ final class EndEffectorConstants {
   static final int intakePhotoSensorDIOPin = 0;
   static final int motorID = 50;
   static final int currentLimit = 40;
-
-  static final class Simulation {
-    static final double effectorMOI = 0.004;
-
-    // (Radius * 2 * PI) / (10 to 1 gearing)
-    static final double effectorPCF = (Units.inchesToMeters(3) * 2 * Math.PI) / 10;
-  }
 }
 
 public class EndEffector extends SubsystemBase {
-  /** Creates a new EndEffector. */
   SparkMax effector;
 
   private final DigitalInput photoSensor;
@@ -67,23 +57,20 @@ public class EndEffector extends SubsystemBase {
   }
 
   public void effectorStop() {
-    DriverStation.reportWarning("Effector stop", false);
     effector.set(0);
   }
 
   public void effectorForward() {
-    DriverStation.reportWarning("Effector forward", false);
     effector.set(1.0);
   }
 
   public void effectorReverse() {
-    DriverStation.reportWarning("Effector reverse", false);
     effector.set(-1.0);
   }
 
   public Command effectorForwardUntilBrakeCMD() {
     return Commands.run(this::effectorForward, this)
-        .finallyDo(this::effectorStop)
-        .until(this::hasGamePiece);
+        .until(this::hasGamePiece)
+        .finallyDo(this::effectorStop);
   }
 }

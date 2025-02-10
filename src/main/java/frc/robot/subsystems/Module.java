@@ -42,7 +42,7 @@ final class ModuleConstants {
   // Wheel diameter * pi / gear ratio
   static final double drivePCF = inchesToMeters(3 + 13d / 16d) * Math.PI / 8.14d;
 
-  static final double anglePCF = 360.0 / 12.8d;
+  static final double anglePCF = 360.0 / 12.8d; // combined pulley and gear ratio
 
   static final int driveCurrentLimit = 40;
   static final int angleCurrentLimit = 20;

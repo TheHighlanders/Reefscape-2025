@@ -14,6 +14,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 final class ClimberConstants {
   static final int climberCurrentLimit = 20;
@@ -27,9 +28,12 @@ final class ClimberConstants {
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
-  private SparkMax climbMotor = new SparkMax(ClimberConstants.climbMotorID, MotorType.kBrushless);
+  private SparkMax climbMotor;
 
   public Climber() {
+    if (Constants.onlyConstructSwerve) return;
+    climbMotor = new SparkMax(ClimberConstants.climbMotorID, MotorType.kBrushless);
+
     SparkMaxConfig climberConfig = createClimberConfig();
     climbMotor.configure(
         climberConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);

@@ -24,20 +24,28 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
 
   Swerve drive = new Swerve();
-  EndEffector endEffector = new EndEffector();
-  Autos autos = new Autos(drive);
-  Climber climber = new Climber();
-  Elevator elevator = new Elevator();
+  EndEffector endEffector;
+  Autos autos;
+  Climber climber;
+  Elevator elevator;
 
   AutoChooser chooser;
 
   public RobotContainer() {
-    chooser = new AutoChooser();
+    if (!Constants.onlyConstructSwerve) {
+      endEffector = new EndEffector();
+      autos = new Autos(drive);
+      climber = new Climber();
+      elevator = new Elevator();
+
+      chooser = new AutoChooser();
+
+      subsystems.put("endEffector", endEffector);
+      subsystems.put("climber", climber);
+      subsystems.put("elevator", elevator);
+    }
 
     subsystems.put("drive", drive);
-    subsystems.put("endEffector", endEffector);
-    subsystems.put("climber", climber);
-    subsystems.put("elevator", elevator);
 
     // This needs to be the last subsystem added
     Superstructure superstructure = new Superstructure(subsystems);
@@ -45,15 +53,20 @@ public class RobotContainer {
     StateRequest.init(superstructure);
 
     configureBindings();
-    configureAutonomous();
+    if (!Constants.onlyConstructSwerve) {
+      configureAutonomous();
+    }
 
     drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
   private void configureBindings() {
     driver.x().onTrue(drive.resetGyro());
-    driver.a().whileTrue(climber.createClimbInCommand());
-    driver.b().whileTrue(climber.createClimbOutCommand());
+
+    if (!Constants.onlyConstructSwerve) {
+      driver.a().whileTrue(climber.createClimbInCommand());
+      driver.b().whileTrue(climber.createClimbOutCommand());
+    }
   }
 
   private void configureAutonomous() {

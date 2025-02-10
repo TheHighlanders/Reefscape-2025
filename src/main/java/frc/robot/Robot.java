@@ -42,9 +42,11 @@ public class Robot extends TimedRobot {
     }
     if (loops % 50 == 12) {
       m_robotContainer.drive.resetEncoders();
-      m_robotContainer.elevator.sendTuningConstants();
+      if (!Constants.onlyConstructSwerve) {
+        m_robotContainer.elevator.sendTuningConstants();
+      }
     }
-    if (loops % 50 == 37) {
+    if (loops % 50 == 37 && !Constants.onlyConstructSwerve) {
       m_robotContainer.elevator.updateTuningConstants();
     }
     loops++;
