@@ -64,6 +64,7 @@ public class RobotContainer {
         .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(endEffector.intakeCMD()));
 
     driver.leftTrigger(0.5).onTrue(endEffector.depositCMD());
+    driver.leftTrigger().whileTrue(drive.slowMode());
 
     operator.y().whileTrue(climber.createClimbOutCommand());
     operator.a().whileTrue(climber.createClimbInCommand());

@@ -66,8 +66,8 @@ final class SwerveConstants {
 public class Swerve extends SubsystemBase {
 
   enum SwerveState {
-    FAST,
-    SLOW
+    NORMAL,
+    LINEUP
   }
 
   private static final double MAX_SLOW_MODE = 0.3;
@@ -99,7 +99,7 @@ public class Swerve extends SubsystemBase {
 
   Field2d field = new Field2d();
 
-  SwerveState current = SwerveState.FAST;
+  SwerveState current = SwerveState.NORMAL;
 
   /** Creates a new Swerve. */
   public Swerve(DoubleSupplier elevatorHeight) {
@@ -278,20 +278,25 @@ public class Swerve extends SubsystemBase {
    */
   public void drive(double x, double y, double omega) {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
-    double slowModeCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
-
-    if (current == SwerveState.SLOW) {
+    double slowModeCoefficient;
+    if (current == SwerveState.NORMAL) {
+      slowModeCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
+    } else {
       slowModeCoefficient = 0.3;
     }
 
     x *= slowModeCoefficient;
     y *= slowModeCoefficient;
 
-    ChassisSpeeds chassisSpeeds =
-        fromAllianceRelativeSpeeds(
-            xLim.calculate(x),
-            yLim.calculate(y),
-            omega); // Takes in Alliance Relative, returns Field Relative
+    ChassisSpeeds chassisSpeeds;
+
+    if (current == SwerveState.NORMAL) {
+      // Takes in Alliance Relative, returns Field Relative
+      chassisSpeeds = fromAllianceRelativeSpeeds(x, y, omega);
+    } else {
+      // Takes in Robot Relative, returns Robot Relative
+      chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(x, y, omega, getGyroAngle());
+    }
 
     chassisSpeeds.vxMetersPerSecond *= SwerveConstants.maxSpeed;
     chassisSpeeds.vyMetersPerSecond *= SwerveConstants.maxSpeed;
@@ -404,8 +409,8 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command slowMode() {
-    return Commands.run(() -> current = SwerveState.SLOW, this)
-        .finallyDo(() -> current = SwerveState.FAST);
+    return Commands.run(() -> current = SwerveState.LINEUP, this)
+        .finallyDo(() -> current = SwerveState.NORMAL);
   }
 
   public void driveVoltage(Measure<VoltageUnit> voltage) {
