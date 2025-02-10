@@ -19,15 +19,15 @@ final class algaeConstants {
   static final int algaeBendMotorID = 4;
   static final double algaeBendPCF = 12.8; // check what value the PCF should actually be
   static final int algaeBendCurrentLimit = 0;
-  static final int algaeSpinMotorID = 5;
+  static final int algaeIntakeMotorID = 5;
   static final double bendSoftLimit = 0;
 }
 
 public class Algae extends SubsystemBase {
   private SparkMax algaeBendMotor =
       new SparkMax(algaeConstants.algaeBendMotorID, MotorType.kBrushless);
-  private SparkMax algaeSpinMotor =
-      new SparkMax(algaeConstants.algaeSpinMotorID, MotorType.kBrushed);
+  private SparkMax algaeIntakeMotor =
+      new SparkMax(algaeConstants.algaeIntakeMotorID, MotorType.kBrushed);
 
   public enum bendState {
     UP,
@@ -61,10 +61,10 @@ public class Algae extends SubsystemBase {
     // This method will be called once per scheduler run
 
   }
-
+//TODO change intake and output brushless motors to PID
   public Command intakeAlgae() {
     return Commands.parallel(
-        Commands.runOnce(() -> algaeSpinMotor.set(1)),
+        Commands.runOnce(() -> algaeIntakeMotor.set(1)),
         Commands.sequence(
             Commands.runOnce(
                 () ->
@@ -79,11 +79,30 @@ public class Algae extends SubsystemBase {
                         SparkBase.ResetMode.kResetSafeParameters,
                         SparkBase.PersistMode.kPersistParameters))));
   }
-
-  // TODO fill out command below
   public Command outputAlgae() {
-    // Run spin motor outward
-    // raise arm a bit
-    // once algae is entirely out, raise arm back up to vertical
+    return Commands.parallel(
+      Commands.runOnce(() -> algaeIntakeMotor.set(-1)),
+      Commands.sequence(
+          Commands.runOnce(
+              () ->
+                  algaeBendMotor
+                      .getClosedLoopController()
+                      .setReference(72, ControlType.kPosition)),
+          Commands.waitSeconds(1),
+          Commands.runOnce(
+              () ->
+                  algaeBendMotor.configure(
+                      algaeBendConfig(false),
+                      SparkBase.ResetMode.kResetSafeParameters,
+                      SparkBase.PersistMode.kPersistParameters))));
   }
+  //TODO use whiletrue or finallydo and make brushed motor controls
+public Command brushedIntake() {
+
+}).finallyDo(()-> stop ());
+}
+public Command outputBrushed() {
+
+}
+ 
 }
