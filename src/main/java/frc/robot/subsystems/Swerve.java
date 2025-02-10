@@ -13,7 +13,6 @@ import static edu.wpi.first.units.Units.Volts;
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -282,7 +281,7 @@ public class Swerve extends SubsystemBase {
     double slowModeCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
 
     if (current == SwerveState.SLOW) {
-      slowModeCoefficient *= MathUtil.clamp(slowModeCoefficient * MAX_SLOW_MODE, MAX_SLOW_MODE, 1);
+      slowModeCoefficient = 0.3;
     }
 
     x *= slowModeCoefficient;
