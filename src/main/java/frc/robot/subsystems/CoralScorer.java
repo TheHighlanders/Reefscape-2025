@@ -69,9 +69,14 @@ public class CoralScorer extends SubsystemBase {
     effector.set(-1.0);
   }
 
-  public Command effectorForwardUntilBrakeCMD() {
+  public Command intakeCMD() {
+    // Runs End Effector forward until game piece detected, then stops it
     return Commands.run(this::effectorForward, this)
         .finallyDo(this::effectorStop)
         .until(this::hasGamePiece);
+  }
+
+  public Command depositCMD() {
+    return Commands.run(this::effectorForward, this).finallyDo(this::effectorStop);
   }
 }

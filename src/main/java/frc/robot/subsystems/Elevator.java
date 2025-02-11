@@ -40,7 +40,7 @@ final class ElevatorConstants {
   static final double forwardSoftLimit = 50;
   static final double backwardSoftLimit = 0;
 
-  static final double[] outputRange = { -1d, 1d };
+  static final double[] outputRange = {-1d, 1d};
 
   static final double maxVelocity = 5;
   static final double maxAccel = 5;
@@ -71,29 +71,35 @@ public class Elevator extends SubsystemBase {
     SparkMaxConfig elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(ElevatorConstants.elevMotorID, MotorType.kBrushless);
     reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
-    elevatorMotorConfig.encoder
+    elevatorMotorConfig
+        .encoder
         .positionConversionFactor(ElevatorConstants.elevPCF)
         .velocityConversionFactor(ElevatorConstants.elevPCF / 60.0d);
 
     elevatorMotorConfig.idleMode(IdleMode.kBrake);
 
-    elevatorMotorConfig.limitSwitch
+    elevatorMotorConfig
+        .limitSwitch
         .reverseLimitSwitchType(Type.kNormallyOpen)
         .reverseLimitSwitchEnabled(true);
 
-    elevatorMotorConfig.softLimit
+    elevatorMotorConfig
+        .softLimit
         .forwardSoftLimit(ElevatorConstants.forwardSoftLimit) // TODO: chanege limit value
         .forwardSoftLimitEnabled(true)
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
     // Set Smart Motion and Smart Velocity parameters.
-    elevatorMotorConfig.closedLoop.maxMotion
+    elevatorMotorConfig
+        .closedLoop
+        .maxMotion
         .maxVelocity(ElevatorConstants.maxVelocity) // TODO find these desirerd values
         .maxAcceleration(ElevatorConstants.maxAccel)
         .allowedClosedLoopError(ElevatorConstants.maxClosedLoopError);
     // Set PID gains
-    elevatorMotorConfig.closedLoop // pid loop to control elevator elevating rate
+    elevatorMotorConfig
+        .closedLoop // pid loop to control elevator elevating rate
         .p(ElevatorConstants.elevP)
         .i(ElevatorConstants.elevI) // TODO find these desirerd values
         .d(ElevatorConstants.elevD)
@@ -121,31 +127,37 @@ public class Elevator extends SubsystemBase {
   }
 
   public Command setPosition(ElevatorState position) {
-    return Commands.runOnce(() -> {
-      uppydowny = position;
-      switch (uppydowny) {
-        case HOME:
-          targetPosition = ElevatorConstants.homeTarget;
-          break;
-        case L1_POSITION:
-          targetPosition = ElevatorConstants.l1Target;
-          break;
-        case L2_POSITION:
-          targetPosition = ElevatorConstants.l2Target;
-          break;
-        case L3_POSITION:
-          targetPosition = ElevatorConstants.l3Target;
-          break;
-        case L4_POSITION:
-          targetPosition = ElevatorConstants.l4Target;
-          break;
-        case CORAL_POSITION:
-          targetPosition = ElevatorConstants.coralPositionTarget;
-          break;
-      }
-      elevatorMotor.getClosedLoopController().setReference(
-          targetPosition, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, voltageOffset);
-    });
+    return Commands.runOnce(
+        () -> {
+          uppydowny = position;
+          switch (uppydowny) {
+            case HOME:
+              targetPosition = ElevatorConstants.homeTarget;
+              break;
+            case L1_POSITION:
+              targetPosition = ElevatorConstants.l1Target;
+              break;
+            case L2_POSITION:
+              targetPosition = ElevatorConstants.l2Target;
+              break;
+            case L3_POSITION:
+              targetPosition = ElevatorConstants.l3Target;
+              break;
+            case L4_POSITION:
+              targetPosition = ElevatorConstants.l4Target;
+              break;
+            case CORAL_POSITION:
+              targetPosition = ElevatorConstants.coralPositionTarget;
+              break;
+          }
+          elevatorMotor
+              .getClosedLoopController()
+              .setReference(
+                  targetPosition,
+                  ControlType.kMAXMotionPositionControl,
+                  ClosedLoopSlot.kSlot0,
+                  voltageOffset);
+        });
   }
 
   public void sendTuningConstants() {
@@ -172,5 +184,9 @@ public class Elevator extends SubsystemBase {
     voltageOffset = f;
     elevatorMotor.configure(
         config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+  }
+
+  public double getElevatorPosition() {
+    return elevatorMotor.getEncoder().getPosition();
   }
 }

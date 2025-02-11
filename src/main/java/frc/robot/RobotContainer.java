@@ -10,8 +10,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
-import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.CoralScorer;
+import frc.robot.subsystems.Elevator;
+import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,12 +21,13 @@ public class RobotContainer {
 
   private final Map<String, Subsystem> subsystems = new HashMap<>();
   CommandXboxController driver = new CommandXboxController(0);
+  CommandXboxController operator = new CommandXboxController(1);
 
-  Swerve drive = new Swerve();
   CoralScorer CoralScorer = new CoralScorer();
-  Autos autos = new Autos(drive);
   Climber climber = new Climber();
   Elevator elevator = new Elevator();
+  Swerve drive = new Swerve(elevator::getElevatorPosition);
+  Autos autos = new Autos(drive);
 
   AutoChooser chooser;
 
@@ -44,9 +46,21 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    driver.x().onTrue(drive.resetGyro());
-    driver.a().whileTrue(climber.createClimbInCommand());
-    driver.b().whileTrue(climber.createClimbOutCommand());
+    driver.start().onTrue(drive.resetGyro());
+
+    driver.y().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+    driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
+    driver.b().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
+    driver.a().onTrue(elevator.setPosition(ElevatorState.CORAL_POSITION));
+    driver
+        .rightTrigger(0.5)
+        .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(CoralScorer.intakeCMD()));
+
+    driver.leftTrigger(0.5).onTrue(CoralScorer.depositCMD());
+    driver.leftTrigger().whileTrue(drive.slowMode());
+
+    operator.y().whileTrue(climber.createClimbOutCommand());
+    operator.a().whileTrue(climber.createClimbInCommand());
   }
 
   private void configureAutonomous() {
