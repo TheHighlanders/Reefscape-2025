@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Elevator;
-import frc.robot.subsystems.EndEffector;
+import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Swerve;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +22,7 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
 
   Swerve drive = new Swerve();
-  EndEffector endEffector = new EndEffector();
+  CoralScorer CoralScorer = new CoralScorer();
   Autos autos = new Autos(drive);
   Climber climber = new Climber();
   Elevator elevator = new Elevator();
@@ -33,7 +33,7 @@ public class RobotContainer {
     chooser = new AutoChooser();
 
     subsystems.put("drive", drive);
-    subsystems.put("endEffector", endEffector);
+    subsystems.put("CoralScorer", CoralScorer);
     subsystems.put("climber", climber);
     subsystems.put("elevator", elevator);
 
