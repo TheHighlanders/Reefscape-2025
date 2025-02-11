@@ -21,7 +21,7 @@ final class ClimberConstants {
   static final int climbMotorID = 60;
 
   // Rotations on input shaft to output shaft including gearbox conversion
-  static final double climberPCF = 12.8;
+  static final double climberPCF = 360.0 / 337.5;
 
   static final double elevatorSoftLimit = 30;
 }
