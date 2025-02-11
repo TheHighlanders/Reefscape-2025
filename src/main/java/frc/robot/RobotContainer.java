@@ -12,9 +12,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.EndEffector;
-import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
-import frc.robot.utils.StateRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,11 +36,6 @@ public class RobotContainer {
     subsystems.put("endEffector", endEffector);
     subsystems.put("climber", climber);
     subsystems.put("elevator", elevator);
-
-    // This needs to be the last subsystem added
-    Superstructure superstructure = new Superstructure(subsystems);
-    subsystems.put("superstructure", superstructure);
-    StateRequest.init(superstructure);
 
     configureBindings();
     configureAutonomous();
