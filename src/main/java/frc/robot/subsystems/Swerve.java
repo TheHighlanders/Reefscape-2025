@@ -103,6 +103,7 @@ public class Swerve extends SubsystemBase {
 
   /** Creates a new Swerve. */
   public Swerve(DoubleSupplier elevatorHeight) {
+    if (!Constants.SwerveEnabled) return;
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
     }

@@ -19,6 +19,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 final class ElevatorConstants {
   static final int elevMotorID = 40;
@@ -68,6 +69,7 @@ public class Elevator extends SubsystemBase {
   private ElevatorState uppydowny = ElevatorState.HOME;
 
   public Elevator() { // Creates a new Elevator.
+    if (!Constants.ElevatorEnabled) return;
     SparkMaxConfig elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(ElevatorConstants.elevMotorID, MotorType.kBrushless);
     reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
@@ -120,13 +122,14 @@ public class Elevator extends SubsystemBase {
 
   @Override
   public void periodic() {
-
+    if (!Constants.ElevatorEnabled) return;
     if (reverseLimitSwitch.isPressed()) { // when the switch is pressed stop the motor
       elevatorMotor.getEncoder().setPosition(0);
     }
   }
 
   public Command setPosition(ElevatorState position) {
+    if (!Constants.ElevatorEnabled) return Commands.print("elevaor disabled");
     return Commands.runOnce(
         () -> {
           uppydowny = position;
@@ -187,6 +190,7 @@ public class Elevator extends SubsystemBase {
   }
 
   public double getElevatorPosition() {
+    if (!Constants.ElevatorEnabled) return 0;
     return elevatorMotor.getEncoder().getPosition();
   }
 }

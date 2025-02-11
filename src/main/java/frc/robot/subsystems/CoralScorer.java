@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 final class CoralScorerConstants {
   static final int intakePhotoSensorDIOPin = 0;
@@ -29,6 +30,7 @@ public class CoralScorer extends SubsystemBase {
   private final DigitalInput photoSensor;
 
   public CoralScorer() {
+    if (!Constants.CoralEnabled) return;
     photoSensor = new DigitalInput(CoralScorerConstants.intakePhotoSensorDIOPin);
     effector = new SparkMax(CoralScorerConstants.motorID, MotorType.kBrushless);
 
@@ -54,22 +56,24 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public boolean hasGamePiece() {
+    if (!Constants.CoralEnabled) return false;
     return photoSensor.get();
   }
 
   public void effectorStop() {
-    effector.set(0);
+    if (Constants.CoralEnabled) effector.set(0);
   }
 
   public void effectorForward() {
-    effector.set(1.0);
+    if (Constants.CoralEnabled) effector.set(1.0);
   }
 
   public void effectorReverse() {
-    effector.set(-1.0);
+    if (Constants.CoralEnabled) effector.set(-1.0);
   }
 
   public Command intakeCMD() {
+    if (!Constants.CoralEnabled) return Commands.print("coral disabled");
     // Runs End Effector forward until game piece detected, then stops it
     return Commands.run(this::effectorForward, this)
         .finallyDo(this::effectorStop)
@@ -77,6 +81,7 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public Command depositCMD() {
+    if (!Constants.CoralEnabled) return Commands.print("coral disabled");
     return Commands.run(this::effectorForward, this).finallyDo(this::effectorStop);
   }
 }

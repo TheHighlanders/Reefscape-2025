@@ -32,7 +32,7 @@ public class Climber extends SubsystemBase {
   private SparkMax climbMotor;
 
   public Climber() {
-    if (Constants.onlyConstructSwerve) return;
+    if (!Constants.ClimberEnabled) return;
     climbMotor = new SparkMax(ClimberConstants.climbMotorID, MotorType.kBrushless);
 
     SparkMaxConfig climberConfig = createClimberConfig();
@@ -58,6 +58,7 @@ public class Climber extends SubsystemBase {
   }
 
   public Command createClimbOutCommand() {
+    if (!Constants.ClimberEnabled) return Commands.print("climber disabled");
     // TODO: make sure 1 is correct direction
     return Commands.startEnd(
         () -> climbMotor.set(-1),
@@ -67,6 +68,7 @@ public class Climber extends SubsystemBase {
   }
 
   public Command createClimbInCommand() {
+    if (!Constants.ClimberEnabled) return Commands.print("climber disabled");
     return Commands.startEnd(() -> climbMotor.set(1), () -> climbMotor.set(0.0), this);
   }
 }

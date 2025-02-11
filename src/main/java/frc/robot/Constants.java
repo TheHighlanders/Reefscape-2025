@@ -15,5 +15,9 @@ public class Constants {
 
   public static final boolean sim = RobotBase.isSimulation();
 
-  public static final boolean onlyConstructSwerve = true;
+  public static final boolean SwerveEnabled = true;
+  public static final boolean CoralEnabled = true;
+  public static final boolean ElevatorEnabled = true;
+  public static final boolean ClimberEnabled = true;
+  public static final boolean AutosEnabled = true;
 }
