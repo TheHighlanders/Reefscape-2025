@@ -16,33 +16,34 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-final class EndEffectorConstants {
+final class CoralScorerConstants {
   static final int intakePhotoSensorDIOPin = 0;
   static final int motorID = 50;
   static final int currentLimit = 40;
+  static final boolean inverted = false;
 }
 
-public class EndEffector extends SubsystemBase {
+public class CoralScorer extends SubsystemBase {
   SparkMax effector;
 
   private final DigitalInput photoSensor;
 
-  public EndEffector() {
-    photoSensor = new DigitalInput(EndEffectorConstants.intakePhotoSensorDIOPin);
-    effector = new SparkMax(EndEffectorConstants.motorID, MotorType.kBrushless);
+  public CoralScorer() {
+    photoSensor = new DigitalInput(CoralScorerConstants.intakePhotoSensorDIOPin);
+    effector = new SparkMax(CoralScorerConstants.motorID, MotorType.kBrushless);
 
-    SparkMaxConfig effectorConfig = effectorConfg();
+    SparkMaxConfig effectorConfig = effectorConfig();
 
     effector.configure(
         effectorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
-  private SparkMaxConfig effectorConfg() {
+  private SparkMaxConfig effectorConfig() {
     SparkMaxConfig effectorConfig = new SparkMaxConfig();
 
-    effectorConfig.inverted(false);
+    effectorConfig.inverted(CoralScorerConstants.inverted);
 
-    effectorConfig.smartCurrentLimit(EndEffectorConstants.currentLimit).idleMode(IdleMode.kCoast);
+    effectorConfig.smartCurrentLimit(CoralScorerConstants.currentLimit).idleMode(IdleMode.kCoast);
 
     return effectorConfig;
   }
@@ -68,9 +69,14 @@ public class EndEffector extends SubsystemBase {
     effector.set(-1.0);
   }
 
-  public Command effectorForwardUntilBrakeCMD() {
+  public Command intakeCMD() {
+    // Runs End Effector forward until game piece detected, then stops it
     return Commands.run(this::effectorForward, this)
-        .until(this::hasGamePiece)
-        .finallyDo(this::effectorStop);
+        .finallyDo(this::effectorStop)
+        .until(this::hasGamePiece);
+  }
+
+  public Command depositCMD() {
+    return Commands.run(this::effectorForward, this).finallyDo(this::effectorStop);
   }
 }

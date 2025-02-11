@@ -10,11 +10,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
+import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
-import frc.robot.subsystems.EndEffector;
-import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
-import frc.robot.utils.StateRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,35 +20,29 @@ public class RobotContainer {
 
   private final Map<String, Subsystem> subsystems = new HashMap<>();
   CommandXboxController driver = new CommandXboxController(0);
+  CommandXboxController operator = new CommandXboxController(1);
 
-  Swerve drive = new Swerve();
-  EndEffector endEffector;
+  Elevator elevator = new Elevator();
+  Swerve drive = new Swerve(elevator::getElevatorPosition);
+  CoralScorer coralScorer;
   Autos autos;
   Climber climber;
-  Elevator elevator;
 
   AutoChooser chooser;
 
   public RobotContainer() {
     if (!Constants.onlyConstructSwerve) {
-      endEffector = new EndEffector();
+      coralScorer = new CoralScorer();
       autos = new Autos(drive);
       climber = new Climber();
-      elevator = new Elevator();
-
       chooser = new AutoChooser();
 
-      subsystems.put("endEffector", endEffector);
+      subsystems.put("endEffector", coralScorer);
       subsystems.put("climber", climber);
       subsystems.put("elevator", elevator);
     }
 
     subsystems.put("drive", drive);
-
-    // This needs to be the last subsystem added
-    Superstructure superstructure = new Superstructure(subsystems);
-    subsystems.put("superstructure", superstructure);
-    StateRequest.init(superstructure);
 
     configureBindings();
     if (!Constants.onlyConstructSwerve) {
