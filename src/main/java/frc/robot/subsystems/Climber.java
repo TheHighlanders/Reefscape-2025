@@ -20,6 +20,7 @@ final class ClimberConstants {
 
   static final int climbMotorID = 3;
 
+  // Rotations on input shaft to output shaft including gearbox conversion
   static final double climberPCF = 12.8;
 
   static final double elevatorSoftLimit = 30;
@@ -32,16 +33,14 @@ public class Climber extends SubsystemBase {
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
     climbMotor.configure(
-        climberConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     climbMotor.getEncoder().setPosition(0);
   }
 
   private SparkMaxConfig createClimberConfig() {
     SparkMaxConfig climberConfig = new SparkMaxConfig();
-    climberConfig
-        .encoder
-        .positionConversionFactor(ClimberConstants.climberPCF) // Rot to deg conversion
-        .velocityConversionFactor(ClimberConstants.climberPCF / 60.0d); // RPM to deg/s conversion
+    climberConfig.encoder.positionConversionFactor(
+        ClimberConstants.climberPCF); // Rot to deg conversion
 
     climberConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
@@ -53,9 +52,6 @@ public class Climber extends SubsystemBase {
 
     return climberConfig;
   }
-
-  @Override
-  public void periodic() {}
 
   public Command createClimbOutCommand() {
     // TODO: make sure 1 is correct direction
