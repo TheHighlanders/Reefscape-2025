@@ -10,9 +10,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
+import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
-import frc.robot.subsystems.EndEffector;
 import frc.robot.subsystems.Swerve;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,7 +23,7 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
-  EndEffector endEffector = new EndEffector();
+  CoralScorer CoralScorer = new CoralScorer();
   Climber climber = new Climber();
   Elevator elevator = new Elevator();
   Swerve drive = new Swerve(elevator::getElevatorPosition);
@@ -35,7 +35,7 @@ public class RobotContainer {
     chooser = new AutoChooser();
 
     subsystems.put("drive", drive);
-    subsystems.put("endEffector", endEffector);
+    subsystems.put("CoralScorer", CoralScorer);
     subsystems.put("climber", climber);
     subsystems.put("elevator", elevator);
 
@@ -54,9 +54,9 @@ public class RobotContainer {
     driver.a().onTrue(elevator.setPosition(ElevatorState.CORAL_POSITION));
     driver
         .rightTrigger(0.5)
-        .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(endEffector.intakeCMD()));
+        .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(CoralScorer.intakeCMD()));
 
-    driver.leftTrigger(0.5).onTrue(endEffector.depositCMD());
+    driver.leftTrigger(0.5).onTrue(CoralScorer.depositCMD());
     driver.leftTrigger().whileTrue(drive.slowMode());
 
     operator.y().whileTrue(climber.createClimbOutCommand());

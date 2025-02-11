@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 final class ClimberConstants {
   static final int climberCurrentLimit = 20;
 
-  static final int climbMotorID = 3;
+  static final int climbMotorID = 70;
 
   // Rotations on input shaft to output shaft including gearbox conversion
   static final double climberPCF = 12.8;
