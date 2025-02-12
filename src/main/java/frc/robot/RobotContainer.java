@@ -39,6 +39,8 @@ public class RobotContainer {
     if (Constants.SwerveEnabled)
       drive.setDefaultCommand(
           drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
+    if (Constants.ClimberEnabled)
+      climber.setDefaultCommand(climber.manualControl(operator::getLeftY));
   }
 
   private void configureBindings() {

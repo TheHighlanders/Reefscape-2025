@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import java.util.function.DoubleSupplier;
 
 final class ClimberConstants {
   static final int climberCurrentLimit = 20;
@@ -65,6 +66,10 @@ public class Climber extends SubsystemBase {
         // Stop the climber at the end of the command
         () -> climbMotor.set(0.0),
         this);
+  }
+
+  public Command manualControl(DoubleSupplier control) {
+    return Commands.run(() -> climbMotor.set(control.getAsDouble()), this);
   }
 
   public Command createClimbInCommand() {
