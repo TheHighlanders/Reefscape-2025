@@ -189,4 +189,8 @@ public class Elevator extends SubsystemBase {
   public double getElevatorPosition() {
     return elevatorMotor.getEncoder().getPosition();
   }
+
+  public double getElevatorPercentage(){
+    return (getElevatorPosition()/ElevatorConstants.l4Target);
+  }
 }

@@ -29,11 +29,14 @@ public class LEDS extends SubsystemBase {
   private final AddressableLED m_led;
   private final AddressableLEDBuffer m_buffer;
 
-  public LEDS() {
+  private Elevator elevator;
+
+  public LEDS(Elevator elevator) {
     m_led = new AddressableLED(kPort);
     m_buffer = new AddressableLEDBuffer(kLength);
     m_led.setLength(kLength);
     m_led.start();
+    this.elevator=elevator;
 
     // Set the default command to turn the strip off, otherwise the last colors written by
     // the last command to run will continue to be displayed.
@@ -47,6 +50,8 @@ public class LEDS extends SubsystemBase {
   public void periodic() {
     // Periodically send the latest LED color data to the LED strip for it to display
     m_led.setData(m_buffer);
+  
+
   }
 
 
@@ -60,6 +65,9 @@ public class LEDS extends SubsystemBase {
     return run(() -> pattern.applyTo(m_buffer));
   }
 
+  public Command elevatorLedPercentage(){
+    return runPattern(LEDPattern.progressMaskLayer(() -> elevator.getElevatorPercentage()));
+  }
 
 
 }

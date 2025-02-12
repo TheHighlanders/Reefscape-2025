@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 final class CoralScorerConstants {
   static final int intakePhotoSensorDIOPin = 0;
@@ -67,6 +68,10 @@ public class CoralScorer extends SubsystemBase {
 
   public void effectorReverse() {
     effector.set(-1.0);
+  }
+
+  public Trigger hasCoral(){
+  return new Trigger(()->hasGamePiece()==true);
   }
 
   public Command intakeCMD() {

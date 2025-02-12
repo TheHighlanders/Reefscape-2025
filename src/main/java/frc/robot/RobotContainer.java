@@ -5,7 +5,9 @@
 package frc.robot;
 
 import choreo.auto.AutoChooser;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -13,9 +15,11 @@ import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
+import frc.robot.subsystems.LEDS;
 import frc.robot.subsystems.Swerve;
 import java.util.HashMap;
 import java.util.Map;
+
 
 public class RobotContainer {
 
@@ -28,7 +32,7 @@ public class RobotContainer {
   Elevator elevator = new Elevator();
   Swerve drive = new Swerve(elevator::getElevatorPosition);
   Autos autos = new Autos(drive);
-
+  LEDS leds = new LEDS(elevator);
   AutoChooser chooser;
 
   public RobotContainer() {
@@ -43,15 +47,19 @@ public class RobotContainer {
     configureAutonomous();
 
     drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
+
+    CoralScorer.hasCoral().whileTrue(leds.runPattern(LEDPattern.solid(Color.kWhite)));
+
+
   }
 
   private void configureBindings() {
     driver.start().onTrue(drive.resetGyro());
 
-    driver.y().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
-    driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
-    driver.b().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
-    driver.a().onTrue(elevator.setPosition(ElevatorState.CORAL_POSITION));
+    driver.y().onTrue(elevator.setPosition(ElevatorState.L4_POSITION).alongWith(leds.elevatorLedPercentage()));
+    driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION).alongWith(leds.elevatorLedPercentage()));
+    driver.b().onTrue(elevator.setPosition(ElevatorState.L2_POSITION).alongWith(leds.elevatorLedPercentage()));
+    driver.a().onTrue(elevator.setPosition(ElevatorState.CORAL_POSITION).alongWith(leds.elevatorLedPercentage()));
     driver
         .rightTrigger(0.5)
         .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(CoralScorer.intakeCMD()));
@@ -61,6 +69,7 @@ public class RobotContainer {
 
     operator.y().whileTrue(climber.createClimbOutCommand());
     operator.a().whileTrue(climber.createClimbInCommand());
+
   }
 
   private void configureAutonomous() {
@@ -72,5 +81,10 @@ public class RobotContainer {
 
   public Command getAutonomousCommand() {
     return chooser.selectedCommand();
+
   }
+
+
+
 }
+
