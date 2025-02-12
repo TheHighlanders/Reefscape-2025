@@ -18,9 +18,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 final class ClimberConstants {
   static final int climberCurrentLimit = 20;
 
-  static final int climbMotorID = 3;
+  static final int climbMotorID = 60;
 
-  static final double climberPCF = 12.8;
+  // Rotations on input shaft to output shaft including gearbox conversion
+  static final double climberPCF = 360.0 / 337.5;
 
   static final double elevatorSoftLimit = 30;
 }
@@ -32,16 +33,14 @@ public class Climber extends SubsystemBase {
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
     climbMotor.configure(
-        climberConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     climbMotor.getEncoder().setPosition(0);
   }
 
   private SparkMaxConfig createClimberConfig() {
     SparkMaxConfig climberConfig = new SparkMaxConfig();
-    climberConfig
-        .encoder
-        .positionConversionFactor(ClimberConstants.climberPCF) // Rot to deg conversion
-        .velocityConversionFactor(ClimberConstants.climberPCF / 60.0d); // RPM to deg/s conversion
+    climberConfig.encoder.positionConversionFactor(
+        ClimberConstants.climberPCF); // Rot to deg conversion
 
     climberConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
@@ -53,9 +52,6 @@ public class Climber extends SubsystemBase {
 
     return climberConfig;
   }
-
-  @Override
-  public void periodic() {}
 
   public Command createClimbOutCommand() {
     // TODO: make sure 1 is correct direction

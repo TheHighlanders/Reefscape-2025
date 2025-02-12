@@ -38,9 +38,8 @@ final class ModuleConstants {
   static final double driveV = 4;
   static final double driveA = 8;
 
-  // TODO: Change to L2 (6.75) when we go to actual modules
   // Wheel diameter * pi / gear ratio
-  static final double drivePCF = inchesToMeters(3 + 13d / 16d) * Math.PI / 8.14d;
+  static final double drivePCF = inchesToMeters(3 + 13d / 16d) * Math.PI / 6.75d;
 
   static final double anglePCF = 360.0 / 12.8d;
 
