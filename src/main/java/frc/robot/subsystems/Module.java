@@ -20,6 +20,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -72,9 +73,8 @@ public class Module {
   private final Rotation2d KModuleAbsoluteOffset;
 
   /* Creates an additional FF controller for extra drive motor control */
-  private static SimpleMotorFeedforward driveFeedforward =
-      new SimpleMotorFeedforward(
-          ModuleConstants.driveS, ModuleConstants.driveV, ModuleConstants.driveA);
+  private static SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(
+      ModuleConstants.driveS, ModuleConstants.driveV, ModuleConstants.driveA);
 
   double ffOut = 0;
 
@@ -111,8 +111,7 @@ public class Module {
 
     driveConfig.inverted(false);
 
-    driveConfig
-        .encoder
+    driveConfig.encoder
         .positionConversionFactor(ModuleConstants.drivePCF)
         .velocityConversionFactor(ModuleConstants.drivePCF / 60.0d);
 
@@ -129,13 +128,11 @@ public class Module {
 
     angleConfig.inverted(false);
 
-    angleConfig
-        .encoder
+    angleConfig.encoder
         .positionConversionFactor(ModuleConstants.anglePCF)
         .velocityConversionFactor(ModuleConstants.anglePCF / 60.0d);
 
-    angleConfig
-        .closedLoop
+    angleConfig.closedLoop
         .pid(ModuleConstants.angleP, ModuleConstants.angleI, ModuleConstants.angleD)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(-180.0d, 180.0d)
@@ -149,7 +146,7 @@ public class Module {
   /**
    * Sets both Angle and Drive to desired states
    *
-   * @param state: Desired module state
+   * @param state:      Desired module state
    * @param isOpenLoop: Controls if the drive motor use a PID loop
    */
   public void setModuleState(SwerveModuleState state, boolean isOpenLoop) {
@@ -158,19 +155,47 @@ public class Module {
   }
 
   /**
-   * Sets the Drive Motor to a desired state, if isOpenLoop is true, it will be set as a percent, if
+   * Sets the Drive Motor to a desired state, if isOpenLoop is true, it will be
+   * set as a percent, if
    * it is false, than it will use a velocity PIDF loop
    *
-   * @param state: Desired module state
+   * @param state:      Desired module state
    * @param isOpenLoop: Whether or not to use a PID loop
    */
   public void setDriveState(SwerveModuleState state, boolean isOpenLoop) {
+
+    /* Back out the expected shimmy the drive motor will see */
+    /* Find the angular rate to determine what to back out */
+    double azimuthTurnRps = angleEncoder.getVelocity()/360;
+
+    /* Azimuth turn rate multiplied by coupling ratio provides back-out rps */
+    double driveRateBackOut = azimuthTurnRps * m_couplingRatioDriveRotorToCANcoder;
+
+    double angleToSetDeg = state.angle.getRotations();
+    double velocityToSet = (state.speedMetersPerSecond) - driveRateBackOut;
+
+    /*
+     * From FRC 900's whitepaper, we add a cosine compensator to the applied drive
+     * velocity
+     */
+    /* To reduce the "skew" that occurs when changing direction */
+    double steerMotorError = angleToSetDeg - (angleEncoder.getPosition()/360.0d);
+    // If error is close to 0 rotations, we're already there, so apply full power
+    // If the error is close to 0.25 rotations, then we're 90 degrees, so movement
+    // doesn't help
+    // us at all
+    // We take the absolute value of this to make sure we don't invert our drive,
+    // even though we
+    // shouldn't ever target over 90 degrees anyway
+    double cosineScalar = Math.abs(Math.cos(Units.rotationsToRadians(steerMotorError)));
+    velocityToSet *= cosineScalar;
+
     if (isOpenLoop) {
       double motorPercent = state.speedMetersPerSecond / ModuleConstants.maxSpeed;
       driveMotor.set(motorPercent);
       driveReference = state.speedMetersPerSecond;
     } else {
-      ffOut = driveFeedforward.calculate(state.speedMetersPerSecond);
+      ffOut = driveFeedforward.calculate(velocityToSet);
       driveController.setReference(
           state.speedMetersPerSecond, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ffOut);
       driveReference = state.speedMetersPerSecond;
@@ -178,7 +203,8 @@ public class Module {
   }
 
   /**
-   * Sets the Angle Motor to a desired state, does not set the state if speed is too low, to stop
+   * Sets the Angle Motor to a desired state, does not set the state if speed is
+   * too low, to stop
    * wheel jitter
    *
    * @param state: Desired module state
