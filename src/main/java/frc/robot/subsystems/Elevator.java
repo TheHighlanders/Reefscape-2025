@@ -21,9 +21,10 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 final class ElevatorConstants {
-  static final int elevMotorID = 40;
+  static final int elevMotorID = 41;
 
-  static final double elevPCF = 1;
+  // 2 for carriage movement relative to 1st stage, also includes DP, and gear ratio
+  static final double elevPCF = 2 * 1.751 / 9.0d * Math.PI;
 
   static final double homeTarget = 0;
   static final double l1Target = 0;
@@ -32,12 +33,13 @@ final class ElevatorConstants {
   static final double l4Target = 30;
   static final double coralPositionTarget = 40;
 
-  static final double feedFoward = 8;
-  static final double elevP = 1;
+  static final double feedFoward = 0;
+  static final double elevP = 0;
   static final double elevI = 0;
   static final double elevD = 0;
 
-  static final double forwardSoftLimit = 50;
+  static final double forwardSoftLimit = 55;
+  ;
   static final double backwardSoftLimit = 0;
 
   static final double[] outputRange = {-1d, 1d};
@@ -76,7 +78,7 @@ public class Elevator extends SubsystemBase {
         .positionConversionFactor(ElevatorConstants.elevPCF)
         .velocityConversionFactor(ElevatorConstants.elevPCF / 60.0d);
 
-    elevatorMotorConfig.idleMode(IdleMode.kBrake);
+    elevatorMotorConfig.idleMode(IdleMode.kBrake).inverted(true);
 
     elevatorMotorConfig
         .limitSwitch
@@ -124,6 +126,9 @@ public class Elevator extends SubsystemBase {
     if (reverseLimitSwitch.isPressed()) { // when the switch is pressed stop the motor
       elevatorMotor.getEncoder().setPosition(0);
     }
+
+    SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("Tuning/Elevator/VoltagekF", voltageOffset);
   }
 
   public Command setPosition(ElevatorState position) {
@@ -170,6 +175,7 @@ public class Elevator extends SubsystemBase {
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorMotor.getEncoder().getPosition());
     SmartDashboard.putNumber(
         "Tuning/Elevator/Error", targetPosition - elevatorMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("Tuning/Elevator/Setpoint", targetPosition);
   }
 
   public void updateTuningConstants() {
@@ -188,5 +194,10 @@ public class Elevator extends SubsystemBase {
 
   public double getElevatorPosition() {
     return elevatorMotor.getEncoder().getPosition();
+  }
+
+  public Command jogElevator(double speed) {
+    return Commands.run(() -> elevatorMotor.set(Math.max(Math.min(1, speed), -1)))
+        .finallyDo(() -> elevatorMotor.stopMotor());
   }
 }

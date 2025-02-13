@@ -18,12 +18,12 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 final class ClimberConstants {
   static final int climberCurrentLimit = 20;
 
-  static final int climbMotorID = 60;
+  static final int climbMotorID = 42;
 
   // Rotations on input shaft to output shaft including gearbox conversion
   static final double climberPCF = 360.0 / 337.5;
 
-  static final double elevatorSoftLimit = 30;
+  static final double climberSoftLimit = 80;
 }
 
 public class Climber extends SubsystemBase {
@@ -47,7 +47,7 @@ public class Climber extends SubsystemBase {
     climberConfig.smartCurrentLimit(ClimberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
     climberConfig
         .softLimit
-        .forwardSoftLimit(ClimberConstants.elevatorSoftLimit)
+        .forwardSoftLimit(ClimberConstants.climberSoftLimit)
         .forwardSoftLimitEnabled(true);
 
     return climberConfig;
@@ -56,13 +56,13 @@ public class Climber extends SubsystemBase {
   public Command createClimbOutCommand() {
     // TODO: make sure 1 is correct direction
     return Commands.startEnd(
-        () -> climbMotor.set(-1),
+        () -> climbMotor.set(-0.1),
         // Stop the climber at the end of the command
         () -> climbMotor.set(0.0),
         this);
   }
 
   public Command createClimbInCommand() {
-    return Commands.startEnd(() -> climbMotor.set(1), () -> climbMotor.set(0.0), this);
+    return Commands.startEnd(() -> climbMotor.set(0.1), () -> climbMotor.set(0.0), this);
   }
 }

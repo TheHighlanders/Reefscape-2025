@@ -23,7 +23,7 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
-  CoralScorer CoralScorer = new CoralScorer();
+  CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
   Elevator elevator = new Elevator();
   Swerve drive = new Swerve(elevator::getElevatorPosition);
@@ -35,32 +35,37 @@ public class RobotContainer {
     chooser = new AutoChooser();
 
     subsystems.put("drive", drive);
-    subsystems.put("CoralScorer", CoralScorer);
+    subsystems.put("CoralScorer", coralScorer);
     subsystems.put("climber", climber);
     subsystems.put("elevator", elevator);
 
     configureBindings();
     configureAutonomous();
 
-    drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
+    // drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY,
+    // driver::getRightX));
   }
 
   private void configureBindings() {
-    driver.start().onTrue(drive.resetGyro());
+    // driver.start().onTrue(drive.resetGyro());
 
-    driver.y().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
-    driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
-    driver.b().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
-    driver.a().onTrue(elevator.setPosition(ElevatorState.CORAL_POSITION));
-    driver
-        .rightTrigger(0.5)
-        .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(CoralScorer.intakeCMD()));
+    // driver.y().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+    // driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
+    // driver.b().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
+    // driver.a().onTrue(elevator.setPosition(ElevatorState.CORAL_POSITION));
+    // driver
+    //     .rightTrigger(0.5)
+    //
+    // .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(CoralScorer.intakeCMD()));
 
-    driver.leftTrigger(0.5).onTrue(CoralScorer.depositCMD());
-    driver.leftTrigger().whileTrue(drive.slowMode());
+    // driver.leftTrigger(0.5).onTrue(CoralScorer.depositCMD());
+    // driver.leftTrigger().whileTrue(drive.slowMode());
 
-    operator.y().whileTrue(climber.createClimbOutCommand());
-    operator.a().whileTrue(climber.createClimbInCommand());
+    // operator.y().whileTrue(climber.createClimbOutCommand());
+    // operator.a().whileTrue(climber.createClimbInCommand());
+
+    driver.x().whileTrue(elevator.setPosition(ElevatorState.L2_POSITION));
+    driver.b().whileTrue(elevator.setPosition(ElevatorState.HOME));
   }
 
   private void configureAutonomous() {

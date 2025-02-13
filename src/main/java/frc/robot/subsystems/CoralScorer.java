@@ -17,8 +17,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 final class CoralScorerConstants {
-  static final int intakePhotoSensorDIOPin = 0;
-  static final int motorID = 50;
+  static final int intakePhotoSensorDIOPin = 9;
+  static final int motorID = 51;
   static final int currentLimit = 40;
   static final boolean inverted = false;
 }
@@ -42,6 +42,7 @@ public class CoralScorer extends SubsystemBase {
     SparkMaxConfig effectorConfig = new SparkMaxConfig();
 
     effectorConfig.inverted(CoralScorerConstants.inverted);
+    effectorConfig.idleMode(IdleMode.kBrake);
 
     effectorConfig.smartCurrentLimit(CoralScorerConstants.currentLimit).idleMode(IdleMode.kCoast);
 
