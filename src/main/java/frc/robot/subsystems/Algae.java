@@ -22,6 +22,10 @@ final class AlgaeConstants {
   static final int algaeIntakeMotorID = 5;
   static final double bendSoftLimit = 0;
   static final double algaeIntakePosition = 72;
+ 
+  static final double bendP = 0;
+  static final double bendI = 0;
+  static final double bendD = 0;
 }
 
 public class Algae extends SubsystemBase {
@@ -40,7 +44,10 @@ public class Algae extends SubsystemBase {
     SparkMaxConfig algaeBendConfig = new SparkMaxConfig();
     algaeBendConfig.encoder
         .positionConversionFactor(AlgaeConstants.algaeBendPCF) // Rotations to degrees conversion
-        .velocityConversionFactor(AlgaeConstants.algaeBendPCF / 60.0d); // RPM to deg/s conversion
+        .velocityConversionFactor(AlgaeConstants.algaeBendPCF / 60.0d) // RPM to deg/s conversion
+        .p(AlgaeConstants.bendP)
+        .i(AlgaeConstants.bendI)
+        .d(AlgaeConstants.bendD);
 
     algaeBendConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
