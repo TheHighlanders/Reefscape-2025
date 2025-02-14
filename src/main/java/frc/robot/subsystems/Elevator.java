@@ -14,7 +14,6 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.LimitSwitchConfig.Type;
-import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -28,25 +27,24 @@ final class ElevatorConstants {
   // 2 for carriage movement relative to 1st stage, also includes DP, and gear ratio
   static final double elevPCF = 2 * 1.751 / 9.0d * Math.PI;
 
-  static final double homeTarget = 0;
+  static final double homeTarget = 5; // Position before autolanding
   static final double l1Target = 0;
   static final double l2Target = 10;
   static final double l3Target = 20;
-  static final double l4Target = 50;
+  static final double l4Target = 40;
   static final double coralPositionTarget = 40;
 
-  static final double feedForward = 0.25;
-  static final double elevP = 0.5;
+  static final double antiSlamVoltageOffset = 0.25; // Ignores ff
+  static final double feedForward = 0.8;
+  static final double elevP = 0.4;
   static final double elevI = 0;
-  static final double elevD = 0;
+  static final double elevD = 20;
 
   static final double forwardSoftLimit = 55;
   static final double backwardSoftLimit = 0;
 
-  static final double[] outputRange = {-1d, 1d};
-
-  static final double maxVelocity = 20;
-  static final double maxAccel = 50;
+  static final double maxVelocity = 80 * 60.0d;
+  static final double maxAccel = 3600;
   static final double maxClosedLoopError = 5;
 }
 
@@ -67,10 +65,14 @@ public class Elevator extends SubsystemBase {
   double targetPosition;
 
   double arbFF;
+  double antiSlamVoltageOffset;
 
   private ElevatorState uppydowny = ElevatorState.HOME;
 
   private SparkClosedLoopController elevatorController;
+
+  private double maxV = ElevatorConstants.maxVelocity;
+  private double maxA = ElevatorConstants.maxAccel;
 
   public Elevator() { // Creates a new Elevator.
     SparkMaxConfig elevatorMotorConfig = new SparkMaxConfig();
@@ -79,7 +81,7 @@ public class Elevator extends SubsystemBase {
     elevatorMotorConfig
         .encoder
         .positionConversionFactor(ElevatorConstants.elevPCF)
-        .velocityConversionFactor(ElevatorConstants.elevPCF / 60.0d);
+        .velocityConversionFactor(ElevatorConstants.elevPCF);
 
     elevatorMotorConfig.idleMode(IdleMode.kBrake).inverted(true);
 
@@ -95,28 +97,22 @@ public class Elevator extends SubsystemBase {
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
-    // Set Smart Motion and Smart Velocity parameters.
-    elevatorMotorConfig
-        .closedLoop
-        .maxMotion
-        .maxVelocity(ElevatorConstants.maxVelocity) // TODO find these desirerd values
-        .maxAcceleration(ElevatorConstants.maxAccel)
-        .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal);
-    // .allowedClosedLoopError(ElevatorConstants.maxClosedLoopError)
+    elevatorMotorConfig.closedLoop.outputRange(-0.85, 0.85);
+
+    elevatorMotorConfig.closedLoopRampRate(0.02);
 
     // Set PID gains
     elevatorMotorConfig
         .closedLoop // pid loop to control elevator elevating rate
         .p(ElevatorConstants.elevP)
         .i(ElevatorConstants.elevI) // TODO find these desirerd values
-        .d(ElevatorConstants.elevD)
-    // .outputRange(ElevatorConstants.outputRange[0], ElevatorConstants.outputRange[1])
-    ;
+        .d(ElevatorConstants.elevD);
 
     elevatorMotor.configure(
         elevatorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     arbFF = ElevatorConstants.feedForward;
+    antiSlamVoltageOffset = ElevatorConstants.antiSlamVoltageOffset;
 
     // Reset the position to 0 to start within the range of the soft limits
     elevatorMotor.getEncoder().setPosition(0);
@@ -129,6 +125,15 @@ public class Elevator extends SubsystemBase {
 
     if (reverseLimitSwitch.isPressed()) { // when the switch is pressed stop the motor
       elevatorMotor.getEncoder().setPosition(0);
+    }
+
+    if (uppydowny == ElevatorState.HOME) {
+      if (elevatorMotor.getEncoder().getPosition() <= ElevatorConstants.homeTarget
+          && !reverseLimitSwitch.isPressed()) {
+        // elevatorMotor.setVoltage(antiSlamVoltageOffset);
+        elevatorController.setReference(
+            antiSlamVoltageOffset, ControlType.kVoltage, ClosedLoopSlot.kSlot0, 0);
+      }
     }
 
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorMotor.getEncoder().getPosition());
@@ -166,7 +171,7 @@ public class Elevator extends SubsystemBase {
               break;
           }
           elevatorController.setReference(
-              targetPosition, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, arbFF);
+              targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
         });
   }
 
@@ -177,10 +182,15 @@ public class Elevator extends SubsystemBase {
     SmartDashboard.putNumber("Tuning/Elevator/Elevator D", config.getD());
     SmartDashboard.putNumber("Tuning/Elevator/Elevator F", arbFF);
 
+    SmartDashboard.putNumber("Tuning/Elevator/Anti Slam Voltage", antiSlamVoltageOffset);
+
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorMotor.getEncoder().getPosition());
     SmartDashboard.putNumber(
         "Tuning/Elevator/Error", targetPosition - elevatorMotor.getEncoder().getPosition());
     SmartDashboard.putNumber("Tuning/Elevator/Setpoint", targetPosition);
+
+    SmartDashboard.putNumber("Tuning/Elevator/Max V", maxV);
+    SmartDashboard.putNumber("Tuning/Elevator/Max A", maxA);
   }
 
   public void updateTuningConstants() {
@@ -191,9 +201,21 @@ public class Elevator extends SubsystemBase {
     double f =
         SmartDashboard.getNumber("Tuning/Elevator/Elevator F", ElevatorConstants.feedForward);
 
+    double mV = SmartDashboard.getNumber("Tuning/Elevator/Max V", maxV);
+    double mA = SmartDashboard.getNumber("Tuning/Elevator/Max A", maxA);
+
+    antiSlamVoltageOffset =
+        SmartDashboard.getNumber(
+            "Tuning/Elevator/Anti Slam Voltage", ElevatorConstants.antiSlamVoltageOffset);
+
     SparkMaxConfig config = new SparkMaxConfig();
     config.closedLoop.pid(p, i, d);
     arbFF = f;
+    config.closedLoop.maxMotion.maxAcceleration(mA);
+    config.closedLoop.maxMotion.maxVelocity(mV);
+    maxA = mA;
+    maxV = mV;
+
     elevatorMotor.configure(
         config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }

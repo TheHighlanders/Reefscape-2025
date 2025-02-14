@@ -49,10 +49,9 @@ public class RobotContainer {
   private void configureBindings() {
     // driver.start().onTrue(drive.resetGyro());
 
-    // driver.y().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
-    // driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
-    // driver.b().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
-    // driver.a().onTrue(elevator.setPosition(ElevatorState.CORAL_POSITION));
+    driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
+    driver.y().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
+    driver.a().onTrue(elevator.setPosition(ElevatorState.HOME));
     // driver
     //     .rightTrigger(0.5)
     //
@@ -63,9 +62,6 @@ public class RobotContainer {
 
     // operator.y().whileTrue(climber.createClimbOutCommand());
     // operator.a().whileTrue(climber.createClimbInCommand());
-
-    driver.x().whileTrue(elevator.setPosition(ElevatorState.L2_POSITION));
-    driver.b().whileTrue(elevator.setPosition(ElevatorState.HOME));
   }
 
   private void configureAutonomous() {
