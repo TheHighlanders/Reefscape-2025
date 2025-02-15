@@ -447,6 +447,9 @@ public class Swerve extends SubsystemBase {
           "ModuleDebug/Module" + m.getModuleNumber() + "FFoutput", m.getFFDriveOutput());
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "MotorOutput", m.getAppliedOutputDrive());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "AbsoluteEncoder",
+          m.findAbsoluteOffsetCalibrations().getDegrees());
     }
   }
 

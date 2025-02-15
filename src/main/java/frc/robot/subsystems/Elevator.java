@@ -16,6 +16,8 @@ import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.LimitSwitchConfig.Type;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -35,7 +37,7 @@ final class ElevatorConstants {
   static final double coralPositionTarget = 40;
 
   static final double antiSlamVoltageOffset = 0.25; // Ignores ff
-  static final double feedForward = 0.8;
+  static final double feedForward = 0.9;
   static final double elevP = 0.4;
   static final double elevI = 0;
   static final double elevD = 20;
@@ -128,11 +130,14 @@ public class Elevator extends SubsystemBase {
     }
 
     if (uppydowny == ElevatorState.HOME) {
-      if (elevatorMotor.getEncoder().getPosition() <= ElevatorConstants.homeTarget
+      if (MathUtil.isNear(
+              ElevatorConstants.homeTarget, elevatorMotor.getEncoder().getPosition(), 0.5)
           && !reverseLimitSwitch.isPressed()) {
         // elevatorMotor.setVoltage(antiSlamVoltageOffset);
         elevatorController.setReference(
             antiSlamVoltageOffset, ControlType.kVoltage, ClosedLoopSlot.kSlot0, 0);
+
+        DriverStation.reportWarning("IN AUTOLAND", false);
       }
     }
 
