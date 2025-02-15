@@ -42,8 +42,7 @@ public class RobotContainer {
     configureBindings();
     configureAutonomous();
 
-    // drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY,
-    // driver::getRightX));
+    drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
   private void configureBindings() {
@@ -52,6 +51,11 @@ public class RobotContainer {
     driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     driver.y().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
     driver.a().onTrue(elevator.setPosition(ElevatorState.HOME));
+    driver.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+    driver.povDown().whileTrue(elevator.jogElevator(-0.3));
+    driver.povUp().whileTrue(elevator.jogElevator(0.3));
+
+    driver.start().whileTrue(elevator.zeroElevator());
     // driver
     //     .rightTrigger(0.5)
     //

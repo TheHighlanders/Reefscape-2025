@@ -55,7 +55,7 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public boolean hasGamePiece() {
-    return photoSensor.get();
+    return !photoSensor.get();
   }
 
   public void effectorStop() {

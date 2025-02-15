@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -33,7 +34,7 @@ final class ElevatorConstants {
   static final double l1Target = 0;
   static final double l2Target = 10;
   static final double l3Target = 20;
-  static final double l4Target = 40;
+  static final double l4Target = 55;
   static final double coralPositionTarget = 40;
 
   static final double antiSlamVoltageOffset = 0.25; // Ignores ff
@@ -73,6 +74,8 @@ public class Elevator extends SubsystemBase {
 
   private SparkClosedLoopController elevatorController;
 
+  private RelativeEncoder elevatorEncoder;
+
   private double maxV = ElevatorConstants.maxVelocity;
   private double maxA = ElevatorConstants.maxAccel;
 
@@ -99,9 +102,9 @@ public class Elevator extends SubsystemBase {
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
-    elevatorMotorConfig.closedLoop.outputRange(-0.85, 0.85);
+    elevatorMotorConfig.closedLoop.outputRange(-0.4, 0.85);
 
-    elevatorMotorConfig.closedLoopRampRate(0.02);
+    elevatorMotorConfig.closedLoopRampRate(0.05);
 
     // Set PID gains
     elevatorMotorConfig
@@ -117,21 +120,23 @@ public class Elevator extends SubsystemBase {
     antiSlamVoltageOffset = ElevatorConstants.antiSlamVoltageOffset;
 
     // Reset the position to 0 to start within the range of the soft limits
-    elevatorMotor.getEncoder().setPosition(0);
 
     elevatorController = elevatorMotor.getClosedLoopController();
+
+    elevatorEncoder = elevatorMotor.getEncoder();
+
+    elevatorEncoder.setPosition(0);
   }
 
   @Override
   public void periodic() {
 
     if (reverseLimitSwitch.isPressed()) { // when the switch is pressed stop the motor
-      elevatorMotor.getEncoder().setPosition(0);
+      elevatorEncoder.setPosition(0);
     }
 
     if (uppydowny == ElevatorState.HOME) {
-      if (MathUtil.isNear(
-              ElevatorConstants.homeTarget, elevatorMotor.getEncoder().getPosition(), 0.5)
+      if (MathUtil.isNear(ElevatorConstants.homeTarget, elevatorEncoder.getPosition(), 0.5)
           && !reverseLimitSwitch.isPressed()) {
         // elevatorMotor.setVoltage(antiSlamVoltageOffset);
         elevatorController.setReference(
@@ -141,14 +146,26 @@ public class Elevator extends SubsystemBase {
       }
     }
 
-    SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorMotor.getEncoder().getPosition());
+    if (elevatorEncoder.getPosition() < 0) {
+      elevatorEncoder.setPosition(0);
+    }
+
+    SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
     SmartDashboard.putNumber("Tuning/Elevator/VoltagekF", arbFF);
     SmartDashboard.putNumber("Tuning/Elevator/Setpoint", targetPosition);
     SmartDashboard.putNumber("Tuning/Elevator/Output", elevatorMotor.getAppliedOutput());
-    SmartDashboard.putNumber("Tuning/Elevator/Velocity", elevatorMotor.getEncoder().getVelocity());
+    SmartDashboard.putNumber("Tuning/Elevator/Velocity", elevatorEncoder.getVelocity());
 
     SmartDashboard.putNumber(
-        "Tuning/Elevator/Error", targetPosition - elevatorMotor.getEncoder().getPosition());
+        "Tuning/Elevator/Error", targetPosition - elevatorEncoder.getPosition());
+  }
+
+  public Command zeroElevator() {
+    return Commands.runOnce(
+            () -> {
+              elevatorEncoder.setPosition(0);
+            })
+        .ignoringDisable(true);
   }
 
   public Command setPosition(ElevatorState position) {
@@ -189,9 +206,9 @@ public class Elevator extends SubsystemBase {
 
     SmartDashboard.putNumber("Tuning/Elevator/Anti Slam Voltage", antiSlamVoltageOffset);
 
-    SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
     SmartDashboard.putNumber(
-        "Tuning/Elevator/Error", targetPosition - elevatorMotor.getEncoder().getPosition());
+        "Tuning/Elevator/Error", targetPosition - elevatorEncoder.getPosition());
     SmartDashboard.putNumber("Tuning/Elevator/Setpoint", targetPosition);
 
     SmartDashboard.putNumber("Tuning/Elevator/Max V", maxV);
@@ -226,7 +243,7 @@ public class Elevator extends SubsystemBase {
   }
 
   public double getElevatorPosition() {
-    return elevatorMotor.getEncoder().getPosition();
+    return elevatorEncoder.getPosition();
   }
 
   public Command jogElevator(double speed) {
