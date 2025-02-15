@@ -42,10 +42,6 @@ public class Robot extends TimedRobot {
     } else if (loops % 25 == 0) {
       m_robotContainer.drive.resetEncoders();
     }
-    if (loops % 50 == 12) {
-      m_robotContainer.drive.resetEncoders();
-      //
-    }
     if (loops % 50 == 37) {
       m_robotContainer.elevator.updateTuningConstants();
     }

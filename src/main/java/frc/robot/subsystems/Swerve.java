@@ -178,6 +178,8 @@ public class Swerve extends SubsystemBase {
         getGyroAngle(),
         getModulePostions());
     field.setRobotPose(getPose());
+
+    sendDiagnostics();
   }
 
   public Pose2d getPose() {
