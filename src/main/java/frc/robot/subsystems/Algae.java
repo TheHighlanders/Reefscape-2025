@@ -22,39 +22,44 @@ final class AlgaeConstants {
   static final int algaeIntakeMotorID = 5;
   static final double bendSoftLimit = 0;
   static final double algaeIntakePosition = 72;
- 
+
   static final double bendP = 0;
   static final double bendI = 0;
   static final double bendD = 0;
 }
 
 public class Algae extends SubsystemBase {
-  private SparkMax algaeBendMotor = new SparkMax(AlgaeConstants.algaeBendMotorID, MotorType.kBrushless);
-  private SparkMax algaeIntakeMotor = new SparkMax(AlgaeConstants.algaeIntakeMotorID, MotorType.kBrushed);
+  private SparkMax algaeBendMotor =
+      new SparkMax(AlgaeConstants.algaeBendMotorID, MotorType.kBrushless);
+  private SparkMax algaeIntakeMotor =
+      new SparkMax(AlgaeConstants.algaeIntakeMotorID, MotorType.kBrushed);
 
   public enum bendState {
     UP,
     DOWN
   }
 
-  public Algae() {
-  }
+  public Algae() {}
 
   private SparkMaxConfig algaeBendConfig(boolean coast) {
     SparkMaxConfig algaeBendConfig = new SparkMaxConfig();
-    algaeBendConfig.encoder
+    algaeBendConfig
+        .encoder
         .positionConversionFactor(AlgaeConstants.algaeBendPCF) // Rotations to degrees conversion
-        .velocityConversionFactor(AlgaeConstants.algaeBendPCF / 60.0d) // RPM to deg/s conversion
+        .velocityConversionFactor(AlgaeConstants.algaeBendPCF / 60.0d); // RPM to deg/s conversion
+
+    algaeBendConfig
+        .closedLoop
+        .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .p(AlgaeConstants.bendP)
         .i(AlgaeConstants.bendI)
         .d(AlgaeConstants.bendD);
 
-    algaeBendConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
-
     algaeBendConfig
         .smartCurrentLimit(AlgaeConstants.algaeBendCurrentLimit)
         .idleMode(coast ? IdleMode.kCoast : IdleMode.kBrake);
-    algaeBendConfig.softLimit
+    algaeBendConfig
+        .softLimit
         .forwardSoftLimit(AlgaeConstants.bendSoftLimit)
         .forwardSoftLimitEnabled(true);
 
@@ -64,26 +69,29 @@ public class Algae extends SubsystemBase {
   // TODO change intake and output brushless motors to PID
   public Command intakeAlgae() {
     return Commands.startEnd(
-        () -> algaeBendMotor
-            .getClosedLoopController()
-            .setReference(AlgaeConstants.algaeIntakePosition, ControlType.kMAXMotionPositionControl),
-
-        () -> algaeBendMotor.configure(
-            algaeBendConfig(true),
-            SparkBase.ResetMode.kResetSafeParameters,
-            SparkBase.PersistMode.kPersistParameters));
+        () ->
+            algaeBendMotor
+                .getClosedLoopController()
+                .setReference(
+                    AlgaeConstants.algaeIntakePosition, ControlType.kMAXMotionPositionControl),
+        () ->
+            algaeBendMotor.configure(
+                algaeBendConfig(true),
+                SparkBase.ResetMode.kResetSafeParameters,
+                SparkBase.PersistMode.kPersistParameters));
   }
 
   public Command outputAlgae() {
     return Commands.startEnd(
-        () -> algaeBendMotor
-            .getClosedLoopController()
-            .setReference(AlgaeConstants.algaeIntakePosition, ControlType.kPosition),
-
-        () -> algaeBendMotor.configure(
-            algaeBendConfig(false),
-            SparkBase.ResetMode.kResetSafeParameters,
-            SparkBase.PersistMode.kPersistParameters));
+        () ->
+            algaeBendMotor
+                .getClosedLoopController()
+                .setReference(AlgaeConstants.algaeIntakePosition, ControlType.kPosition),
+        () ->
+            algaeBendMotor.configure(
+                algaeBendConfig(false),
+                SparkBase.ResetMode.kResetSafeParameters,
+                SparkBase.PersistMode.kPersistParameters));
   }
 
   // TODO LOOK AT VALUES
@@ -94,5 +102,4 @@ public class Algae extends SubsystemBase {
   public Command outputBrushed() {
     return Commands.startEnd(() -> algaeIntakeMotor.set(-1), () -> algaeIntakeMotor.set(0.0), this);
   }
-
 }
