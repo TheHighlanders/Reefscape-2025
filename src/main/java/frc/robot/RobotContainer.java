@@ -61,11 +61,12 @@ public class RobotContainer {
     //
     // .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(CoralScorer.intakeCMD()));
 
-    // driver.leftTrigger(0.5).onTrue(CoralScorer.depositCMD());
+    driver.leftTrigger(0.5).whileTrue(coralScorer.depositCMD());
+    driver.rightTrigger(0.5).whileTrue(coralScorer.intakeCMD());
     // driver.leftTrigger().whileTrue(drive.slowMode());
 
-    // operator.y().whileTrue(climber.createClimbOutCommand());
-    // operator.a().whileTrue(climber.createClimbInCommand());
+    operator.y().whileTrue(climber.createClimbOutCommand());
+    operator.a().whileTrue(climber.createClimbInCommand());
   }
 
   private void configureAutonomous() {

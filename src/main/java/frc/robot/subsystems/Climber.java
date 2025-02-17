@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 final class ClimberConstants {
-  static final int climberCurrentLimit = 20;
+  static final int climberCurrentLimit = 40;
 
   static final int climbMotorID = 42;
 
@@ -63,6 +63,6 @@ public class Climber extends SubsystemBase {
   }
 
   public Command createClimbInCommand() {
-    return Commands.startEnd(() -> climbMotor.set(0.1), () -> climbMotor.set(0.0), this);
+    return Commands.startEnd(() -> climbMotor.set(1), () -> climbMotor.set(0.0), this);
   }
 }
