@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.Algae;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.EndEffector;
@@ -26,6 +27,7 @@ public class RobotContainer {
   Autos autos = new Autos(drive);
   Climber climber = new Climber();
   Elevator elevator = new Elevator();
+  Algae algae = new Algae();
 
   AutoChooser chooser;
 
@@ -47,6 +49,11 @@ public class RobotContainer {
     driver.x().onTrue(drive.resetGyro());
     driver.a().whileTrue(climber.createClimbInCommand());
     driver.b().whileTrue(climber.createClimbOutCommand());
+
+    driver.rightBumper().whileTrue(algae.intakeAlgae());
+    driver.leftBumper().whileTrue(algae.outputAlgae());
+    driver.back().onTrue(algae.brushedIntake());
+    driver.start().onTrue(algae.outputBrushed());
   }
 
   private void configureAutonomous() {

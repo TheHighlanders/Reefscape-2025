@@ -11,19 +11,20 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 final class AlgaeConstants {
-  static final int algaeBendMotorID = 4;
+  static final int algaeBendMotorID = 3;
   static final double algaeBendPCF = 12.8; // check what value the PCF should actually be
   static final int algaeBendCurrentLimit = 0;
-  static final int algaeIntakeMotorID = 5;
+  static final int algaeIntakeMotorID = 4;
   static final double bendSoftLimit = 0;
   static final double algaeIntakePosition = 72;
 
-  static final double bendP = 0;
+  static final double bendP = 1;
   static final double bendI = 0;
   static final double bendD = 0;
 }
@@ -40,6 +41,11 @@ public class Algae extends SubsystemBase {
   }
 
   public Algae() {}
+
+  @Override
+  public void periodic() {
+    SmartDashboard.putNumber("Algae position", algaeBendMotor.getEncoder().getPosition());
+  }
 
   private SparkMaxConfig algaeBendConfig(boolean coast) {
     SparkMaxConfig algaeBendConfig = new SparkMaxConfig();
