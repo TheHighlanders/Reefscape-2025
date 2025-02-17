@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.Algae;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
@@ -28,6 +29,7 @@ public class RobotContainer {
   Elevator elevator = new Elevator();
   Swerve drive = new Swerve(elevator::getElevatorPosition);
   Autos autos = new Autos(drive);
+  Algae algae = new Algae();
 
   AutoChooser chooser;
 
