@@ -4,16 +4,25 @@
 
 package frc.robot;
 
+import java.util.Optional;
+
+import choreo.Choreo;
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
+import choreo.trajectory.SwerveSample;
+import choreo.trajectory.Trajectory;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.Swerve;
 
 /** Add your docs here. */
 public class Autos {
+  private final Optional<Trajectory<SwerveSample>> trajectory = Choreo.loadTrajectory("midStart -> L1ID21");
   Swerve drive;
   AutoFactory autoFactory;
+  
+  private final Timer timer = new Timer();
 
   public Autos(Swerve drive) {
     this.drive = drive;
