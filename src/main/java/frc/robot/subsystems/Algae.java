@@ -19,12 +19,12 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 final class AlgaeConstants {
   static final int algaeBendMotorID = 3;
   static final double algaeBendPCF = 12.8; // check what value the PCF should actually be
-  static final int algaeBendCurrentLimit = 0;
+  static final int algaeBendCurrentLimit = 20;
   static final int algaeIntakeMotorID = 4;
-  static final double bendSoftLimit = 0;
-  static final double algaeIntakePosition = 72;
+  static final double bendSoftLimit = 20;
+  static final double algaeIntakePosition = -25;
 
-  static final double bendP = 1;
+  static final double bendP = 10;
   static final double bendI = 0;
   static final double bendD = 0;
 }
@@ -45,6 +45,10 @@ public class Algae extends SubsystemBase {
   @Override
   public void periodic() {
     SmartDashboard.putNumber("Algae position", algaeBendMotor.getEncoder().getPosition());
+    SmartDashboard.putNumber("algae current", algaeBendMotor.getAppliedOutput());
+    ;
+    //  SmartDashboard.putNumber("algae current", algaeIntakePosition.getPosition());;
+
   }
 
   private SparkMaxConfig algaeBendConfig(boolean coast) {
@@ -69,17 +73,15 @@ public class Algae extends SubsystemBase {
         .forwardSoftLimit(AlgaeConstants.bendSoftLimit)
         .forwardSoftLimitEnabled(true);
 
+    algaeBendMotor.getEncoder().setPosition(0);
+
     return algaeBendConfig;
   }
 
   // TODO change intake and output brushless motors to PID
   public Command intakeAlgae() {
     return Commands.startEnd(
-        () ->
-            algaeBendMotor
-                .getClosedLoopController()
-                .setReference(
-                    AlgaeConstants.algaeIntakePosition, ControlType.kMAXMotionPositionControl),
+        () -> algaeBendMotor.getClosedLoopController().setReference(0, ControlType.kPosition),
         () ->
             algaeBendMotor.configure(
                 algaeBendConfig(true),

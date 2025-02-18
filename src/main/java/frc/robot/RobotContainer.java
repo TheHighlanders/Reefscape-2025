@@ -69,6 +69,12 @@ public class RobotContainer {
 
     operator.y().whileTrue(climber.createClimbOutCommand());
     operator.a().whileTrue(climber.createClimbInCommand());
+
+    operator.leftTrigger(0.5).whileTrue(algae.brushedIntake());
+    operator.rightTrigger(0.5).whileTrue(algae.outputBrushed());
+
+    operator.x().whileTrue(algae.intakeAlgae());
+    operator.b().whileTrue(algae.outputAlgae());
   }
 
   private void configureAutonomous() {
