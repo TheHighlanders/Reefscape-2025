@@ -1,11 +1,14 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.math.util.Units.inchesToMeters;
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Volts;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
-import com.revrobotics.spark.SparkAbsoluteEncoder;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -16,13 +19,14 @@ import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
-import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.units.measure.Angle;
 import frc.robot.Constants;
 
 final class ModuleConstants {
@@ -66,19 +70,18 @@ public class Module {
   public double angleReference;
   public double driveReference;
 
-  public SparkAbsoluteEncoder absoluteEncoder;
+  public CANcoder absoluteEncoder;
+  public StatusSignal<Angle> absoluteEncoderPosition;
 
-  private final Rotation2d KModuleAbsoluteOffset;
+  public boolean hasZeroedAbsolute = false;
 
   /* Creates an additional FF controller for extra drive motor control */
-  private static SimpleMotorFeedforward driveFeedforward =
-      new SimpleMotorFeedforward(
-          ModuleConstants.driveS, ModuleConstants.driveV, ModuleConstants.driveA);
+  private static SimpleMotorFeedforward driveFeedforward = new SimpleMotorFeedforward(
+      ModuleConstants.driveS, ModuleConstants.driveV, ModuleConstants.driveA);
 
   double ffOut = 0;
 
   public Module(int moduleNumber) {
-    this.KModuleAbsoluteOffset = Rotation2d.fromDegrees(Constants.absoluteOffsets[moduleNumber]);
     this.moduleNumber = moduleNumber;
 
     driveMotor = new SparkMax(Constants.driveMotorIDs[moduleNumber], MotorType.kBrushless);
@@ -95,13 +98,16 @@ public class Module {
     driveEncoder = driveMotor.getEncoder();
     angleEncoder = angleMotor.getEncoder();
 
-    absoluteEncoder = angleMotor.getAbsoluteEncoder();
+    absoluteEncoder = new CANcoder(Constants.canCoderIDs[moduleNumber]);
+    absoluteEncoderPosition = absoluteEncoder.getPosition();
 
     angleController = angleMotor.getClosedLoopController();
     driveController = driveMotor.getClosedLoopController();
 
     driveEncoder.setPosition(0);
-    angleEncoder.setPosition(0);
+
+    // Zero Angle Encoder (NEO internal) against CANcoder
+    resetAbsolute();
   }
 
   private SparkMaxConfig createDriveConfig() {
@@ -109,8 +115,7 @@ public class Module {
 
     driveConfig.inverted(false);
 
-    driveConfig
-        .encoder
+    driveConfig.encoder
         .positionConversionFactor(ModuleConstants.drivePCF)
         .velocityConversionFactor(ModuleConstants.drivePCF / 60.0d);
 
@@ -127,13 +132,11 @@ public class Module {
 
     angleConfig.inverted(false);
 
-    angleConfig
-        .encoder
+    angleConfig.encoder
         .positionConversionFactor(ModuleConstants.anglePCF)
         .velocityConversionFactor(ModuleConstants.anglePCF / 60.0d);
 
-    angleConfig
-        .closedLoop
+    angleConfig.closedLoop
         .pid(ModuleConstants.angleP, ModuleConstants.angleI, ModuleConstants.angleD)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(-180.0d, 180.0d)
@@ -147,7 +150,7 @@ public class Module {
   /**
    * Sets both Angle and Drive to desired states
    *
-   * @param state: Desired module state
+   * @param state:      Desired module state
    * @param isOpenLoop: Controls if the drive motor use a PID loop
    */
   public void setModuleState(SwerveModuleState state, boolean isOpenLoop) {
@@ -156,10 +159,11 @@ public class Module {
   }
 
   /**
-   * Sets the Drive Motor to a desired state, if isOpenLoop is true, it will be set as a percent, if
+   * Sets the Drive Motor to a desired state, if isOpenLoop is true, it will be
+   * set as a percent, if
    * it is false, than it will use a velocity PIDF loop
    *
-   * @param state: Desired module state
+   * @param state:      Desired module state
    * @param isOpenLoop: Whether or not to use a PID loop
    */
   public void setDriveState(SwerveModuleState state, boolean isOpenLoop) {
@@ -176,7 +180,8 @@ public class Module {
   }
 
   /**
-   * Sets the Angle Motor to a desired state, does not set the state if speed is too low, to stop
+   * Sets the Angle Motor to a desired state, does not set the state if speed is
+   * too low, to stop
    * wheel jitter
    *
    * @param state: Desired module state
@@ -230,30 +235,14 @@ public class Module {
    * @return Position of the module between 0 and 360, as a Rotation2d
    */
   public Rotation2d getAbsolutePosition() {
-    /* Gets Position from SparkMAX absol encoder * 360 to degrees */
-    double positionDeg = absoluteEncoder.getPosition() * 360.0d;
-
-    /* Subtracts magnetic offset to get wheel position */
-    positionDeg -= KModuleAbsoluteOffset.getDegrees();
-
-    /* Inverts if necesary */
-    positionDeg *= (ModuleConstants.absolInverted ? -1 : 1);
-
-    return Rotation2d.fromDegrees(positionDeg);
-  }
-
-  // DO NOT USE THIS WITHOUT A GOOD REASON!
-  public Rotation2d findAbsoluteOffsetCalibrations() {
-    DriverStation.reportError(
-        "CALLING NO OFFSET ABSOL POSITION, if not calibrating wheels, you have done something very wrong",
-        false);
-    /* Gets Position from SparkMAX absol encoder * 360 to degrees */
-    double positionDeg = absoluteEncoder.getPosition() * 360.0d;
-
-    /* Inverts if necesary */
-    positionDeg *= (ModuleConstants.absolInverted ? -1 : 1);
-
-    return Rotation2d.fromDegrees(positionDeg);
+    /* Gets Position from CANcoder */
+    if (BaseStatusSignal.isAllGood(absoluteEncoderPosition)) {
+      return Rotation2d.fromDegrees(absoluteEncoderPosition.getValue().in(Degrees));
+    } else if (hasZeroedAbsolute){
+      return Rotation2d.fromDegrees(angleEncoder.getPosition());
+    } else {
+      return new Rotation2d();
+    }
   }
 
   /**
@@ -266,6 +255,14 @@ public class Module {
   public void driveVolts(Measure<VoltageUnit> voltage) {
     setAngleState(new SwerveModuleState(0, new Rotation2d()));
     driveMotor.setVoltage(voltage.in(Volts));
+  }
+
+  public boolean resetAbsolute(){
+    if (BaseStatusSignal.isAllGood(absoluteEncoderPosition)) {
+      angleEncoder.setPosition(absoluteEncoderPosition.getValue().in(Degrees));
+      hasZeroedAbsolute = true;
+    }
+    return hasZeroedAbsolute;
   }
 
   // TODO: Investigate
@@ -291,7 +288,7 @@ public class Module {
 
   /** Resets the Angle Motor to the position of the absolute position */
   public void setIntegratedAngleToAbsolute() {
-    angleEncoder.setPosition(/*getAbsolutePosition().getDegrees()*/ 0);
+    angleEncoder.setPosition(/* getAbsolutePosition().getDegrees() */ 0);
   }
 
   public boolean getAngleInverted() {
