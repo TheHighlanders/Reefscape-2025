@@ -13,6 +13,7 @@ import static edu.wpi.first.units.Units.Volts;
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -54,9 +55,9 @@ final class SwerveConstants {
 
   static final double accelLim = 1.5;
 
-  static final double translateP = 0;
+  static final double translateP = 0.07500000298023224;
   static final double translateI = 0;
-  static final double translateD = 0;
+  static final double translateD = 0.05000000074505806;
 
   static final double rotateP = 0;
   static final double rotateI = 0;
@@ -178,6 +179,8 @@ public class Swerve extends SubsystemBase {
         getGyroAngle(),
         getModulePostions());
     field.setRobotPose(getPose());
+
+    sendDiagnostics();
   }
 
   public Pose2d getPose() {
@@ -287,6 +290,12 @@ public class Swerve extends SubsystemBase {
 
     x *= slowModeCoefficient;
     y *= slowModeCoefficient;
+
+    // Prevent the robot from tipping by applying acceleration limit
+    if (MathUtil.isNear(0, x, 0.01) && MathUtil.isNear(0, x, 0.01)) {
+      x = xLim.calculate(x);
+      y = yLim.calculate(y);
+    }
 
     ChassisSpeeds chassisSpeeds;
 
@@ -447,6 +456,14 @@ public class Swerve extends SubsystemBase {
           "ModuleDebug/Module" + m.getModuleNumber() + "FFoutput", m.getFFDriveOutput());
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "MotorOutput", m.getAppliedOutputDrive());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "AbsoluteEncoder",
+          m.findAbsoluteOffsetCalibrations().getDegrees());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Velocity", m.getDriveVelocity());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Velocity Setpoint",
+          m.getSetpoint().speedMetersPerSecond);
     }
   }
 

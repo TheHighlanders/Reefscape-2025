@@ -29,7 +29,9 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    m_robotContainer.elevator.sendTuningConstants();
+  }
 
   @Override
   public void disabledPeriodic() {
@@ -38,11 +40,7 @@ public class Robot extends TimedRobot {
 
       loops = 0;
     } else if (loops % 25 == 0) {
-      m_robotContainer.drive.resetEncoders();
-    }
-    if (loops % 50 == 12) {
-      m_robotContainer.drive.resetEncoders();
-      m_robotContainer.elevator.sendTuningConstants();
+      // m_robotContainer.drive.readAngleEncoders();
     }
     if (loops % 50 == 37) {
       m_robotContainer.elevator.updateTuningConstants();

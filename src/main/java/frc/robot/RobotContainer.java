@@ -7,8 +7,10 @@ package frc.robot;
 import choreo.auto.AutoChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.subsystems.Algae;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
@@ -23,11 +25,12 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
-  CoralScorer CoralScorer = new CoralScorer();
+  CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
   Elevator elevator = new Elevator();
   Swerve drive = new Swerve(elevator::getElevatorPosition);
   Autos autos = new Autos(drive);
+  Algae algae = new Algae();
 
   AutoChooser chooser;
 
@@ -35,7 +38,7 @@ public class RobotContainer {
     chooser = new AutoChooser();
 
     subsystems.put("drive", drive);
-    subsystems.put("CoralScorer", CoralScorer);
+    subsystems.put("CoralScorer", coralScorer);
     subsystems.put("climber", climber);
     subsystems.put("elevator", elevator);
 
@@ -46,21 +49,39 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    driver.start().onTrue(drive.resetGyro());
+    // driver.start().onTrue(drive.resetGyro());
 
-    driver.y().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
     driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
-    driver.b().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
-    driver.a().onTrue(elevator.setPosition(ElevatorState.CORAL_POSITION));
-    driver
-        .rightTrigger(0.5)
-        .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(CoralScorer.intakeCMD()));
+    driver.y().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
+    driver.a().onTrue(elevator.setPosition(ElevatorState.HOME));
+    driver.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+    driver.povDown().whileTrue(elevator.jogElevator(-0.3));
+    driver.povUp().whileTrue(elevator.jogElevator(0.3));
 
-    driver.leftTrigger(0.5).onTrue(CoralScorer.depositCMD());
-    driver.leftTrigger().whileTrue(drive.slowMode());
+    driver.start().whileTrue(elevator.zeroElevator());
+    driver.povLeft().onTrue(Commands.runOnce(drive::resetEncoders, drive));
+    driver.povRight().onTrue(drive.resetGyro());
+    SmartDashboard.putNumber("Tuning/Elevator/height", 0);
+    driver
+        .leftBumper()
+        .onTrue(elevator.setPosition(() -> SmartDashboard.getNumber("Tuning/Elevator/height", 0)));
+    // driver
+    //     .rightTrigger(0.5)
+    // F
+    // .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(CoralScorer.intakeCMD()));
+
+    driver.leftTrigger(0.5).whileTrue(coralScorer.depositCMD());
+    driver.rightTrigger(0.5).whileTrue(coralScorer.intakeCMD());
+    // driver.leftTrigger().whileTrue(drive.slowMode());
 
     operator.y().whileTrue(climber.createClimbOutCommand());
     operator.a().whileTrue(climber.createClimbInCommand());
+
+    operator.leftTrigger(0.5).whileTrue(algae.brushedIntake());
+    operator.rightTrigger(0.5).whileTrue(algae.outputBrushed());
+
+    operator.x().whileTrue(algae.intakeAlgae());
+    operator.b().whileTrue(algae.outputAlgae());
   }
 
   private void configureAutonomous() {
