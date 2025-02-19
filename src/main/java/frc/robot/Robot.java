@@ -6,6 +6,9 @@ package frc.robot;
 
 import java.util.Optional;
 
+import choreo.Choreo;
+import choreo.trajectory.SwerveSample;
+import choreo.trajectory.Trajectory;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -17,7 +20,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 public class Robot extends TimedRobot {
 
   // Loads a swerve trajectory, alternatively use DifferentialSample if the robot is tank drive
-  private final Optional‹Trajectory<SwerveSample>> trajectory = Choreo. loadTrajectory("myTrajectory");
+  private final Optional<Trajectory<SwerveSample>> trajectory = Choreo.loadTrajectory("midStart -> L1ID21");
   private final Drive driveSubsystem = new Drive();
   private final Timer timer = new Timer ();
   
