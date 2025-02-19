@@ -4,14 +4,23 @@
 
 package frc.robot;
 
+import java.util.Optional;
+
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
 
+  // Loads a swerve trajectory, alternatively use DifferentialSample if the robot is tank drive
+  private final Optional‹Trajectory<SwerveSample>> trajectory = Choreo. loadTrajectory("myTrajectory");
+  private final Drive driveSubsystem = new Drive();
+  private final Timer timer = new Timer ();
+  
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
@@ -48,17 +57,35 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+       if (trajectory.isPresent()) {
+            // Get the initial pose of the trajectory
+            Optional<Pose2d> initialPose = trajectory.get().getInitialPose(isRedAlliance());
 
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
-    }
+            if (initialPose.isPresent()) {
+                // Reset odometry to the start of the trajectory
+                driveSubsystem.resetOdometry(initialPose.get());
+            }
+        }
 
-    WebServer.stop(5800);
+        // Reset and start the timer when the autonomous period begins
+        timer.restart();
   }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+    if (trajectory.isPresent()) {
+      // Sample the trajectory at the current time into the autonomous period
+      Optional<SwerveSample> sample = trajectory.get().sampleAt(timer.get(), isRedAlliance());
+
+      if (sample.isPresent()) {
+          driveSubsystem.followTrajectory(sample);
+      }
+  }
+  private boolean isRedAlliance() {
+    return DriverStation.getAlliance().orElse(Alliance.Blue).equals(Alliance.Red);
+  } 
+
+  }
 
   @Override
   public void autonomousExit() {}
