@@ -4,8 +4,8 @@
 
 package frc.robot;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 import choreo.auto.AutoChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -16,8 +16,6 @@ import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.StateRequest;
-import java.util.HashMap;
-import java.util.Map;
 
 public class RobotContainer {
   private final Map<String, Subsystem> subsystems = new HashMap<>();
@@ -25,7 +23,7 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
 
   Vision vision = new Vision();
-  Swerve drive = new Swerve(vision::getEstimatedRobotPose, vision::getEstimationStdDevs);
+  Swerve drive = new Swerve(vision::getEstimatedRobotPoses, vision::getEstimationStdDevs);
   Autos autos = new Autos(drive);
   AutoChooser chooser;
 

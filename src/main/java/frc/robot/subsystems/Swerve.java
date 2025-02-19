@@ -129,22 +129,16 @@ public class Swerve extends SubsystemBase {
 
   SwerveState current = SwerveState.FAST;
 
-  Supplier<Optional<EstimatedRobotPose>> estPoseSup;
-  Supplier<Matrix<N3, N1>> stdDevSup;
+  Supplier<List<Optional<EstimatedRobotPose>>> estPoseSup;
+  Supplier<List<Matrix<N3, N1>>> stdDevsSup;
 
   /** Creates a new Swerve. */
-  public Swerve(Supplier<Optional<EstimatedRobotPose>> estPoseSup, Supplier<Matrix<N3, N1>> stdDevSup) {
-    this.estPoseSup = estPoseSup;
-    this.stdDevSup = stdDevSup;
+  public Swerve(Supplier<List<Optional<EstimatedRobotPose>>> estPosesSup, Supplier<List<Matrix<N3, N1>>> stdDevsSup) {
+    this.estPoseSup = estPosesSup;
+    this.stdDevsSup = stdDevsSup;
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
-    }
-
-    var estPose = estPoseSup.get();
-    if (estPose.isPresent()) {
-      poseEst.addVisionMeasurement(estPose.get().estimatedPose.toPose2d(), RobotController.getFPGATime(),
-          stdDevSup.get());
     }
 
     // Using +X as forward, and +Y as left, as per
@@ -214,6 +208,17 @@ public class Swerve extends SubsystemBase {
     // This method will be called once per scheduler run
     poseEst.updateWithTime(
         RobotController.getFPGATime() * Math.pow(10, 6), getGyroAngle(), getModulePostions());
+
+    
+    var estPoses = estPoseSup.get();
+    var stdDevs = stdDevsSup.get();
+    for(int i = 0; i < estPoses.size(); i++){
+    var pose = estPoses.get(i);
+    if (pose.isPresent()) {
+      poseEst.addVisionMeasurement(pose.get().estimatedPose.toPose2d(), RobotController.getFPGATime(),
+          stdDevs.get(i));
+    }
+  }
 
     sendNT();
   }
