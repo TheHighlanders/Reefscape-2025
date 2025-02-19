@@ -163,16 +163,8 @@ public class Module {
    * @param isOpenLoop: Whether or not to use a PID loop
    */
   public void setDriveState(SwerveModuleState state, boolean isOpenLoop) {
-
-    /* Back out the expected shimmy the drive motor will see */
-    /* Find the angular rate to determine what to back out */
-    double azimuthTurnRps = angleEncoder.getVelocity()/360;
-
-    /* Azimuth turn rate multiplied by coupling ratio provides back-out rps */
-    double driveRateBackOut = azimuthTurnRps * m_couplingRatioDriveRotorToCANcoder;
-
     double angleToSetDeg = state.angle.getRotations();
-    double velocityToSet = (state.speedMetersPerSecond) - driveRateBackOut;
+    double velocityToSet = state.speedMetersPerSecond;
 
     /*
      * From FRC 900's whitepaper, we add a cosine compensator to the applied drive
@@ -197,8 +189,8 @@ public class Module {
     } else {
       ffOut = driveFeedforward.calculate(velocityToSet);
       driveController.setReference(
-          state.speedMetersPerSecond, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ffOut);
-      driveReference = state.speedMetersPerSecond;
+          velocityToSet, ControlType.kVelocity, ClosedLoopSlot.kSlot0, ffOut);
+      driveReference = velocityToSet;
     }
   }
 
