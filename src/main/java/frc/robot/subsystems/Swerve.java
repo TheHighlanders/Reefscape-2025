@@ -54,9 +54,9 @@ final class SwerveConstants {
 
   static final double accelLim = 1.5;
 
-  static final double translateP = 0;
+  static final double translateP = 0.07500000298023224;
   static final double translateI = 0;
-  static final double translateD = 0;
+  static final double translateD = 0.05000000074505806;
 
   static final double rotateP = 0;
   static final double rotateI = 0;
@@ -452,6 +452,11 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "AbsoluteEncoder",
           m.findAbsoluteOffsetCalibrations().getDegrees());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Velocity", m.getDriveVelocity());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Velocity Setpoint",
+          m.getSetpoint().speedMetersPerSecond);
     }
   }
 

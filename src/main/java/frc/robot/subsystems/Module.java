@@ -30,13 +30,13 @@ final class ModuleConstants {
   static final double angleI = 0;
   static final double angleD = 0.002;
 
-  static final double driveP = 0.2;
+  static final double driveP = 0;
   static final double driveI = 0;
-  static final double driveD = 3;
+  static final double driveD = 0;
 
-  static final double driveS = 0.1718;
-  static final double driveV = 4;
-  static final double driveA = 8;
+  static final double driveS = 0;
+  static final double driveV = 4.15;
+  static final double driveA = 0;
 
   // Wheel diameter * pi / gear ratio
   static final double drivePCF = inchesToMeters(3 + 13d / 16d) * Math.PI / 6.75d;
@@ -101,8 +101,7 @@ public class Module {
     driveController = driveMotor.getClosedLoopController();
 
     driveEncoder.setPosition(0);
-
-    angleEncoder.setPosition(getAbsolutePosition().getDegrees());
+    angleEncoder.setPosition(0);
   }
 
   private SparkMaxConfig createDriveConfig() {

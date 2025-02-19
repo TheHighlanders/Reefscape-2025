@@ -40,7 +40,7 @@ public class Robot extends TimedRobot {
 
       loops = 0;
     } else if (loops % 25 == 0) {
-      m_robotContainer.drive.readAngleEncoders();
+      // m_robotContainer.drive.readAngleEncoders();
     }
     if (loops % 50 == 37) {
       m_robotContainer.elevator.updateTuningConstants();

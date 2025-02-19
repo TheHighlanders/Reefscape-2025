@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.DoubleSupplier;
 
 final class ElevatorConstants {
   static final int elevMotorID = 41;
@@ -33,8 +34,9 @@ final class ElevatorConstants {
   static final double homeTarget = 5; // Position before autolanding
   static final double l1Target = 0;
   static final double l2Target = 10;
-  static final double l3Target = 20;
-  static final double l4Target = 55;
+  static final double l3Target = 27;
+
+  static final double l4Target = 52;
   static final double coralPositionTarget = 40;
 
   static final double antiSlamVoltageOffset = 0.25; // Ignores ff
@@ -166,6 +168,15 @@ public class Elevator extends SubsystemBase {
               elevatorEncoder.setPosition(0);
             })
         .ignoringDisable(true);
+  }
+
+  public Command setPosition(DoubleSupplier pos) {
+    SmartDashboard.putNumber("Tuning/Elevator/height", pos.getAsDouble());
+    return Commands.runOnce(
+        () ->
+            elevatorController.setReference(
+                pos.getAsDouble(), ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF),
+        this);
   }
 
   public Command setPosition(ElevatorState position) {
