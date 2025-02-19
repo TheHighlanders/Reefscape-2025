@@ -13,6 +13,7 @@ import static edu.wpi.first.units.Units.Volts;
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -289,6 +290,12 @@ public class Swerve extends SubsystemBase {
 
     x *= slowModeCoefficient;
     y *= slowModeCoefficient;
+
+    // Prevent the robot from tipping by applying acceleration limit
+    if (MathUtil.isNear(0, x, 0.01) && MathUtil.isNear(0, x, 0.01)) {
+      x = xLim.calculate(x);
+      y = yLim.calculate(y);
+    }
 
     ChassisSpeeds chassisSpeeds;
 
