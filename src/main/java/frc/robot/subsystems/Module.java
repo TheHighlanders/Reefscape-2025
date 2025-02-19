@@ -27,6 +27,7 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants;
 
 final class ModuleConstants {
@@ -241,7 +242,8 @@ public class Module {
     } else if (hasZeroedAbsolute){
       return Rotation2d.fromDegrees(angleEncoder.getPosition());
     } else {
-      return new Rotation2d();
+      DriverStation.reportError("CANCODER NOT GOOD AND MODULE NOT ZEROED: MODULE " + moduleNumber, false);
+      return Rotation2d.fromDegrees(angleEncoder.getPosition());
     }
   }
 
