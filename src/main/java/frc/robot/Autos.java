@@ -8,11 +8,13 @@ import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.Swerve;
 
 /** Add your docs here. */
 public class Autos {
   AutoFactory autoFactory;
+  Swerve drive;
 
   public Autos(Swerve drive) {
     autoFactory =
@@ -24,6 +26,8 @@ public class Autos {
             true, // If alliance flipping should be enabled
             drive // The drive subsystem
             );
+
+    this.drive = drive;
   }
 
   public Command testTraj() {
@@ -34,8 +38,12 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("test");
     AutoTrajectory test = routine.trajectory("Test");
 
-    routine.active().onTrue(test.cmd());
+    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
 
     return routine;
+  }
+
+  public Command updateTrajectoryPIDCMD() {
+    return Commands.runOnce(drive.updateTrajectoryPID());
   }
 }
