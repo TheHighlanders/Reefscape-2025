@@ -65,14 +65,14 @@ public class RobotContainer {
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
 
-    // operator.y().whileTrue(climber.createClimbOutCommand());
-    // operator.a().whileTrue(climber.createClimbInCommand());
+    operator.povDown().whileTrue(climber.createClimbOutCommand());
+    operator.povUp().whileTrue(climber.createClimbInCommand());
 
     operator.start().whileTrue(drive.pidTuningJogDrive());
     operator.back().whileTrue(drive.pidTuningJogAngle());
 
-    operator.povUp().whileTrue(elevator.jogElevator(2));
-    operator.povDown().whileTrue(elevator.jogElevator(-2));
+    // operator.povUp().whileTrue(elevator.jogElevator(2));
+    // operator.povDown().whileTrue(elevator.jogElevator(-2));
 
     driver.back().onTrue(Commands.runOnce(drive::resetEncoders, drive));
   }

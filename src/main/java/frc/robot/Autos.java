@@ -44,6 +44,6 @@ public class Autos {
   }
 
   public Command updateTrajectoryPIDCMD() {
-    return Commands.runOnce(drive.updateTrajectoryPID());
+    return Commands.runOnce(drive::updateTrajectoryPID);
   }
 }

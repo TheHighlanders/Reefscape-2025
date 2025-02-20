@@ -13,7 +13,6 @@ import static edu.wpi.first.units.Units.Volts;
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -56,13 +55,13 @@ final class SwerveConstants {
 
   static final double accelLim = 3;
 
-  static final double translateP = 0.07500000298023224;
-  static final double translateI = 0;
-  static final double translateD = 0.05000000074505806;
+  static double translateP = 0.07500000298023224;
+  static double translateI = 0;
+  static double translateD = 0.05000000074505806;
 
-  static final double rotateP = 0;
-  static final double rotateI = 0;
-  static final double rotateD = 0;
+  static double rotateP = 0;
+  static double rotateI = 0;
+  static double rotateD = 0;
 }
 
 public class Swerve extends SubsystemBase {
@@ -331,11 +330,8 @@ public class Swerve extends SubsystemBase {
     x *= slowModeCoefficient;
     y *= slowModeCoefficient;
 
-    // Prevent the robot from tipping by applying acceleration limit
-    if (MathUtil.isNear(0, x, 0.01) && MathUtil.isNear(0, x, 0.01)) {
-      x = aLim.calculate(x);
-      y = aLim.calculate(y);
-    }
+    x = aLim.calculate(x);
+    y = aLim.calculate(y);
 
     ChassisSpeeds chassisSpeeds;
 
@@ -526,6 +522,22 @@ public class Swerve extends SubsystemBase {
                         poseEst.getEstimatedPosition().getY(),
                         new Rotation2d())))
         .ignoringDisable(true);
+  }
+
+  public void updateTrajectoryPID() {
+    SwerveConstants.translateP =
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP);
+    SwerveConstants.translateI =
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate I", SwerveConstants.translateI);
+    SwerveConstants.translateD =
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate D", SwerveConstants.translateD);
+
+    SwerveConstants.rotateP =
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate P", SwerveConstants.rotateP);
+    SwerveConstants.rotateI =
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI);
+    SwerveConstants.rotateD =
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD);
   }
 
   public Command resetOdometry() {
