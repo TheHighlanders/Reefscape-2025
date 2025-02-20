@@ -11,6 +11,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -22,7 +23,9 @@ final class AlgaeConstants {
   static final int algaeBendCurrentLimit = 20;
   static final int algaeIntakeMotorID = 4;
   static final double bendSoftLimit = 20;
+
   static final double algaeIntakePosition = -25;
+  static final double algaeDislodgePosition = -1; // TODO: find this
 
   static final double bendP = 10;
   static final double bendI = 0;
@@ -78,36 +81,43 @@ public class Algae extends SubsystemBase {
     return algaeBendConfig;
   }
 
-  // TODO change intake and output brushless motors to PID
-  public Command intakeAlgae() {
-    return Commands.startEnd(
-        () -> algaeBendMotor.getClosedLoopController().setReference(0, ControlType.kPosition),
+  private Command toPosition(double position) {
+    return Commands.runOnce(
         () ->
-            algaeBendMotor.configure(
-                algaeBendConfig(true),
-                SparkBase.ResetMode.kResetSafeParameters,
-                SparkBase.PersistMode.kPersistParameters));
+            algaeBendMotor.getClosedLoopController().setReference(position, ControlType.kPosition));
   }
 
-  public Command outputAlgae() {
-    return Commands.startEnd(
-        () ->
-            algaeBendMotor
-                .getClosedLoopController()
-                .setReference(AlgaeConstants.algaeIntakePosition, ControlType.kPosition),
-        () ->
-            algaeBendMotor.configure(
-                algaeBendConfig(false),
-                SparkBase.ResetMode.kResetSafeParameters,
-                SparkBase.PersistMode.kPersistParameters));
+  // TODO change intake and output brushless motors to PID
+  public Command homePosition() {
+    return toPosition(0);
+  }
+
+  public Command processorPosition() {
+    return toPosition(AlgaeConstants.algaeIntakePosition)
+        .until(
+            () ->
+                MathUtil.isNear(
+                    AlgaeConstants.algaeIntakePosition,
+                    algaeBendMotor.getEncoder().getPosition(),
+                    0.1))
+        .finallyDo(
+            () ->
+                algaeBendMotor.configure(
+                    algaeBendConfig(false),
+                    SparkBase.ResetMode.kResetSafeParameters,
+                    SparkBase.PersistMode.kPersistParameters));
+  }
+
+  public Command dislodgePosition() {
+    return toPosition(AlgaeConstants.algaeDislodgePosition);
   }
 
   // TODO LOOK AT VALUES
-  public Command brushedIntake() {
+  public Command intakeAlgae() {
     return Commands.startEnd(() -> algaeIntakeMotor.set(1), () -> algaeIntakeMotor.set(0.0), this);
   }
 
-  public Command outputBrushed() {
+  public Command outputAlgae() {
     return Commands.startEnd(() -> algaeIntakeMotor.set(-1), () -> algaeIntakeMotor.set(0.0), this);
   }
 }

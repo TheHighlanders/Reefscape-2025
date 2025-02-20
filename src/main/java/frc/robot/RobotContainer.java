@@ -49,39 +49,29 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    // driver.start().onTrue(drive.resetGyro());
-
-    driver.x().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
-    driver.y().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
-    driver.a().onTrue(elevator.setPosition(ElevatorState.HOME));
-    driver.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
-    driver.povDown().whileTrue(elevator.jogElevator(-0.3));
-    driver.povUp().whileTrue(elevator.jogElevator(0.3));
+    // Controls Spreadsheet \/
+    // https://docs.google.com/spreadsheets/d/1bb3pvQep2hsePMl8YiyaagtdjtIkL8Z2Oqf_t2ND-68/edit?gid=0#gid=0
+    operator.a().onTrue(elevator.setPosition(ElevatorState.HOME));
+    operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
+    operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
+    operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
 
     driver.start().whileTrue(elevator.zeroElevator());
-    driver.povLeft().onTrue(Commands.runOnce(drive::resetEncoders, drive));
     driver.povRight().onTrue(drive.resetGyro());
-    SmartDashboard.putNumber("Tuning/Elevator/height", 0);
-    driver
-        .leftBumper()
-        .onTrue(elevator.setPosition(() -> SmartDashboard.getNumber("Tuning/Elevator/height", 0)));
-    // driver
-    //     .rightTrigger(0.5)
-    // F
-    // .onTrue(elevator.setPosition(ElevatorState.L1_POSITION).alongWith(CoralScorer.intakeCMD()));
 
-    driver.leftTrigger(0.5).whileTrue(coralScorer.depositCMD());
-    driver.rightTrigger(0.5).whileTrue(coralScorer.intakeCMD());
-    // driver.leftTrigger().whileTrue(drive.slowMode());
+    driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
+    driver.rightBumper().whileTrue(coralScorer.manualIntakeCMD());
 
-    operator.y().whileTrue(climber.createClimbOutCommand());
-    operator.a().whileTrue(climber.createClimbInCommand());
+    driver.leftTrigger().onTrue(drive.enableSlowMode());
+    driver.leftTrigger().onFalse(drive.disableSlowMode());
 
-    operator.leftTrigger(0.5).whileTrue(algae.brushedIntake());
-    operator.rightTrigger(0.5).whileTrue(algae.outputBrushed());
+    // operator.y().whileTrue(climber.createClimbOutCommand());
+    // operator.a().whileTrue(climber.createClimbInCommand());
 
-    operator.x().whileTrue(algae.intakeAlgae());
-    operator.b().whileTrue(algae.outputAlgae());
+    operator.povUp().whileTrue(elevator.jogElevator(2));
+    operator.povDown().whileTrue(elevator.jogElevator(-2));
+
+    driver.back().onTrue(Commands.runOnce(drive::resetEncoders, drive));
   }
 
   private void configureAutonomous() {

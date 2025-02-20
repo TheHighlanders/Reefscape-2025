@@ -25,7 +25,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.DoubleSupplier;
 
-final class ElevatorConstants {
+class ElevatorConstants {
   static final int elevMotorID = 41;
 
   // 2 for carriage movement relative to 1st stage, also includes DP, and gear ratio
@@ -36,7 +36,7 @@ final class ElevatorConstants {
   static final double l2Target = 10;
   static final double l3Target = 27;
 
-  static final double l4Target = 52;
+  static final double l4Target = 51 + (5.0d / 8.0d);
   static final double coralPositionTarget = 40;
 
   static final double antiSlamVoltageOffset = 0.25; // Ignores ff
@@ -257,8 +257,9 @@ public class Elevator extends SubsystemBase {
     return elevatorEncoder.getPosition();
   }
 
-  public Command jogElevator(double speed) {
-    return Commands.run(() -> elevatorMotor.set(Math.max(Math.min(1, speed), -1)))
+  public Command jogElevator(double voltage) {
+    return Commands.run(
+            () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
         .finallyDo(() -> elevatorMotor.stopMotor());
   }
 }

@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 
 final class SwerveConstants {
 
-  public static final double maxRotSpeed = Units.degreesToRadians(180);
+  public static final double maxRotSpeed = Units.degreesToRadians(360);
   // Implicit /sec
 
   static final double width = Units.inchesToMeters(20.5);
@@ -53,7 +53,7 @@ final class SwerveConstants {
   static final double maxSpeed = Constants.maxSpeed;
   // Implict /sec
 
-  static final double accelLim = 1.5;
+  static final double accelLim = 3;
 
   static final double translateP = 0.07500000298023224;
   static final double translateI = 0;
@@ -84,8 +84,7 @@ public class Swerve extends SubsystemBase {
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
 
-  SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
-  SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
+  SlewRateLimiter aLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
   private final PIDController xController =
       new PIDController(
@@ -179,6 +178,8 @@ public class Swerve extends SubsystemBase {
         getGyroAngle(),
         getModulePostions());
     field.setRobotPose(getPose());
+
+    SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
 
     sendDiagnostics();
   }
@@ -293,8 +294,8 @@ public class Swerve extends SubsystemBase {
 
     // Prevent the robot from tipping by applying acceleration limit
     if (MathUtil.isNear(0, x, 0.01) && MathUtil.isNear(0, x, 0.01)) {
-      x = xLim.calculate(x);
-      y = yLim.calculate(y);
+      x = aLim.calculate(x);
+      y = aLim.calculate(y);
     }
 
     ChassisSpeeds chassisSpeeds;
@@ -304,7 +305,15 @@ public class Swerve extends SubsystemBase {
       chassisSpeeds = fromAllianceRelativeSpeeds(x, y, omega);
     } else {
       // Takes in Robot Relative, returns Robot Relative
-      chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(x, y, omega, getGyroAngle());
+
+      // Only allow driving on axes
+      if (Math.abs(x) >= Math.abs(y)) {
+        y = 0;
+      } else {
+        x = 0;
+      }
+      // chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(y, -x, omega, getGyroAngle());
+      chassisSpeeds = new ChassisSpeeds(y, x, omega);
     }
 
     chassisSpeeds.vxMetersPerSecond *= SwerveConstants.maxSpeed;
@@ -392,9 +401,9 @@ public class Swerve extends SubsystemBase {
     return fr;
   }
 
-  public double getCurrentSlowModeCoefficient(double e) {
+  public double getCurrentSlowModeCoefficient(double elevatorHeight) {
     /* 0 to 1 value representing elevator position (0 is bottom, 1 is top) */
-    double elevatorHeightPercent = e / ElevatorConstants.forwardSoftLimit;
+    double elevatorHeightPercent = elevatorHeight / ElevatorConstants.forwardSoftLimit;
 
     /* Don't limit at all if below some threshold */
     if (elevatorHeightPercent >= MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED) {
@@ -407,7 +416,7 @@ public class Swerve extends SubsystemBase {
        */
       double out =
           (MAX_SLOW_MODE - 1)
-                  * Math.pow(e - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
+                  * Math.pow(elevatorHeightPercent - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
                   / Math.pow(1 - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
               + 1;
 
@@ -417,9 +426,12 @@ public class Swerve extends SubsystemBase {
     return 1;
   }
 
-  public Command slowMode() {
-    return Commands.run(() -> current = SwerveState.LINEUP, this)
-        .finallyDo(() -> current = SwerveState.NORMAL);
+  public Command enableSlowMode() {
+    return Commands.runOnce(() -> current = SwerveState.LINEUP);
+  }
+
+  public Command disableSlowMode() {
+    return Commands.runOnce(() -> current = SwerveState.NORMAL);
   }
 
   public void driveVoltage(Measure<VoltageUnit> voltage) {
@@ -456,9 +468,6 @@ public class Swerve extends SubsystemBase {
           "ModuleDebug/Module" + m.getModuleNumber() + "FFoutput", m.getFFDriveOutput());
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "MotorOutput", m.getAppliedOutputDrive());
-      SmartDashboard.putNumber(
-          "ModuleDebug/Module" + m.getModuleNumber() + "AbsoluteEncoder",
-          m.findAbsoluteOffsetCalibrations().getDegrees());
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity", m.getDriveVelocity());
       SmartDashboard.putNumber(
