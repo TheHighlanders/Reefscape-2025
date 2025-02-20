@@ -83,8 +83,9 @@ public class Swerve extends SubsystemBase {
   SwerveDrivePoseEstimator poseEst;
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
-
-  SlewRateLimiter aLim = new SlewRateLimiter(SwerveConstants.accelLim);
+  double accelLim = SwerveConstants.accelLim;
+  SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
+  SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
   private final PIDController xController =
       new PIDController(
@@ -284,11 +285,11 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command pidTuningJogDrive() {
-    SwerveModuleState state =
-        new SwerveModuleState(
-            SmartDashboard.getNumber("Tuning/Swerve/Velocity Setpoint", 0), new Rotation2d());
     return new RunCommand(
         () -> {
+          SwerveModuleState state =
+              new SwerveModuleState(
+                  SmartDashboard.getNumber("Tuning/Swerve/Velocity Setpoint", 0), new Rotation2d());
           for (Module m : modules) {
             m.setModuleState(state, false);
           }
@@ -306,6 +307,16 @@ public class Swerve extends SubsystemBase {
         () -> {
           for (Module m : modules) {
             m.setModuleState(state, false);
+          }
+        },
+        this);
+  }
+
+  public Command pointWheelsForward() {
+    return new RunCommand(
+        () -> {
+          for (Module m : modules) {
+            m.setModuleState(new SwerveModuleState(0, new Rotation2d()), false);
           }
         },
         this);
@@ -330,8 +341,8 @@ public class Swerve extends SubsystemBase {
     x *= slowModeCoefficient;
     y *= slowModeCoefficient;
 
-    x = aLim.calculate(x);
-    y = aLim.calculate(y);
+    x = xLim.calculate(x);
+    y = yLim.calculate(y);
 
     ChassisSpeeds chassisSpeeds;
 
@@ -342,11 +353,12 @@ public class Swerve extends SubsystemBase {
       // Takes in Robot Relative, returns Robot Relative
 
       // Only allow driving on axes
-      if (Math.abs(x) >= Math.abs(y)) {
-        y = 0;
-      } else {
-        x = 0;
-      }
+      // if (Math.abs(x) >= Math.abs(y)) {
+      //   y = 0;
+      // } else {
+      //   x = 0;
+      // }
+
       // chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(y, -x, omega, getGyroAngle());
       chassisSpeeds = new ChassisSpeeds(y, x, omega);
     }
@@ -502,12 +514,16 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "FFoutput", m.getFFDriveOutput());
       SmartDashboard.putNumber(
-          "ModuleDebug/Module" + m.getModuleNumber() + "MotorOutput", m.getAppliedOutputDrive());
+          "ModuleDebug/Module" + m.getModuleNumber() + "AngleMotorOutput",
+          m.getAppliedOutputAngle());
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity", m.getDriveVelocity());
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity Setpoint",
           m.getSetpoint().speedMetersPerSecond);
+
+      SmartDashboard.putNumber(
+          "SwerveSlowCoeff", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
     }
   }
 

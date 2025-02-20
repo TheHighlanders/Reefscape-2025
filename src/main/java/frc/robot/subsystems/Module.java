@@ -20,7 +20,6 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -29,14 +28,14 @@ import frc.robot.Constants;
 final class ModuleConstants {
   static final double angleP = 0.05;
   static final double angleI = 0;
-  static final double angleD = 0.002;
+  static final double angleD = 0;
 
-  static final double driveP = 0;
+  static final double driveP = 0.16;
   static final double driveI = 0;
   static final double driveD = 0;
 
   static final double driveS = 0;
-  static final double driveV = 4.15;
+  static final double driveV = 2.9642857143;
   static final double driveA = 0;
 
   // Wheel diameter * pi / gear ratio
@@ -164,24 +163,24 @@ public class Module {
    * @param isOpenLoop: Whether or not to use a PID loop
    */
   public void setDriveState(SwerveModuleState state, boolean isOpenLoop) {
-    double angleToSetDeg = state.angle.getRotations();
+    // double angleToSetDeg = state.angle.getRotations();
     double velocityToSet = state.speedMetersPerSecond;
 
-    /*
-     * From FRC 900's whitepaper, we add a cosine compensator to the applied drive
-     * velocity
-     */
-    /* To reduce the "skew" that occurs when changing direction */
-    double steerMotorError = angleToSetDeg - (angleEncoder.getPosition() / 360.0d);
-    // If error is close to 0 rotations, we're already there, so apply full power
-    // If the error is close to 0.25 rotations, then we're 90 degrees, so movement
-    // doesn't help
-    // us at all
-    // We take the absolute value of this to make sure we don't invert our drive,
-    // even though we
-    // shouldn't ever target over 90 degrees anyway
-    double cosineScalar = Math.abs(Math.cos(Units.rotationsToRadians(steerMotorError)));
-    velocityToSet *= cosineScalar;
+    // /*
+    //  * From FRC 900's whitepaper, we add a cosine compensator to the applied drive
+    //  * velocity
+    //  */
+    // /* To reduce the "skew" that occurs when changing direction */
+    // double steerMotorError = angleToSetDeg - (angleEncoder.getPosition() / 360.0d);
+    // // If error is close to 0 rotations, we're already there, so apply full power
+    // // If the error is close to 0.25 rotations, then we're 90 degrees, so movement
+    // // doesn't help
+    // // us at all
+    // // We take the absolute value of this to make sure we don't invert our drive,
+    // // even though we
+    // // shouldn't ever target over 90 degrees anyway
+    // double cosineScalar = Math.abs(Math.cos(Units.rotationsToRadians(steerMotorError)));
+    // velocityToSet *= cosineScalar;
 
     if (isOpenLoop) {
       double motorPercent = state.speedMetersPerSecond / ModuleConstants.maxSpeed;
@@ -229,6 +228,10 @@ public class Module {
 
   public double getAppliedOutputDrive() {
     return driveMotor.getAppliedOutput();
+  }
+
+  public double getAppliedOutputAngle() {
+    return angleMotor.getAppliedOutput();
   }
 
   public double getFFDriveOutput() {

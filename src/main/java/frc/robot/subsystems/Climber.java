@@ -11,6 +11,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -23,7 +24,7 @@ final class ClimberConstants {
   // Rotations on input shaft to output shaft including gearbox conversion
   static final double climberPCF = 360.0 / 337.5;
 
-  static final double climberSoftLimit = 80;
+  static final double climberSoftLimit = 120;
 }
 
 public class Climber extends SubsystemBase {
@@ -47,16 +48,22 @@ public class Climber extends SubsystemBase {
     climberConfig.smartCurrentLimit(ClimberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
     climberConfig
         .softLimit
-        .forwardSoftLimit(ClimberConstants.climberSoftLimit)
-        .forwardSoftLimitEnabled(true);
+        .forwardSoftLimit(0)
+        .forwardSoftLimitEnabled(true)
+        .reverseSoftLimit(-ClimberConstants.climberSoftLimit)
+        .reverseSoftLimitEnabled(true);
 
     return climberConfig;
+  }
+
+  public void periodic() {
+    SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
   }
 
   public Command createClimbOutCommand() {
     // TODO: make sure 1 is correct direction
     return Commands.startEnd(
-        () -> climbMotor.set(-0.1),
+        () -> climbMotor.set(-0.2),
         // Stop the climber at the end of the command
         () -> climbMotor.set(0.0),
         this);
