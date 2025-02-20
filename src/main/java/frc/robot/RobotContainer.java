@@ -68,6 +68,9 @@ public class RobotContainer {
     // operator.y().whileTrue(climber.createClimbOutCommand());
     // operator.a().whileTrue(climber.createClimbInCommand());
 
+    operator.start().whileTrue(drive.pidTuningJogDrive());
+    operator.back().whileTrue(drive.pidTuningJogAngle());
+
     operator.povUp().whileTrue(elevator.jogElevator(2));
     operator.povDown().whileTrue(elevator.jogElevator(-2));
 

@@ -34,6 +34,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -141,6 +142,16 @@ public class Swerve extends SubsystemBase {
         });
 
     SmartDashboard.putData("Swerve/Field", field);
+    SmartDashboard.putNumber("Tuning/Swerve/Velocity Setpoint", 0);
+    SmartDashboard.putNumber("Tuning/Swerve/Angle Setpoint", 0);
+
+    SmartDashboard.putNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP);
+    SmartDashboard.putNumber("Tuning/Swerve/Traj Translate I", SwerveConstants.translateI);
+    SmartDashboard.putNumber("Tuning/Swerve/Traj Translate D", SwerveConstants.translateD);
+
+    SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate P", SwerveConstants.rotateP);
+    SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI);
+    SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD);
 
     sysId =
         new SysIdRoutine(
@@ -271,6 +282,34 @@ public class Swerve extends SubsystemBase {
   public Command driveCMD(DoubleSupplier x, DoubleSupplier y, DoubleSupplier omega) {
     return Commands.run(() -> drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble()), this)
         .withName("Swerve Drive Command");
+  }
+
+  public Command pidTuningJogDrive() {
+    SwerveModuleState state =
+        new SwerveModuleState(
+            SmartDashboard.getNumber("Tuning/Swerve/Velocity Setpoint", 0), new Rotation2d());
+    return new RunCommand(
+        () -> {
+          for (Module m : modules) {
+            m.setModuleState(state, false);
+          }
+        },
+        this);
+  }
+
+  public Command pidTuningJogAngle() {
+    SwerveModuleState state =
+        new SwerveModuleState(
+            0,
+            Rotation2d.fromDegrees(SmartDashboard.getNumber("Tuning/Swerve/Angle Setpoint", 0))
+                .plus(modules[0].getAnglePosition()));
+    return new RunCommand(
+        () -> {
+          for (Module m : modules) {
+            m.setModuleState(state, false);
+          }
+        },
+        this);
   }
 
   /**
