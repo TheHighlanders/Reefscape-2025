@@ -44,7 +44,7 @@ import java.util.stream.Stream;
 
 final class SwerveConstants {
 
-  public static final double maxRotSpeed = Units.degreesToRadians(360);
+  public static final double maxRotSpeed = Units.degreesToRadians(270);
   // Implicit /sec
 
   static final double width = Units.inchesToMeters(20.5);
@@ -280,8 +280,18 @@ public class Swerve extends SubsystemBase {
    * @return Drive Command
    */
   public Command driveCMD(DoubleSupplier x, DoubleSupplier y, DoubleSupplier omega) {
-    return Commands.run(() -> drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble()), this)
+    return Commands.run(
+            () ->
+                drive(
+                    squaredCurve(x.getAsDouble()),
+                    squaredCurve(y.getAsDouble()),
+                    omega.getAsDouble()),
+            this)
         .withName("Swerve Drive Command");
+  }
+
+  public double squaredCurve(double input) {
+    return Math.pow(input, 2) * Math.signum(input);
   }
 
   public Command pidTuningJogDrive() {

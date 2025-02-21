@@ -32,8 +32,7 @@ class ElevatorConstants {
   static final double elevPCF = 2 * 1.751 / 9.0d * Math.PI;
 
   static final double homeTarget = 5; // Position before autolanding
-  static final double l1Target = 0;
-  static final double l2Target = 10;
+  static final double l2Target = 11.5;
   static final double l3Target = 27;
 
   static final double l4Target = 51 + (5.0d / 8.0d);
@@ -56,11 +55,9 @@ class ElevatorConstants {
 public class Elevator extends SubsystemBase {
   public enum ElevatorState {
     HOME,
-    L1_POSITION,
     L2_POSITION,
     L3_POSITION,
     L4_POSITION,
-    CORAL_POSITION
   }
 
   private SparkMax elevatorMotor;
@@ -187,9 +184,6 @@ public class Elevator extends SubsystemBase {
             case HOME:
               targetPosition = ElevatorConstants.homeTarget;
               break;
-            case L1_POSITION:
-              targetPosition = ElevatorConstants.l1Target;
-              break;
             case L2_POSITION:
               targetPosition = ElevatorConstants.l2Target;
               break;
@@ -198,9 +192,6 @@ public class Elevator extends SubsystemBase {
               break;
             case L4_POSITION:
               targetPosition = ElevatorConstants.l4Target;
-              break;
-            case CORAL_POSITION:
-              targetPosition = ElevatorConstants.coralPositionTarget;
               break;
           }
           elevatorController.setReference(

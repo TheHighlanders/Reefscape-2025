@@ -46,12 +46,12 @@ public class Climber extends SubsystemBase {
     climberConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
     climberConfig.smartCurrentLimit(ClimberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
-    climberConfig
-        .softLimit
-        .forwardSoftLimit(0)
-        .forwardSoftLimitEnabled(true)
-        .reverseSoftLimit(-ClimberConstants.climberSoftLimit)
-        .reverseSoftLimitEnabled(true);
+    // climberConfig
+    //     .softLimit
+    //     .forwardSoftLimit(0)
+    //     .forwardSoftLimitEnabled(true)
+    //     .reverseSoftLimit(-ClimberConstants.climberSoftLimit)
+    //     .reverseSoftLimitEnabled(true);
 
     return climberConfig;
   }
@@ -63,7 +63,7 @@ public class Climber extends SubsystemBase {
   public Command createClimbOutCommand() {
     // TODO: make sure 1 is correct direction
     return Commands.startEnd(
-        () -> climbMotor.set(-0.2),
+        () -> climbMotor.set(-0.5),
         // Stop the climber at the end of the command
         () -> climbMotor.set(0.0),
         this);
