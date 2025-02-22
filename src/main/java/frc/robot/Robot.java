@@ -4,26 +4,14 @@
 
 package frc.robot;
 
-import java.util.Optional;
-
-import choreo.Choreo;
-import choreo.trajectory.SwerveSample;
-import choreo.trajectory.Trajectory;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
 
-  // Loads a swerve trajectory, alternatively use DifferentialSample if the robot is tank drive
-  private final Optional<Trajectory<SwerveSample>> trajectory = Choreo.loadTrajectory("midStart -> L1ID21");
-  private final Drive driveSubsystem = new Drive();
-  private final Timer timer = new Timer ();
-  
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
@@ -41,18 +29,12 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+  }
 
   @Override
   public void disabledPeriodic() {
-    if (loops % 50 == 0) {
-      m_robotContainer.drive.updateControlConstants();
 
-      loops = 0;
-    } else if (loops % 25 == 0) {
-      m_robotContainer.drive.resetEncoders();
-    }
-    loops++;
   }
 
   @Override
@@ -60,35 +42,17 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
-       if (trajectory.isPresent()) {
-            // Get the initial pose of the trajectory
-            Optional<Pose2d> initialPose = trajectory.get().getInitialPose(isRedAlliance());
+    m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
-            if (initialPose.isPresent()) {
-                // Reset odometry to the start of the trajectory
-                driveSubsystem.resetOdometry(initialPose.get());
-            }
-        }
+    if (m_autonomousCommand != null) {
+      m_autonomousCommand.schedule();
+    }
 
-        // Reset and start the timer when the autonomous period begins
-        timer.restart();
+    WebServer.stop(5800);
   }
 
   @Override
-  public void autonomousPeriodic() {
-    if (trajectory.isPresent()) {
-      // Sample the trajectory at the current time into the autonomous period
-      Optional<SwerveSample> sample = trajectory.get().sampleAt(timer.get(), isRedAlliance());
-
-      if (sample.isPresent()) {
-          driveSubsystem.followTrajectory(sample);
-      }
-  }
-  private boolean isRedAlliance() {
-    return DriverStation.getAlliance().orElse(Alliance.Blue).equals(Alliance.Red);
-  } 
-
-  }
+  public void autonomousPeriodic() {}
 
   @Override
   public void autonomousExit() {}
