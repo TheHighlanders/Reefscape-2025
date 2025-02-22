@@ -32,6 +32,7 @@ final class ClimberConstants {
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
   private SparkMax climbMotor = new SparkMax(ClimberConstants.climbMotorID, MotorType.kBrushless);
+
   double climberHoldVoltage;
 
   public Climber() {
@@ -63,7 +64,8 @@ public class Climber extends SubsystemBase {
 
   public void periodic() {
     SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
-    climberHoldVoltage = SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
+    climberHoldVoltage =
+        SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
     SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
   }
 
@@ -80,7 +82,7 @@ public class Climber extends SubsystemBase {
     return Commands.startEnd(() -> climbMotor.set(1), () -> climbMotor.set(0.0), this);
   }
 
-  public Command holdClimbpPosition() {
+  public Command holdClimbPosition() {
     return Commands.runOnce(() -> climbMotor.setVoltage(ClimberConstants.climberHoldVoltage), this);
   }
 }

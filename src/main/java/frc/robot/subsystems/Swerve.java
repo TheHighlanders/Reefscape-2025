@@ -158,8 +158,8 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putNumber("Trajectory/YError", 0);
     SmartDashboard.putNumber("Trajectory/HeadingError", 0);
 
-    SmartDashboard.putNumber("ElevatorSlowCoefficient", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
-
+    SmartDashboard.putNumber(
+        "ElevatorSlowCoefficient", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
 
     sysId =
         new SysIdRoutine(
@@ -489,7 +489,7 @@ public class Swerve extends SubsystemBase {
                   * Math.pow(elevatorHeightPercent - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
                   / Math.pow(1 - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
               + 1;
-    SmartDashboard.putNumber("ElevatorSlowCoefficient", out);
+      SmartDashboard.putNumber("ElevatorSlowCoefficient", out);
 
       return out;
     }

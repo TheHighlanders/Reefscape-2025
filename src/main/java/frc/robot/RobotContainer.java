@@ -22,7 +22,6 @@ import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -77,18 +76,20 @@ public class RobotContainer {
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
 
-    operator.povDown()
+    operator
+        .povDown()
         .or(operator.povDownLeft())
         .or(operator.povDownRight())
         .whileTrue(climber.createClimbOutCommand());
 
-    operator.povUp()
-      .or(operator.povUpLeft())
-      .or(operator.povUpRight())
-      .whileTrue(climber.createClimbInCommand());
-    operator.povRight().onTrue(climber.holdClimbpPosition());
+    operator
+        .povUp()
+        .or(operator.povUpLeft())
+        .or(operator.povUpRight())
+        .whileTrue(climber.createClimbInCommand());
+    operator.povRight().onTrue(climber.holdClimbPosition());
 
-    operator.start().toggleOnTrue(drive.pointWheelsForward());
+    operator.start().whileTrue(drive.pidTuningJogDrive());
     operator.back().whileTrue(drive.pidTuningJogAngle());
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
@@ -114,19 +115,18 @@ public class RobotContainer {
 
     Thread m_visionThread;
 
-    m_visionThread = new Thread(
-        () -> {
-          // Get the UsbCamera from CameraServer
-          UsbCamera camera = CameraServer.startAutomaticCapture();
-          // Set the resolution
-          camera.setResolution(320, 240);
-          camera.setPixelFormat(PixelFormat.kMJPEG);
-        });
+    m_visionThread =
+        new Thread(
+            () -> {
+              // Get the UsbCamera from CameraServer
+              UsbCamera camera = CameraServer.startAutomaticCapture();
+              // Set the resolution
+              camera.setResolution(320, 240);
+              camera.setPixelFormat(PixelFormat.kMJPEG);
+            });
 
     m_visionThread =
-
         new Thread(
-
             () -> {
 
               // Get the UsbCamera from CameraServer
@@ -158,7 +158,6 @@ public class RobotContainer {
 
                 outputStream.putFrame(mat);
               }
-
             });
 
     m_visionThread.setDaemon(true);
