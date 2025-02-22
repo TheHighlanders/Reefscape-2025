@@ -358,6 +358,12 @@ public class Swerve extends SubsystemBase {
     } else {
       slowModeYCoefficient = 0.3;
       slowModeXCoefficient = 0.15;
+
+      if (Math.abs(x) > Math.abs(y)) {
+        y = 0;
+      } else {
+        x = 0;
+      }
     }
 
     y *= slowModeYCoefficient;
