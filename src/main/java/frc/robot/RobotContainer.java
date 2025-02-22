@@ -6,6 +6,8 @@ package frc.robot;
 
 import choreo.auto.AutoChooser;
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.CvSink;
+import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.util.PixelFormat;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -20,6 +22,11 @@ import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 
 public class RobotContainer {
 
@@ -68,8 +75,16 @@ public class RobotContainer {
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
 
-    operator.povDown().whileTrue(climber.createClimbOutCommand());
-    operator.povUp().whileTrue(climber.createClimbInCommand());
+    operator.povDown()
+        .or(operator.povDownLeft())
+        .or(operator.povDownRight())
+        .whileTrue(climber.createClimbOutCommand());
+
+    operator.povUp()
+      .or(operator.povUpLeft())
+      .or(operator.povUpRight())
+      .whileTrue(climber.createClimbInCommand());
+    operator.povRight().onTrue(climber.holdClimbpPosition());
 
     operator.start().toggleOnTrue(drive.pointWheelsForward());
     operator.back().whileTrue(drive.pidTuningJogAngle());
@@ -81,7 +96,9 @@ public class RobotContainer {
   }
 
   private void configureAutonomous() {
-    chooser.addRoutine("Test Routine", autos::testTrajRoutine);
+    chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
+    chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
+    chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
     chooser.addCmd("SYSID", drive::sysId);
 
     SmartDashboard.putData("AutoChooser", chooser);
@@ -95,15 +112,53 @@ public class RobotContainer {
 
     Thread m_visionThread;
 
+    m_visionThread = new Thread(
+        () -> {
+          // Get the UsbCamera from CameraServer
+          UsbCamera camera = CameraServer.startAutomaticCapture();
+          // Set the resolution
+          camera.setResolution(320, 240);
+          camera.setPixelFormat(PixelFormat.kMJPEG);
+        });
+
     m_visionThread =
+
         new Thread(
+
             () -> {
+
               // Get the UsbCamera from CameraServer
               UsbCamera camera = CameraServer.startAutomaticCapture();
+
               // Set the resolution
               camera.setResolution(320, 240);
-              camera.setPixelFormat(PixelFormat.kMJPEG);
+
+              // Get a CvSink. This will capture Mats from the camera
+              CvSink cvSink = CameraServer.getVideo();
+
+              // Setup a CvSource. This will send images back to the Dashboard
+              CvSource outputStream = CameraServer.putVideo("DriverReefCam", 320, 240);
+
+              // Mats are very memory expensive. Lets reuse this Mat.
+              Mat mat = new Mat();
+              while (!Thread.interrupted()) {
+                if (cvSink.grabFrame(mat) == 0) {
+                  // Send the output the error.
+                  outputStream.notifyError(cvSink.getError());
+                  // skip the rest of the current iteration
+                  continue;
+                }
+
+                // Put a rectangle on the image
+                Imgproc.rectangle(
+                    mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
+                // Give the output stream a new image to display
+
+                outputStream.putFrame(mat);
+              }
+
             });
+
     m_visionThread.setDaemon(true);
     m_visionThread.start();
   }

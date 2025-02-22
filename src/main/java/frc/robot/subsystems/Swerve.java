@@ -68,7 +68,8 @@ public class Swerve extends SubsystemBase {
 
   enum SwerveState {
     NORMAL,
-    LINEUP
+    LINEUP,
+    SLOW
   }
 
   private static final double MAX_SLOW_MODE = 0.3;
@@ -152,6 +153,13 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate P", SwerveConstants.rotateP);
     SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI);
     SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD);
+
+    SmartDashboard.putNumber("Trajectory/XError", 0);
+    SmartDashboard.putNumber("Trajectory/YError", 0);
+    SmartDashboard.putNumber("Trajectory/HeadingError", 0);
+
+    SmartDashboard.putNumber("ElevatorSlowCoefficient", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
+
 
     sysId =
         new SysIdRoutine(
@@ -351,8 +359,9 @@ public class Swerve extends SubsystemBase {
     x *= slowModeCoefficient;
     y *= slowModeCoefficient;
 
-    x = xLim.calculate(x);
-    y = yLim.calculate(y);
+    // x = xLim.calculate(x);
+    // y = yLim.calculate(y);
+    // TODO: Reenable if wheelieing
 
     ChassisSpeeds chassisSpeeds;
 
@@ -476,6 +485,7 @@ public class Swerve extends SubsystemBase {
                   * Math.pow(elevatorHeightPercent - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
                   / Math.pow(1 - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
               + 1;
+    SmartDashboard.putNumber("ElevatorSlowCoefficient", out);
 
       return out;
     }

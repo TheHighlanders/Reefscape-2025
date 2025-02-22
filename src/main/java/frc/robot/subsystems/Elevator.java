@@ -257,7 +257,17 @@ public class Elevator extends SubsystemBase {
     return MathUtil.isNear(targetPosition, elevatorEncoder.getPosition(), tolerance);
   }
 
+  public boolean isAtHome(double tolerance){
+    return MathUtil.isNear(0, elevatorEncoder.getPosition(), tolerance);
+  }
+
   public Command elevatorAuto(ElevatorState targetState){
-    return setPosition(targetState).alongWith(Commands.waitUntil(()->isAtSetpoint(0.5)));
+    switch (targetState){
+      case HOME:
+        return setPosition(targetState).alongWith(Commands.waitUntil(()->isAtHome(0.5)));
+      default:
+        return setPosition(targetState).alongWith(Commands.waitUntil(()->isAtSetpoint(antiSlamVoltageOffset)));
+    }
+    
   }
 }

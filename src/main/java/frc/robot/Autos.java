@@ -34,9 +34,27 @@ public class Autos {
     return autoFactory.trajectoryCmd("Test");
   }
 
-  public AutoRoutine testTrajRoutine() {
-    AutoRoutine routine = autoFactory.newRoutine("test");
-    AutoTrajectory test = routine.trajectory("Test");
+  public AutoRoutine testDriveTrajRoutine() {
+    AutoRoutine routine = autoFactory.newRoutine("testDrive");
+    AutoTrajectory test = routine.trajectory("TestDrive");
+
+    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+
+    return routine;
+  }
+
+  public AutoRoutine testRotateTrajRoutine() {
+    AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
+    AutoTrajectory test = routine.trajectory("TestRotate");
+
+    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+
+    return routine;
+  }
+
+  public AutoRoutine testDriveRotateTrajRoutine() {
+    AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
+    AutoTrajectory test = routine.trajectory("testRotateAndDrive");
 
     routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
 

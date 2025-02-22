@@ -25,6 +25,8 @@ final class ClimberConstants {
   static final double climberPCF = 360.0 / 337.5;
 
   static final double climberSoftLimit = 120;
+
+  static final double climberHoldVoltage = 10;
 }
 
 public class Climber extends SubsystemBase {
@@ -71,5 +73,9 @@ public class Climber extends SubsystemBase {
 
   public Command createClimbInCommand() {
     return Commands.startEnd(() -> climbMotor.set(1), () -> climbMotor.set(0.0), this);
+  }
+
+  public Command holdClimbpPosition() {
+    return Commands.runOnce(() -> climbMotor.setVoltage(ClimberConstants.climberHoldVoltage), this);
   }
 }
