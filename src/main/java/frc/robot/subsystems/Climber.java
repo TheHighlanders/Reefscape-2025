@@ -26,12 +26,13 @@ final class ClimberConstants {
 
   static final double climberSoftLimit = 120;
 
-  static final double climberHoldVoltage = 10;
+  static final double climberHoldVoltage = 0;
 }
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
   private SparkMax climbMotor = new SparkMax(ClimberConstants.climbMotorID, MotorType.kBrushless);
+  double climberHoldVoltage;
 
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
@@ -49,17 +50,21 @@ public class Climber extends SubsystemBase {
 
     climberConfig.smartCurrentLimit(ClimberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
     // climberConfig
-    //     .softLimit
-    //     .forwardSoftLimit(0)
-    //     .forwardSoftLimitEnabled(true)
-    //     .reverseSoftLimit(-ClimberConstants.climberSoftLimit)
-    //     .reverseSoftLimitEnabled(true);
+    // .softLimit
+    // .forwardSoftLimit(0)
+    // .forwardSoftLimitEnabled(true)
+    // .reverseSoftLimit(-ClimberConstants.climberSoftLimit)
+    // .reverseSoftLimitEnabled(true);
+    climberHoldVoltage = ClimberConstants.climberHoldVoltage;
+    SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
 
     return climberConfig;
   }
 
   public void periodic() {
     SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
+    climberHoldVoltage = SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
+    SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
   }
 
   public Command createClimbOutCommand() {
