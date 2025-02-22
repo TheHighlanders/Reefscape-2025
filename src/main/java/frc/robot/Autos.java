@@ -14,11 +14,12 @@ import choreo.trajectory.SwerveSample;
 import choreo.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.Swerve;
 
 /** Add your docs here. */
 public class Autos {
-  private final Optional<Trajectory<SwerveSample>> trajectory = Choreo.loadTrajectory("midStart -> L1ID21");
+  private final Optional<Trajectory<SwerveSample>> trajectory = Choreo.loadTrajectory("midStart-L1ID21");
   Swerve drive;
   AutoFactory autoFactory;
   
@@ -50,4 +51,6 @@ public class Autos {
 
     return routine;
   }
+
+
 }
