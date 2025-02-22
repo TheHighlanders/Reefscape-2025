@@ -9,14 +9,18 @@ import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.subsystems.CoralScorer;
+import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Swerve;
 
 /** Add your docs here. */
 public class Autos {
   AutoFactory autoFactory;
   Swerve drive;
+  Elevator elevator;
+  CoralScorer coral;
 
-  public Autos(Swerve drive) {
+  public Autos(Swerve drive, Elevator elevator, CoralScorer coral) {
     autoFactory =
         new AutoFactory(
             drive::getPose, // A function that returns the current robot pose
@@ -28,6 +32,8 @@ public class Autos {
             );
 
     this.drive = drive;
+    this.elevator = elevator;
+    this.coral = coral;
   }
 
   public Command testTraj() {
@@ -63,5 +69,13 @@ public class Autos {
 
   public Command updateTrajectoryPIDCMD() {
     return Commands.runOnce(drive::updateTrajectoryPID);
+  }
+
+  public Command simpleDriveAuto() {
+    return drive.driveForwardTimed(1, 4);
+  }
+
+  public Command simple1Piece() {
+    return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
   }
 }

@@ -316,6 +316,19 @@ public class Swerve extends SubsystemBase {
         this);
   }
 
+  public Command driveForwardTimed(double velocity, double timeSec) {
+    return new RunCommand(
+            () -> {
+              SwerveModuleState state =
+                  new SwerveModuleState(velocity, Rotation2d.fromDegrees(180));
+              for (Module m : modules) {
+                m.setModuleState(state, false);
+              }
+            },
+            this)
+        .withTimeout(timeSec);
+  }
+
   public Command pidTuningJogAngle() {
     SwerveModuleState state =
         new SwerveModuleState(
@@ -560,6 +573,9 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity Setpoint",
           m.getSetpoint().speedMetersPerSecond);
+
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Position", m.getPosition().distanceMeters);
 
       SmartDashboard.putNumber(
           "SwerveSlowCoeff", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));

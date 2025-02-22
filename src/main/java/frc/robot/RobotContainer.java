@@ -37,7 +37,7 @@ public class RobotContainer {
   Climber climber = new Climber();
   Elevator elevator = new Elevator();
   Swerve drive = new Swerve(elevator::getElevatorPosition);
-  Autos autos = new Autos(drive);
+  Autos autos = new Autos(drive, elevator, coralScorer);
 
   AutoChooser chooser;
 
@@ -104,6 +104,7 @@ public class RobotContainer {
     chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
     chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
     chooser.addCmd("SYSID", drive::sysId);
+    chooser.addCmd("FORWARD", () -> drive.pidTuningJogDrive());
 
     SmartDashboard.putData("AutoChooser", chooser);
   }
