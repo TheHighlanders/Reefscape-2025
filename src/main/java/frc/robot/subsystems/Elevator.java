@@ -33,7 +33,7 @@ class ElevatorConstants {
 
   static final double homeTarget = 5; // Position before autolanding
   static final double l2Target = 11.5;
-  static final double l3Target = 27;
+  static final double l3Target = 28;
   static final double l4Target = 52.5 + (5.0d / 8.0d);
 
   static final double coralBetweenReefOffset = 2;
@@ -102,7 +102,7 @@ public class Elevator extends SubsystemBase {
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
-    elevatorMotorConfig.closedLoop.outputRange(-0.4, 0.85);
+    elevatorMotorConfig.closedLoop.outputRange(-0.35, 0.85);
 
     elevatorMotorConfig.closedLoopRampRate(0.05);
 
@@ -187,7 +187,7 @@ public class Elevator extends SubsystemBase {
               break;
           }
           elevatorController.setReference(
-              targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
+              targetPosition + positionOffset, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
         });
   }
 
@@ -268,11 +268,11 @@ public class Elevator extends SubsystemBase {
     return Commands.startEnd(
         () -> {
           positionOffset = ElevatorConstants.coralBetweenReefOffset;
-          setPosition(uppydowny);
+          setPosition(uppydowny).schedule();
         },
         () -> {
           positionOffset = 0;
-          setPosition(uppydowny);
+          setPosition(uppydowny).schedule();
         });
   }
 }
