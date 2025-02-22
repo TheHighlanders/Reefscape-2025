@@ -35,7 +35,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledPeriodic() {
-
+    if (loops % 50 == 0) {
       loops = 0;
     } else if (loops % 25 == 0) {
       // m_robotContainer.drive.readAngleEncoders();
