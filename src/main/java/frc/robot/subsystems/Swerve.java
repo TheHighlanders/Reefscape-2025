@@ -349,15 +349,19 @@ public class Swerve extends SubsystemBase {
    */
   public void drive(double x, double y, double omega) {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
-    double slowModeCoefficient;
+    double slowModeYCoefficient;
+    double slowModeXCoefficient;
     if (current == SwerveState.NORMAL) {
-      slowModeCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
+      slowModeYCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
+      slowModeXCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
+
     } else {
-      slowModeCoefficient = 0.3;
+      slowModeYCoefficient = 0.3;
+      slowModeXCoefficient = 0.15;
     }
 
-    x *= slowModeCoefficient;
-    y *= slowModeCoefficient;
+    y *= slowModeYCoefficient;
+    x *= slowModeXCoefficient;
 
     // x = xLim.calculate(x);
     // y = yLim.calculate(y);
