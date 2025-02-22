@@ -333,12 +333,16 @@ public class Swerve extends SubsystemBase {
 
   public Command pointWheelsForward() {
     return new RunCommand(
-        () -> {
-          for (Module m : modules) {
-            m.setModuleState(new SwerveModuleState(0, new Rotation2d()), false);
-          }
-        },
-        this);
+            () -> {
+              for (Module m : modules) {
+                m.setModuleState(new SwerveModuleState(0, new Rotation2d()), false);
+              }
+            },
+            this)
+        .finallyDo(
+            (e) -> {
+              for (Module m : modules) m.angleEncoder.setPosition(0);
+            });
   }
 
   /**
@@ -383,12 +387,13 @@ public class Swerve extends SubsystemBase {
 
       // Only allow driving on axes
       // if (Math.abs(x) >= Math.abs(y)) {
-      //   y = 0;
+      // y = 0;
       // } else {
-      //   x = 0;
+      // x = 0;
       // }
 
-      // chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(y, -x, omega, getGyroAngle());
+      // chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(y, -x, omega,
+      // getGyroAngle());
       chassisSpeeds = new ChassisSpeeds(y, x, omega);
     }
 
@@ -486,7 +491,8 @@ public class Swerve extends SubsystemBase {
 
       /*
        * Scale slow mode position based on height percent using a parabola
-       * y=\left\{0\le x\le h:1,h\le x\le1:\frac{l-1}{\left(1-h\right)^{2}}\left(x-h\right)^{2}+1\right\}
+       * y=\left\{0\le x\le h:1,h\le
+       * x\le1:\frac{l-1}{\left(1-h\right)^{2}}\left(x-h\right)^{2}+1\right\}
        * where h = MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED
        * & l = MAX_SLOW_MODE
        */
