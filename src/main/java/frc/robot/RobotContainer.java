@@ -108,6 +108,10 @@ public class RobotContainer {
     SmartDashboard.putData("AutoChooser", chooser);
   }
 
+  public Command findClimberZero() {
+    return climber.findZeroPosition();
+  }
+
   public Command getAutonomousCommand() {
     return chooser.selectedCommand();
   }
