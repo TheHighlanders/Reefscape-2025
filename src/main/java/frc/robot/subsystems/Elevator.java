@@ -247,10 +247,17 @@ public class Elevator extends SubsystemBase {
   public double getElevatorPosition() {
     return elevatorEncoder.getPosition();
   }
-
   public Command jogElevator(double voltage) {
     return Commands.run(
             () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
         .finallyDo(() -> elevatorMotor.stopMotor());
+  }
+
+  public boolean isAtSetpoint(double tolerance){
+    return MathUtil.isNear(targetPosition, elevatorEncoder.getPosition(), tolerance);
+  }
+
+  public Command elevatorAuto(ElevatorState targetState){
+    return setPosition(targetState).alongWith(Commands.waitUntil(()->isAtSetpoint(0.5)));
   }
 }
