@@ -64,7 +64,7 @@ public class RobotContainer {
     operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
     operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
-    operator.rightBumper().whileTrue(elevator.offsetElevator());
+    operator.leftBumper().whileTrue(elevator.offsetElevator());
 
     driver.start().whileTrue(elevator.zeroElevator());
     driver.povRight().onTrue(drive.resetGyro());
@@ -91,6 +91,7 @@ public class RobotContainer {
 
     operator.start().whileTrue(drive.pidTuningJogDrive());
     operator.back().whileTrue(drive.pidTuningJogAngle());
+    operator.rightBumper().toggleOnTrue(drive.pointWheelsForward());
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
