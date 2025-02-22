@@ -13,6 +13,8 @@ import static edu.wpi.first.units.Units.Volts;
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -335,6 +337,7 @@ public class Swerve extends SubsystemBase {
         () -> {
           for (Module m : modules) {
             m.setModuleState(new SwerveModuleState(0, new Rotation2d()), false);
+            
           }
         },
         this);
@@ -358,16 +361,15 @@ public class Swerve extends SubsystemBase {
     } else {
       slowModeYCoefficient = 0.3;
       slowModeXCoefficient = 0.15;
-
-      if (Math.abs(x) > Math.abs(y)) {
-        y = 0;
-      } else {
-        x = 0;
-      }
     }
 
     y *= slowModeYCoefficient;
     x *= slowModeXCoefficient;
+
+    if (current != SwerveState.NORMAL) {
+      y = MathUtil.clamp(y + (0.1 * Math.signum(y)), -1, 1);
+      x = MathUtil.clamp(x + (0.1 * Math.signum(x)), -1, 1);
+    }
 
     // x = xLim.calculate(x);
     // y = yLim.calculate(y);

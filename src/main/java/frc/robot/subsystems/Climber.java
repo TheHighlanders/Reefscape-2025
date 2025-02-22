@@ -7,12 +7,17 @@ package frc.robot.subsystems;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.Pair;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -32,6 +37,12 @@ final class ClimberConstants {
   static final double climberHoldVoltage = 0;
 
   static final double timeToZeroClimber = 1; // Seconds
+
+  // Position, Power
+  static final double[][] climberPosititionToPower = {
+      { 0, 1 },
+      { 0.6, 0.5 },
+  };
 }
 
 public class Climber extends SubsystemBase {
@@ -70,6 +81,10 @@ public class Climber extends SubsystemBase {
     return climberConfig;
   }
 
+  private Runnable holdPosition() {
+    return () -> climbMotor.setVoltage(ClimberConstants.climberHoldVoltage);
+  }
+
   public void periodic() {
     SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
     climberHoldVoltage = SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
@@ -94,6 +109,20 @@ public class Climber extends SubsystemBase {
     climbMotor.set(0);
   }
 
+
+  public void climbIn() {
+    double currentPosition = climbMotor.getEncoder().getPosition();
+    double[] greatestPositionBelowCurrent = { 0, 1 };
+
+    for (double[] pair : ClimberConstants.climberPosititionToPower) {
+      if (currentPosition > pair[0]) {
+        greatestPositionBelowCurrent = pair;
+      } else break;
+    }
+
+    climbMotor.set(greatestPositionBelowCurrent[1]);
+  }
+
   public Command createClimbOutCommand() {
     // TODO: make sure 1 is correct direction
     return Commands.startEnd(
@@ -109,11 +138,17 @@ public class Climber extends SubsystemBase {
         .finallyDo(this::handleAtZeroPosition);
   }
 
+  public Command climbCommand() {
+    return Commands.run(this::climbIn, this)
+        .until(() -> MathUtil.isNear(ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
+        .finallyDo(holdPosition());
+  }
+
   public Command createClimbInCommand() {
     return Commands.startEnd(() -> climbMotor.set(1), () -> climbMotor.set(0.0), this);
   }
 
   public Command holdClimbPosition() {
-    return Commands.runOnce(() -> climbMotor.setVoltage(climberHoldVoltage), this);
+    return Commands.runOnce(holdPosition(), this);
   }
 }
