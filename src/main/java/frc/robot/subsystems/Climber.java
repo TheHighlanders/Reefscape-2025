@@ -11,6 +11,9 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -27,19 +30,24 @@ final class ClimberConstants {
   static final double climberSoftLimit = 120;
 
   static final double climberHoldVoltage = 0;
+
+  static final double timeToZeroClimber = 1; // Seconds
 }
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
+  private Timer holdTimer = new Timer();
   private SparkMax climbMotor = new SparkMax(ClimberConstants.climbMotorID, MotorType.kBrushless);
 
   double climberHoldVoltage;
+  double climberPreviousPosition;
 
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
     climbMotor.configure(
         climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     climbMotor.getEncoder().setPosition(0);
+    climberPreviousPosition = 0;
   }
 
   private SparkMaxConfig createClimberConfig() {
@@ -64,9 +72,26 @@ public class Climber extends SubsystemBase {
 
   public void periodic() {
     SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
-    climberHoldVoltage =
-        SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
+    climberHoldVoltage = SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
     SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
+  }
+
+  public void findClimberZeroTick() {
+    climbMotor.set(0.05);
+    double currentPosition = climbMotor.getEncoder().getPosition();
+
+    if (MathUtil.isNear(climberPreviousPosition, currentPosition, 0.1)) {
+      if (!holdTimer.isRunning()) {
+        holdTimer.start();
+      }
+    } else {
+      holdTimer.reset();
+    }
+  }
+
+  public void handleAtZeroPosition() {
+    climbMotor.getEncoder().setPosition(0);
+    climbMotor.set(0);
   }
 
   public Command createClimbOutCommand() {
@@ -76,6 +101,12 @@ public class Climber extends SubsystemBase {
         // Stop the climber at the end of the command
         () -> climbMotor.set(0.0),
         this);
+  }
+
+  public Command findZeroPosition() {
+    return Commands.run(this::findClimberZeroTick, this)
+        .until(() -> holdTimer.hasElapsed(ClimberConstants.timeToZeroClimber))
+        .finallyDo(this::handleAtZeroPosition);
   }
 
   public Command createClimbInCommand() {
