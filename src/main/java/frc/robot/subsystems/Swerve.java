@@ -13,7 +13,6 @@ import static edu.wpi.first.units.Units.Volts;
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -337,7 +336,6 @@ public class Swerve extends SubsystemBase {
         () -> {
           for (Module m : modules) {
             m.setModuleState(new SwerveModuleState(0, new Rotation2d()), false);
-            
           }
         },
         this);

@@ -7,17 +7,12 @@ package frc.robot.subsystems;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-
-import java.util.HashSet;
-import java.util.Set;
-
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.Pair;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -34,20 +29,21 @@ final class ClimberConstants {
 
   static final double climberSoftLimit = 120;
 
-  static final double climberHoldVoltage = 0;
+  static final double climberHoldVoltage = 1.5;
 
   static final double timeToZeroClimber = 1; // Seconds
 
   // Position, Power
   static final double[][] climberPosititionToPower = {
-      { 0, 1 },
-      { 0.6, 0.5 },
+    {0, 1},
+    {0.6, 0.5},
   };
 }
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
   private Timer holdTimer = new Timer();
+
   private SparkMax climbMotor = new SparkMax(ClimberConstants.climbMotorID, MotorType.kBrushless);
 
   double climberHoldVoltage;
@@ -87,7 +83,8 @@ public class Climber extends SubsystemBase {
 
   public void periodic() {
     SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
-    climberHoldVoltage = SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
+    climberHoldVoltage =
+        SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
     SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
   }
 
@@ -107,12 +104,12 @@ public class Climber extends SubsystemBase {
   public void handleAtZeroPosition() {
     climbMotor.getEncoder().setPosition(0);
     climbMotor.set(0);
+    DriverStation.reportWarning("ZEROED CLIMBER+++++++++++++++++++++", false);
   }
-
 
   public void climbIn() {
     double currentPosition = climbMotor.getEncoder().getPosition();
-    double[] greatestPositionBelowCurrent = { 0, 1 };
+    double[] greatestPositionBelowCurrent = {0, 1};
 
     for (double[] pair : ClimberConstants.climberPosititionToPower) {
       if (currentPosition > pair[0]) {
@@ -140,7 +137,10 @@ public class Climber extends SubsystemBase {
 
   public Command climbCommand() {
     return Commands.run(this::climbIn, this)
-        .until(() -> MathUtil.isNear(ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
+        .until(
+            () ->
+                MathUtil.isNear(
+                    ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
         .finallyDo(holdPosition());
   }
 
