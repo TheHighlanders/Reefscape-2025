@@ -30,11 +30,20 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
+    m_robotContainer.elevator.sendTuningConstants();
   }
 
   @Override
   public void disabledPeriodic() {
 
+      loops = 0;
+    } else if (loops % 25 == 0) {
+      // m_robotContainer.drive.readAngleEncoders();
+    }
+    if (loops % 50 == 37) {
+      m_robotContainer.elevator.updateTuningConstants();
+    }
+    loops++;
   }
 
   @Override
@@ -62,6 +71,7 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+    m_robotContainer.findClimberZero().schedule();
   }
 
   @Override

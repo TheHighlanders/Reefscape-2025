@@ -11,63 +11,144 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-class climberConstants {
+final class ClimberConstants {
+  static final int climberCurrentLimit = 40;
 
-  static double climberPCF = 12.8;
+  static final int climbMotorID = 42;
 
-  static int climberCurrentLimit = 20;
+  // Rotations on input shaft to output shaft including gearbox conversion
+  static final double climberPCF = 360.0 / 337.5;
 
-  static int climbMotorID = 3;
+  static final double climberSoftLimit = 120;
 
-  static double elevatorSoftLimit = 30;
+  static final double climberHoldVoltage = 1.5;
+
+  static final double timeToZeroClimber = 1; // Seconds
+
+  // Position, Power
+  static final double[][] climberPosititionToPower = {
+    {0, 1},
+    {0.6, 0.5},
+  };
 }
 
 public class Climber extends SubsystemBase {
   /** Creates a new Climber. */
-  public SparkMax climbMotor = new SparkMax(climberConstants.climbMotorID, MotorType.kBrushless);
+  private Timer holdTimer = new Timer();
+
+  private SparkMax climbMotor = new SparkMax(ClimberConstants.climbMotorID, MotorType.kBrushless);
+
+  double climberHoldVoltage;
+  double climberPreviousPosition;
 
   public Climber() {
     SparkMaxConfig climberConfig = createClimberConfig();
     climbMotor.configure(
-        climberConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+        climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     climbMotor.getEncoder().setPosition(0);
+    climberPreviousPosition = 0;
   }
 
   private SparkMaxConfig createClimberConfig() {
     SparkMaxConfig climberConfig = new SparkMaxConfig();
-    climberConfig
-        .encoder
-        .positionConversionFactor(climberConstants.climberPCF) // Rot to deg conversion
-        .velocityConversionFactor(climberConstants.climberPCF / 60.0d); // RPM to deg/s conversion
+    climberConfig.encoder.positionConversionFactor(
+        ClimberConstants.climberPCF); // Rot to deg conversion
 
     climberConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
-    climberConfig.smartCurrentLimit(climberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
-    climberConfig
-        .softLimit
-        .forwardSoftLimit(climberConstants.elevatorSoftLimit)
-        .forwardSoftLimitEnabled(true);
+    climberConfig.smartCurrentLimit(ClimberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
+    // climberConfig
+    // .softLimit
+    // .forwardSoftLimit(0)
+    // .forwardSoftLimitEnabled(true)
+    // .reverseSoftLimit(-ClimberConstants.climberSoftLimit)
+    // .reverseSoftLimitEnabled(true);
+    climberHoldVoltage = ClimberConstants.climberHoldVoltage;
+    SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
 
     return climberConfig;
   }
 
-  @Override
-  public void periodic() {}
+  private Runnable holdPosition() {
+    return () -> climbMotor.setVoltage(ClimberConstants.climberHoldVoltage);
+  }
+
+  public void periodic() {
+    SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
+    climberHoldVoltage =
+        SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
+    SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
+  }
+
+  public void findClimberZeroTick() {
+    climbMotor.set(0.05);
+    double currentPosition = climbMotor.getEncoder().getPosition();
+
+    if (MathUtil.isNear(climberPreviousPosition, currentPosition, 0.1)) {
+      if (!holdTimer.isRunning()) {
+        holdTimer.start();
+      }
+    } else {
+      holdTimer.reset();
+    }
+  }
+
+  public void handleAtZeroPosition() {
+    climbMotor.getEncoder().setPosition(0);
+    climbMotor.set(0);
+    DriverStation.reportWarning("ZEROED CLIMBER+++++++++++++++++++++", false);
+  }
+
+  public void climbIn() {
+    double currentPosition = climbMotor.getEncoder().getPosition();
+    double[] greatestPositionBelowCurrent = {0, 1};
+
+    for (double[] pair : ClimberConstants.climberPosititionToPower) {
+      if (currentPosition > pair[0]) {
+        greatestPositionBelowCurrent = pair;
+      } else break;
+    }
+
+    climbMotor.set(greatestPositionBelowCurrent[1]);
+  }
 
   public Command createClimbOutCommand() {
     // TODO: make sure 1 is correct direction
     return Commands.startEnd(
-        () -> climbMotor.set(-1),
+        () -> climbMotor.set(-0.5),
         // Stop the climber at the end of the command
         () -> climbMotor.set(0.0),
         this);
   }
 
+  public Command findZeroPosition() {
+    return Commands.run(this::findClimberZeroTick, this)
+        .until(() -> holdTimer.hasElapsed(ClimberConstants.timeToZeroClimber))
+        .finallyDo(this::handleAtZeroPosition);
+  }
+
+  public Command climbCommand() {
+    return Commands.run(this::climbIn, this)
+        .until(
+            () ->
+                MathUtil.isNear(
+                    ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
+        .finallyDo(holdPosition());
+  }
+
   public Command createClimbInCommand() {
     return Commands.startEnd(() -> climbMotor.set(1), () -> climbMotor.set(0.0), this);
+  }
+
+  public Command holdClimbPosition() {
+    return Commands.runOnce(holdPosition(), this);
   }
 }

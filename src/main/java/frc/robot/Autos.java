@@ -19,15 +19,10 @@ import frc.robot.subsystems.Swerve;
 
 /** Add your docs here. */
 public class Autos {
-  private final Optional<Trajectory<SwerveSample>> trajectory = Choreo.loadTrajectory("midStart-L1ID21");
-  Swerve drive;
   AutoFactory autoFactory;
-  
-  private final Timer timer = new Timer();
+  Swerve drive;
 
   public Autos(Swerve drive) {
-    this.drive = drive;
-
     autoFactory =
         new AutoFactory(
             drive::getPose, // A function that returns the current robot pose
@@ -37,20 +32,42 @@ public class Autos {
             true, // If alliance flipping should be enabled
             drive // The drive subsystem
             );
+
+    this.drive = drive;
   }
 
   public Command testTraj() {
     return autoFactory.trajectoryCmd("Test");
   }
 
-  public AutoRoutine testTrajRoutine() {
-    AutoRoutine routine = autoFactory.newRoutine("test");
-    AutoTrajectory test = routine.trajectory("Test");
+  public AutoRoutine testDriveTrajRoutine() {
+    AutoRoutine routine = autoFactory.newRoutine("testDrive");
+    AutoTrajectory test = routine.trajectory("TestDrive");
 
-    routine.active().onTrue(test.cmd());
+    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
 
     return routine;
   }
 
+  public AutoRoutine testRotateTrajRoutine() {
+    AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
+    AutoTrajectory test = routine.trajectory("TestRotate");
 
+    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+
+    return routine;
+  }
+
+  public AutoRoutine testDriveRotateTrajRoutine() {
+    AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
+    AutoTrajectory test = routine.trajectory("testRotateAndDrive");
+
+    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+
+    return routine;
+  }
+
+  public Command updateTrajectoryPIDCMD() {
+    return Commands.runOnce(drive::updateTrajectoryPID);
+  }
 }
