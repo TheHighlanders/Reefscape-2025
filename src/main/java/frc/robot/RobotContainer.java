@@ -70,6 +70,7 @@ public class RobotContainer {
     driver.povRight().onTrue(drive.resetGyro());
 
     driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
+    driver.a().whileTrue(coralScorer.reverseCommand());
     driver.rightBumper().whileTrue(coralScorer.manualIntakeCMD());
 
     driver.leftTrigger().onTrue(drive.enableSlowMode());

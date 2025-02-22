@@ -35,7 +35,7 @@ class ElevatorConstants {
   static final double l2Target = 11.5;
   static final double l3Target = 27;
 
-  static final double l4Target = 51 + (5.0d / 8.0d);
+  static final double l4Target = 52.5 + (5.0d / 8.0d);
   static final double coralPositionTarget = 40;
 
   static final double antiSlamVoltageOffset = 0.25; // Ignores ff

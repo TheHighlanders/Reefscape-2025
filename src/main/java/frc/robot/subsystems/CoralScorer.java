@@ -74,6 +74,10 @@ public class CoralScorer extends SubsystemBase {
     effector.set(-1.0);
   }
 
+  public Command reverseCommand() {
+    return Commands.startEnd(this::effectorReverse, this::effectorStop, this);
+  }
+
   public Command intakeCMD() {
     // Runs End Effector forward until game piece detected, then stops it
     return Commands.run(this::effectorForward, this)
