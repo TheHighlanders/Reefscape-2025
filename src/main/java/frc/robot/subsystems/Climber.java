@@ -83,6 +83,6 @@ public class Climber extends SubsystemBase {
   }
 
   public Command holdClimbPosition() {
-    return Commands.runOnce(() -> climbMotor.setVoltage(ClimberConstants.climberHoldVoltage), this);
+    return Commands.runOnce(() -> climbMotor.setVoltage(climberHoldVoltage), this);
   }
 }
