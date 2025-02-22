@@ -89,7 +89,7 @@ public class RobotContainer {
         .whileTrue(climber.createClimbInCommand());
     operator.povRight().onTrue(climber.holdClimbPosition());
 
-    operator.start().whileTrue(drive.pointWheelsForward());
+    operator.start().toggleOnTrue(drive.pointWheelsForward());
     operator.back().whileTrue(drive.pidTuningJogAngle());
     operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
