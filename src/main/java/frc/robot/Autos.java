@@ -67,6 +67,15 @@ public class Autos {
     return routine;
   }
 
+  public AutoRoutine L1ID22TOID12Station() {
+    AutoRoutine routine = autoFactory.newRoutine("L1ID22-ID12Station");
+    AutoTrajectory test = routine.trajectory("L1ID22-ID12Station");
+
+    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+
+    return routine;
+  }
+
   public Command updateTrajectoryPIDCMD() {
     return Commands.runOnce(drive::updateTrajectoryPID);
   }
@@ -75,7 +84,15 @@ public class Autos {
     return drive.driveForwardTimed(1, 4);
   }
 
-  public Command simple1Piece() {
+  public Command simple1Piece() { //the one piece is real
     return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
   }
+  
+  public Command testSequenceCommand() {
+    return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
+  }
+
+
+
+
 }
