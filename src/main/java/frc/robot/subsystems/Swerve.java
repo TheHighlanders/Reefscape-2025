@@ -71,8 +71,7 @@ public class Swerve extends SubsystemBase {
 
   enum SwerveState {
     NORMAL,
-    LINEUP,
-    SLOW
+    LINEUP
   }
 
   private static final double MAX_SLOW_MODE = 0.3;
@@ -89,7 +88,7 @@ public class Swerve extends SubsystemBase {
   SwerveDrivePoseEstimator poseEst;
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
-  double accelLim = SwerveConstants.accelLim;
+
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
   SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
@@ -151,23 +150,6 @@ public class Swerve extends SubsystemBase {
         });
 
     SmartDashboard.putData("Swerve/Field", field);
-    SmartDashboard.putNumber("Tuning/Swerve/Velocity Setpoint", 0);
-    SmartDashboard.putNumber("Tuning/Swerve/Angle Setpoint", 0);
-
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP);
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Translate I", SwerveConstants.translateI);
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Translate D", SwerveConstants.translateD);
-
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate P", SwerveConstants.rotateP);
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI);
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD);
-
-    SmartDashboard.putNumber("Trajectory/XError", 0);
-    SmartDashboard.putNumber("Trajectory/YError", 0);
-    SmartDashboard.putNumber("Trajectory/HeadingError", 0);
-
-    SmartDashboard.putNumber(
-        "ElevatorSlowCoefficient", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
 
     sysId =
         new SysIdRoutine(
@@ -307,76 +289,8 @@ public class Swerve extends SubsystemBase {
    * @return Drive Command
    */
   public Command driveCMD(DoubleSupplier x, DoubleSupplier y, DoubleSupplier omega) {
-    return Commands.run(
-            () ->
-                drive(
-                    squaredCurve(x.getAsDouble()),
-                    squaredCurve(y.getAsDouble()),
-                    omega.getAsDouble()),
-            this)
+    return Commands.run(() -> drive(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble()), this)
         .withName("Swerve Drive Command");
-  }
-
-  public double squaredCurve(double input) {
-    return Math.pow(input, 2) * Math.signum(input);
-  }
-
-  public Command pidTuningJogDrive() {
-    return new RunCommand(
-        () -> {
-          SwerveModuleState state =
-              new SwerveModuleState(
-                  SmartDashboard.getNumber("Tuning/Swerve/Velocity Setpoint", 0), new Rotation2d());
-          for (Module m : modules) {
-            m.setModuleState(state, false);
-          }
-        },
-        this);
-  }
-
-  public Command driveForwardTimed(double velocity, double timeSec) {
-    return new RunCommand(
-            () -> {
-              SwerveModuleState state =
-                  new SwerveModuleState(velocity, Rotation2d.fromDegrees(180));
-              for (Module m : modules) {
-                m.setModuleState(state, false);
-              }
-            },
-            this)
-        .withTimeout(timeSec);
-  }
-
-  public Command pidTuningJogAngle() {
-    SwerveModuleState state =
-        new SwerveModuleState(
-            0,
-            Rotation2d.fromDegrees(SmartDashboard.getNumber("Tuning/Swerve/Angle Setpoint", 0))
-                .plus(modules[0].getAnglePosition()));
-    return new RunCommand(
-        () -> {
-          for (Module m : modules) {
-            m.setModuleState(state, false);
-          }
-        },
-        this);
-  }
-
-  public Command pointWheelsForward() {
-    return new RunCommand(
-        () -> {
-          for (Module m : modules) {
-            m.setModuleState(new SwerveModuleState(0, new Rotation2d()), false);
-          }
-        },
-        this);
-  }
-
-  public Command resetWheelsToZero() {
-    return Commands.runOnce(
-        () -> {
-          for (Module m : modules) m.angleEncoder.setPosition(0);
-        });
   }
 
   /**
@@ -516,9 +430,9 @@ public class Swerve extends SubsystemBase {
     return fr;
   }
 
-  public double getCurrentSlowModeCoefficient(double elevatorHeight) {
+  public double getCurrentSlowModeCoefficient(double e) {
     /* 0 to 1 value representing elevator position (0 is bottom, 1 is top) */
-    double elevatorHeightPercent = elevatorHeight / ElevatorConstants.forwardSoftLimit;
+    double elevatorHeightPercent = e / ElevatorConstants.forwardSoftLimit;
 
     /* Don't limit at all if below some threshold */
     if (elevatorHeightPercent >= MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED) {
@@ -527,17 +441,14 @@ public class Swerve extends SubsystemBase {
        * Scale slow mode position based on height percent using a parabola
        * y=\left\{0\le x\le h:1,h\le
        * x\le1:\frac{l-1}{\left(1-h\right)^{2}}\left(x-h\right)^{2}+1\right\}
-       * y=\left\{0\le x\le h:1,h\le
-       * x\le1:\frac{l-1}{\left(1-h\right)^{2}}\left(x-h\right)^{2}+1\right\}
        * where h = MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED
        * & l = MAX_SLOW_MODE
        */
       double out =
           (MAX_SLOW_MODE - 1)
-                  * Math.pow(elevatorHeightPercent - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
+                  * Math.pow(e - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
                   / Math.pow(1 - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
               + 1;
-      SmartDashboard.putNumber("ElevatorSlowCoefficient", out);
 
       return out;
     }
@@ -586,19 +497,12 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "FFoutput", m.getFFDriveOutput());
       SmartDashboard.putNumber(
-          "ModuleDebug/Module" + m.getModuleNumber() + "AngleMotorOutput",
-          m.getAppliedOutputAngle());
+          "ModuleDebug/Module" + m.getModuleNumber() + "MotorOutput", m.getAppliedOutputDrive());
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity", m.getDriveVelocity());
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity Setpoint",
           m.getSetpoint().speedMetersPerSecond);
-
-      SmartDashboard.putNumber(
-          "ModuleDebug/Module" + m.getModuleNumber() + "Position", m.getPosition().distanceMeters);
-
-      SmartDashboard.putNumber(
-          "SwerveSlowCoeff", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
     }
   }
 
@@ -615,6 +519,65 @@ public class Swerve extends SubsystemBase {
         .ignoringDisable(true);
   }
 
+  public Command resetOdometry() {
+    return Commands.runOnce(
+        () -> {
+          poseEst.resetTranslation(new Translation2d());
+          resetGyro();
+        });
+  }
+
+  public Command driveForwardTimed(double velocity, double timeSec) {
+    return Commands.runOnce(
+            () -> {
+              SwerveModuleState state =
+                  new SwerveModuleState(velocity, Rotation2d.fromDegrees(180));
+              for (Module m : modules) {
+                m.setModuleState(state, false);
+              }
+            },
+            this)
+        .withTimeout(timeSec);
+  }
+
+  public Command pointWheelsForward() {
+    return new RunCommand(
+        () -> {
+          for (Module m : modules) {
+            m.setModuleState(new SwerveModuleState(0, new Rotation2d()), false);
+          }
+        },
+        this);
+  }
+
+  public Command pidTuningJogAngle() {
+    SwerveModuleState state =
+        new SwerveModuleState(
+            0,
+            Rotation2d.fromDegrees(SmartDashboard.getNumber("Tuning/Swerve/Angle Setpoint", 0))
+                .plus(modules[0].getAnglePosition()));
+    return new RunCommand(
+        () -> {
+          for (Module m : modules) {
+            m.setModuleState(state, false);
+          }
+        },
+        this);
+  }
+
+  public Command pidTuningJogDrive() {
+    return new RunCommand(
+        () -> {
+          SwerveModuleState state =
+              new SwerveModuleState(
+                  SmartDashboard.getNumber("Tuning/Swerve/Velocity Setpoint", 0), new Rotation2d());
+          for (Module m : modules) {
+            m.setModuleState(state, false);
+          }
+        },
+        this);
+  }
+
   public void updateTrajectoryPID() {
     SwerveConstants.translateP =
         SmartDashboard.getNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP);
@@ -629,14 +592,6 @@ public class Swerve extends SubsystemBase {
         SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI);
     SwerveConstants.rotateD =
         SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD);
-  }
-
-  public Command resetOdometry() {
-    return Commands.runOnce(
-        () -> {
-          poseEst.resetTranslation(new Translation2d());
-          resetGyro();
-        });
   }
 
   public void updateDashboardGUI() {
