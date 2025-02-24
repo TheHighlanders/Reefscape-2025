@@ -264,6 +264,8 @@ public class Module {
     if (BaseStatusSignal.isAllGood(absoluteEncoderPosition)) {
       return Rotation2d.fromDegrees(absoluteEncoderPosition.getValue().in(Degrees));
     } else if (hasZeroedAbsolute) {
+      DriverStation.reportWarning(
+          "CANCODER NOT GOOD DEFAULTING TO RELATIVE: MODULE " + moduleNumber, false);
       return Rotation2d.fromDegrees(angleEncoder.getPosition());
     } else {
       DriverStation.reportError(
