@@ -192,6 +192,7 @@ public class Swerve extends SubsystemBase {
                       .linearVelocity(MetersPerSecond.of(modules[1].getDriveVelocity()));
                 },
                 this));
+    attemptZeroingAbsolute();
   }
 
   @Override
@@ -247,12 +248,6 @@ public class Swerve extends SubsystemBase {
             },
             this)
         .ignoringDisable(true);
-  }
-
-  public void resetEncoders() {
-    for (Module m : modules) {
-      m.setIntegratedAngleToAbsolute();
-    }
   }
 
   public Rotation2d getGyroAngle() {
