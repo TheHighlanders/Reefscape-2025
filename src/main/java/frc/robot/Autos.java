@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Swerve;
-
+import frc.robot.subsystems.Elevator.ElevatorState;
 
 /** Add your docs here. */
 public class Autos {
@@ -101,12 +101,12 @@ public class Autos {
     return drive.driveForwardTimed(1, 4);
   }
 
-  public Command simple1Piece() { //the one piece is real
-    return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
-  }
-  
-  public Command testSequenceCommand() {
-    return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
+  public Command simple1Piece() {
+    return Commands.sequence(
+      drive.driveForwardTimed(1.5, 1.5),
+      coral.depositCMD().withTimeout(1),
+      drive.driveForwardTimed(-0.5, 0.5)
+    );
   }
 
 
