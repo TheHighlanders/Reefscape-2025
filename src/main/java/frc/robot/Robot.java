@@ -4,11 +4,14 @@
 
 package frc.robot;
 
+import edu.wpi.first.net.WebServer;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
+
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
@@ -17,6 +20,7 @@ public class Robot extends TimedRobot {
 
   public Robot() {
     m_robotContainer = new RobotContainer();
+    WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
   }
 
   @Override
@@ -25,15 +29,22 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {} 
+  public void disabledInit() {
+    m_robotContainer.elevator.sendTuningConstants();
+  }
 
   @Override
   public void disabledPeriodic() {
-    if (loops % 10 == 0) {
-      m_robotContainer.drive.resetEncoders();
+    if (loops % 50 == 0) {
       loops = 0;
-    } else if(loops % 5 == 0){
+    } else if (loops % 25 == 0) {
+      // m_robotContainer.drive.readAngleEncoders();
       m_robotContainer.drive.updateControlConstants();
+    }
+    if (loops % 50 == 37) {
+      m_robotContainer.drive.updateDashboardGUI();
+      m_robotContainer.drive.updateTrajectoryPID();
+      m_robotContainer.elevator.updateTuningConstants();
     }
     loops++;
   }
@@ -48,6 +59,8 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
+
+    WebServer.stop(5800);
   }
 
   @Override
@@ -61,6 +74,7 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+    m_robotContainer.findClimberZero().schedule();
   }
 
   @Override

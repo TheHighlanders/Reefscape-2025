@@ -8,28 +8,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  format:
-    name: Format Code
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: 17
-      - name: Run spotlessApply
-        run: ./gradlew spotlessApply || true
-      - name: Create Pull Request
-        run: |
-          git config user.name 'github-actions[bot]' || true
-          git config user.email 'github-actions[bot]@users.noreply.github.com' || true
-          git commit -am "Spotless Format" || true
-          git push || true
-  
-  test:
-    name: Run Tests
+  build:
+    name: Run Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,4 +17,6 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 17
-      - run: ./gradlew test
+      - run: ./gradlew build
+    
+
