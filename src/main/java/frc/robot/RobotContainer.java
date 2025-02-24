@@ -34,22 +34,13 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
+  Vision vision = new Vision();
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
   Elevator elevator = new Elevator();
-  Swerve drive = new Swerve(elevator::getElevatorPosition);
+  Swerve drive = new Swerve(vision::getEstimatedRobotPoses, vision::getEstimationStdDevs,
+      elevator::getElevatorPosition);
   Autos autos = new Autos(drive, elevator, coralScorer);
-
-  Vision vision = new Vision();
-  Swerve drive = new Swerve(vision::getEstimatedRobotPoses, vision::getEstimationStdDevs);
-  Autos autos = new Autos(drive);
-  AutoChooser chooser;
-
-  public RobotContainer() {
-    // This needs to be the last subsystem added
-    Superstructure superstructure = new Superstructure(subsystems);
-    subsystems.put("superstructure", superstructure);
-    StateRequest.init(superstructure);
   AutoChooser chooser;
 
   public RobotContainer() {
@@ -133,50 +124,48 @@ public class RobotContainer {
 
     Thread m_visionThread;
 
-    m_visionThread =
-        new Thread(
-            () -> {
-              // Get the UsbCamera from CameraServer
-              UsbCamera camera = CameraServer.startAutomaticCapture();
-              // Set the resolution
-              camera.setResolution(320, 240);
-              camera.setPixelFormat(PixelFormat.kMJPEG);
-            });
+    m_visionThread = new Thread(
+        () -> {
+          // Get the UsbCamera from CameraServer
+          UsbCamera camera = CameraServer.startAutomaticCapture();
+          // Set the resolution
+          camera.setResolution(320, 240);
+          camera.setPixelFormat(PixelFormat.kMJPEG);
+        });
 
-    m_visionThread =
-        new Thread(
-            () -> {
+    m_visionThread = new Thread(
+        () -> {
 
-              // Get the UsbCamera from CameraServer
-              UsbCamera camera = CameraServer.startAutomaticCapture();
+          // Get the UsbCamera from CameraServer
+          UsbCamera camera = CameraServer.startAutomaticCapture();
 
-              // Set the resolution
-              camera.setResolution(320, 240);
+          // Set the resolution
+          camera.setResolution(320, 240);
 
-              // Get a CvSink. This will capture Mats from the camera
-              CvSink cvSink = CameraServer.getVideo();
+          // Get a CvSink. This will capture Mats from the camera
+          CvSink cvSink = CameraServer.getVideo();
 
-              // Setup a CvSource. This will send images back to the Dashboard
-              CvSource outputStream = CameraServer.putVideo("DriverReefCam", 320, 240);
+          // Setup a CvSource. This will send images back to the Dashboard
+          CvSource outputStream = CameraServer.putVideo("DriverReefCam", 320, 240);
 
-              // Mats are very memory expensive. Lets reuse this Mat.
-              Mat mat = new Mat();
-              while (!Thread.interrupted()) {
-                if (cvSink.grabFrame(mat) == 0) {
-                  // Send the output the error.
-                  outputStream.notifyError(cvSink.getError());
-                  // skip the rest of the current iteration
-                  continue;
-                }
+          // Mats are very memory expensive. Lets reuse this Mat.
+          Mat mat = new Mat();
+          while (!Thread.interrupted()) {
+            if (cvSink.grabFrame(mat) == 0) {
+              // Send the output the error.
+              outputStream.notifyError(cvSink.getError());
+              // skip the rest of the current iteration
+              continue;
+            }
 
-                // Put a rectangle on the image
-                Imgproc.rectangle(
-                    mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
-                // Give the output stream a new image to display
+            // Put a rectangle on the image
+            Imgproc.rectangle(
+                mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
+            // Give the output stream a new image to display
 
-                outputStream.putFrame(mat);
-              }
-            });
+            outputStream.putFrame(mat);
+          }
+        });
 
     m_visionThread.setDaemon(true);
     m_visionThread.start();
