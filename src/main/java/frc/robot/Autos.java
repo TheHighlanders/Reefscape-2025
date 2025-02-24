@@ -13,12 +13,14 @@ import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Swerve;
 
+
 /** Add your docs here. */
 public class Autos {
   AutoFactory autoFactory;
   Swerve drive;
   Elevator elevator;
   CoralScorer coral;
+
 
   public Autos(Swerve drive, Elevator elevator, CoralScorer coral) {
     autoFactory =
@@ -74,6 +76,21 @@ public class Autos {
     routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
 
     return routine;
+  }
+  public AutoRoutine L1ID22TOID12StationTOID12StationTOL1ID17() { //it bad name but it acurate look at game manual:>
+    AutoRoutine routine = autoFactory.newRoutine("L1ID22TOID12StationTOID12StationTOL1ID17");
+    
+    AutoTrajectory L1ID22TOID12Station = routine.trajectory("L1ID22-ID12Station");
+    AutoTrajectory ID12StationTOL1ID17 = routine.trajectory("ID12StationTOL1ID17");
+   
+    L1ID22TOID12Station.active();
+    L1ID22TOID12Station.done().onTrue(coral.intakeCMD().andThen(Commands.waitSeconds(2)));
+    L1ID22TOID12Station.done().onTrue(ID12StationTOL1ID17.cmd());
+    ID12StationTOL1ID17.active();
+    ID12StationTOL1ID17.done().onTrue(coral.depositCMD().andThen(Commands.waitSeconds(.5)));
+
+    return routine;
+
   }
 
   public Command updateTrajectoryPIDCMD() {
