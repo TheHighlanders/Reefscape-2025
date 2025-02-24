@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.ClimberConstants.PowerPoint;
 
 final class ClimberConstants {
   static final int climberCurrentLimit = 40;
@@ -33,11 +34,10 @@ final class ClimberConstants {
 
   static final double timeToZeroClimber = 1; // Seconds
 
+  static final record PowerPoint(double position, double power) {}
+
   // Position, Power
-  static final double[][] climberPosititionToPower = {
-    {0, 1},
-    {0.6, 0.5},
-  };
+  static final PowerPoint[] CLIMB_POINTS = {new PowerPoint(0.0, 1.0), new PowerPoint(0.6, 0.5)};
 }
 
 public class Climber extends SubsystemBase {
@@ -109,15 +109,16 @@ public class Climber extends SubsystemBase {
 
   public void climbIn() {
     double currentPosition = climbMotor.getEncoder().getPosition();
-    double[] greatestPositionBelowCurrent = {0, 1};
+    PowerPoint activePoint = ClimberConstants.CLIMB_POINTS[0];
 
-    for (double[] pair : ClimberConstants.climberPosititionToPower) {
-      if (currentPosition > pair[0]) {
-        greatestPositionBelowCurrent = pair;
-      } else break;
+    for (PowerPoint point : ClimberConstants.CLIMB_POINTS) {
+      if (currentPosition <= point.position()) {
+        break;
+      }
+      activePoint = point;
     }
 
-    climbMotor.set(greatestPositionBelowCurrent[1]);
+    climbMotor.set(activePoint.power());
   }
 
   public Command createClimbOutCommand() {
