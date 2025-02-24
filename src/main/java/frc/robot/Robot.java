@@ -38,8 +38,7 @@ public class Robot extends TimedRobot {
     if (loops % 50 == 0) {
       loops = 0;
     } else if (loops % 25 == 0) {
-      // m_robotContainer.drive.readAngleEncoders();
-      m_robotContainer.drive.updateControlConstants();
+      m_robotContainer.drive.attemptZeroingAbsolute();
     }
     if (loops % 50 == 37) {
       m_robotContainer.drive.updateDashboardGUI();

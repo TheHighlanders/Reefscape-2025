@@ -39,6 +39,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -79,6 +81,8 @@ public class Swerve extends SubsystemBase {
   private static final double MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED = 0.25;
 
   DoubleSupplier elevatorHeight;
+
+  private List<Module> needZeroing = new ArrayList<Module>();
 
   Module[] modules = new Module[4];
   AHRS gyro;
@@ -188,6 +192,7 @@ public class Swerve extends SubsystemBase {
                       .linearVelocity(MetersPerSecond.of(modules[1].getDriveVelocity()));
                 },
                 this));
+    attemptZeroingAbsolute();
   }
 
   @Override
@@ -220,6 +225,17 @@ public class Swerve extends SubsystemBase {
     return Stream.of(modules).map(Module::getSetpoint).toArray(SwerveModuleState[]::new);
   }
 
+  public void attemptZeroingAbsolute() {
+    if (needZeroing.size() >= 0) {
+      for (int i = 0; i < needZeroing.size(); i++) {
+        if (needZeroing.get(i).resetAbsolute()) {
+          needZeroing.remove(i);
+          i--;
+        }
+      }
+    }
+  }
+
   public Command readAngleEncoders() {
     return Commands.runOnce(
             () -> {
@@ -232,12 +248,6 @@ public class Swerve extends SubsystemBase {
             },
             this)
         .ignoringDisable(true);
-  }
-
-  public void resetEncoders() {
-    for (Module m : modules) {
-      m.setIntegratedAngleToAbsolute();
-    }
   }
 
   public Rotation2d getGyroAngle() {

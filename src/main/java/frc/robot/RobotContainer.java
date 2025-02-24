@@ -12,7 +12,6 @@ import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.util.PixelFormat;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
@@ -95,8 +94,6 @@ public class RobotContainer {
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
-
-    driver.back().onTrue(Commands.runOnce(drive::resetEncoders, drive));
   }
 
   private void configureAutonomous() {
