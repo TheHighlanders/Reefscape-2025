@@ -66,8 +66,16 @@ public class CoralScorer extends SubsystemBase {
     effector.set(1.0);
   }
 
+  public void effectorSlowForward() {
+    effector.set(0.3);
+  }
+
   public void effectorReverse() {
     effector.set(-1.0);
+  }
+
+  public Command reverseCommand() {
+    return Commands.startEnd(this::effectorReverse, this::effectorStop, this);
   }
 
   public Command intakeCMD() {
@@ -75,6 +83,12 @@ public class CoralScorer extends SubsystemBase {
     return Commands.run(this::effectorForward, this)
         .finallyDo(this::effectorStop)
         .until(this::hasGamePiece);
+  }
+
+  public Command manualIntakeCMD() {
+    return Commands.run(this::effectorSlowForward, this)
+        .finallyDo(this::effectorStop)
+        .withTimeout(1);
   }
 
   public Command depositCMD() {

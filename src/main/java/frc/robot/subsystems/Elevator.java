@@ -23,21 +23,20 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import java.util.function.DoubleSupplier;
 
-final class ElevatorConstants {
+class ElevatorConstants {
   static final int elevMotorID = 41;
 
-  // 2 for carriage movement relative to 1st stage, also includes DP, and gear ratio
+  // 2 for carriage movement relative to 1st stage, also includes DP, and gear
+  // ratio
   static final double elevPCF = 2 * 1.751 / 9.0d * Math.PI;
 
   static final double homeTarget = 5; // Position before autolanding
-  static final double l1Target = 0;
-  static final double l2Target = 10;
-  static final double l3Target = 27;
+  static final double l2Target = 11.5;
+  static final double l3Target = 28;
+  static final double l4Target = 52.5 + (5.0d / 8.0d);
 
-  static final double l4Target = 52;
-  static final double coralPositionTarget = 40;
+  static final double coralBetweenReefOffset = 2;
 
   static final double antiSlamVoltageOffset = 0.25; // Ignores ff
   static final double feedForward = 0.9;
@@ -56,11 +55,9 @@ final class ElevatorConstants {
 public class Elevator extends SubsystemBase {
   public enum ElevatorState {
     HOME,
-    L1_POSITION,
     L2_POSITION,
     L3_POSITION,
     L4_POSITION,
-    CORAL_POSITION
   }
 
   private SparkMax elevatorMotor;
@@ -68,6 +65,7 @@ public class Elevator extends SubsystemBase {
   private SparkLimitSwitch reverseLimitSwitch;
 
   double targetPosition;
+  double positionOffset;
 
   double arbFF;
   double antiSlamVoltageOffset;
@@ -104,7 +102,7 @@ public class Elevator extends SubsystemBase {
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
-    elevatorMotorConfig.closedLoop.outputRange(-0.4, 0.85);
+    elevatorMotorConfig.closedLoop.outputRange(-0.35, 0.85);
 
     elevatorMotorConfig.closedLoopRampRate(0.05);
 
@@ -170,15 +168,6 @@ public class Elevator extends SubsystemBase {
         .ignoringDisable(true);
   }
 
-  public Command setPosition(DoubleSupplier pos) {
-    SmartDashboard.putNumber("Tuning/Elevator/height", pos.getAsDouble());
-    return Commands.runOnce(
-        () ->
-            elevatorController.setReference(
-                pos.getAsDouble(), ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF),
-        this);
-  }
-
   public Command setPosition(ElevatorState position) {
     return Commands.runOnce(
         () -> {
@@ -186,9 +175,6 @@ public class Elevator extends SubsystemBase {
           switch (uppydowny) {
             case HOME:
               targetPosition = ElevatorConstants.homeTarget;
-              break;
-            case L1_POSITION:
-              targetPosition = ElevatorConstants.l1Target;
               break;
             case L2_POSITION:
               targetPosition = ElevatorConstants.l2Target;
@@ -199,12 +185,9 @@ public class Elevator extends SubsystemBase {
             case L4_POSITION:
               targetPosition = ElevatorConstants.l4Target;
               break;
-            case CORAL_POSITION:
-              targetPosition = ElevatorConstants.coralPositionTarget;
-              break;
           }
           elevatorController.setReference(
-              targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
+              targetPosition + positionOffset, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
         });
   }
 
@@ -257,8 +240,39 @@ public class Elevator extends SubsystemBase {
     return elevatorEncoder.getPosition();
   }
 
-  public Command jogElevator(double speed) {
-    return Commands.run(() -> elevatorMotor.set(Math.max(Math.min(1, speed), -1)))
+  public Command jogElevator(double voltage) {
+    return Commands.run(
+            () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
         .finallyDo(() -> elevatorMotor.stopMotor());
+  }
+
+  public boolean isAtSetpoint(double tolerance) {
+    return MathUtil.isNear(targetPosition, elevatorEncoder.getPosition(), tolerance);
+  }
+
+  public boolean isAtHome(double tolerance) {
+    return MathUtil.isNear(0, elevatorEncoder.getPosition(), tolerance);
+  }
+
+  public Command elevatorAuto(ElevatorState targetState) {
+    switch (targetState) {
+      case HOME:
+        return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtHome(0.5)));
+      default:
+        return setPosition(targetState)
+            .alongWith(Commands.waitUntil(() -> isAtSetpoint(antiSlamVoltageOffset)));
+    }
+  }
+
+  public Command offsetElevator() {
+    return Commands.startEnd(
+        () -> {
+          positionOffset = ElevatorConstants.coralBetweenReefOffset;
+          setPosition(uppydowny).schedule();
+        },
+        () -> {
+          positionOffset = 0;
+          setPosition(uppydowny).schedule();
+        });
   }
 }
