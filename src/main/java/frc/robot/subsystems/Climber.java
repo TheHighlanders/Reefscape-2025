@@ -38,7 +38,6 @@ final class ClimberConstants {
 
   // Position, Power
   static final PowerPoint[] CLIMB_POINTS = {new PowerPoint(0.0, 1.0), new PowerPoint(0.6, 0.5)};
-  ;
 }
 
 public class Climber extends SubsystemBase {
