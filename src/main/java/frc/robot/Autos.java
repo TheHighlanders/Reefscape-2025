@@ -52,7 +52,7 @@ public class Autos {
   }
 
   public AutoRoutine testRotateTrajRoutine() {
-    AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
+    AutoRoutine routine = autoFactory.newRoutine("testRotate");
     AutoTrajectory test = routine.trajectory("TestRotate");
 
     routine
@@ -64,7 +64,7 @@ public class Autos {
 
   public AutoRoutine testDriveRotateTrajRoutine() {
     AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
-    AutoTrajectory test = routine.trajectory("testRotateAndDrive");
+    AutoTrajectory test = routine.trajectory("TestRotateAndDrive");
 
     routine
         .active()

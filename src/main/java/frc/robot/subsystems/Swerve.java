@@ -58,13 +58,13 @@ final class SwerveConstants {
 
   static final double accelLim = 3;
 
-  static double translateP = 0;
-  static double translateI = 0;
+  static double translateP = 1.75;
+  static double translateI = 0.05;
   static double translateD = 0;
 
-  static double rotateP = 0;
+  static double rotateP = 1.5;
   static double rotateI = 0;
-  static double rotateD = 0;
+  static double rotateD = 0.6;
 }
 
 public class Swerve extends SubsystemBase {
@@ -165,6 +165,8 @@ public class Swerve extends SubsystemBase {
 
     SmartDashboard.putNumber(
         "ElevatorSlowCoefficient", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
+
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     sysId =
         new SysIdRoutine(
