@@ -255,7 +255,7 @@ public class Swerve extends SubsystemBase {
   }
 
   public void resetOdometry(Pose2d pose) {
-    poseEst.resetPosition(pose.getRotation(), getModulePostions(), pose);
+    poseEst.resetPosition(getGyroAngle(), getModulePostions(), pose);
   }
 
   /**
@@ -336,7 +336,15 @@ public class Swerve extends SubsystemBase {
               }
             },
             this)
-        .withTimeout(timeSec);
+        .withTimeout(timeSec)
+        .finallyDo(this::stopDrive);
+  }
+
+  public void stopDrive() {
+    SwerveModuleState state = new SwerveModuleState(0, new Rotation2d());
+    for (Module m : modules) {
+      m.setModuleState(state, false);
+    }
   }
 
   public Command pidTuningJogAngle() {
@@ -556,9 +564,9 @@ public class Swerve extends SubsystemBase {
     // Generate the next speeds for the robot
     ChassisSpeeds speeds =
         new ChassisSpeeds(
-            -(sample.vx + xController.calculate(pose.getX(), sample.x)),
-            -(sample.vy + yController.calculate(pose.getY(), sample.y)),
-            -(sample.omega
+            (sample.vx + xController.calculate(pose.getX(), sample.x)),
+            (sample.vy + yController.calculate(pose.getY(), sample.y)),
+            (sample.omega
                 + headingController.calculate(pose.getRotation().getRadians(), sample.heading)));
 
     SmartDashboard.putNumber("Trajectory/XError", xController.getError());

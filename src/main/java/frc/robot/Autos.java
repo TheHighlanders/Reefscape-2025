@@ -62,7 +62,9 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
     AutoTrajectory test = routine.trajectory("testRotateAndDrive");
 
-    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+    routine
+        .active()
+        .onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.resetOdometry(), test.cmd()));
 
     return routine;
   }
@@ -102,7 +104,10 @@ public class Autos {
   }
 
   public Command simple1Piece() { // the one piece is real
-    return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
+    return Commands.sequence(
+        drive.driveForwardTimed(1.5, 1.5),
+        coral.slowDepositCMD().withTimeout(1),
+        drive.driveForwardTimed(-0.5, 0.75));
   }
 
   public Command testSequenceCommand() {

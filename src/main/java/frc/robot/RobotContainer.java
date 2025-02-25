@@ -102,6 +102,7 @@ public class RobotContainer {
     chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
     chooser.addCmd("SYSID", drive::sysId);
     chooser.addCmd("FORWARD", () -> drive.pidTuningJogDrive());
+    chooser.addCmd("Simple One Piece", autos::simple1Piece);
 
     SmartDashboard.putData("AutoChooser", chooser);
   }

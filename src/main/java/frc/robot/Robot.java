@@ -41,6 +41,7 @@ public class Robot extends TimedRobot {
       m_robotContainer.drive.attemptZeroingAbsolute();
     }
     if (loops % 50 == 37) {
+      m_robotContainer.drive.updateControlConstants();
       m_robotContainer.drive.updateDashboardGUI();
       m_robotContainer.drive.updateTrajectoryPID();
       m_robotContainer.elevator.updateTuningConstants();
