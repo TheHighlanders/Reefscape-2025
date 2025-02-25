@@ -60,7 +60,7 @@ final class SwerveConstants {
 
   static final double headingCorrectionDeadband = 0.05;
 
-  static double headingCorrectionP = 1.75;
+  static double headingCorrectionP = 0.5;
   static double headingCorrectionI = 0.05;
   static double headingCorrectionD = 0;
 
@@ -444,7 +444,7 @@ public class Swerve extends SubsystemBase {
     // TODO: Reenable if wheelieing
 
     // Comment to disable heading correction
-    omega = headingCorrection(x, y, omega);
+    // omega = headingCorrection(x, y, omega);
 
     ChassisSpeeds chassisSpeeds;
 
@@ -683,9 +683,9 @@ public class Swerve extends SubsystemBase {
   public void updateDashboardGUI() {
     Module m = modules[0];
 
-    SmartDashboard.putNumber("Tuning/Swerve/Correction P", SwerveConstants.headingCorrectionP);
-    SmartDashboard.putNumber("Tuning/Swerve/Correction I", SwerveConstants.headingCorrectionI);
-    SmartDashboard.putNumber("Tuning/Swerve/Correction D", SwerveConstants.headingCorrectionD);
+    SmartDashboard.putNumber("Tuning/Swerve/Correction P", headingDeadbandController.getP());
+    SmartDashboard.putNumber("Tuning/Swerve/Correction I", headingDeadbandController.getI());
+    SmartDashboard.putNumber("Tuning/Swerve/Correction D", headingDeadbandController.getD());
 
     SmartDashboard.putNumber("Tuning/Swerve/Angle P", m.getAngleP());
     SmartDashboard.putNumber("Tuning/Swerve/Angle I", m.getAngleI());
