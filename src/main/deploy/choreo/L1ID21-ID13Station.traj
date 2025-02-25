@@ -15,9 +15,9 @@
  },
  "params":{
   "waypoints":[
-    {"x":{"exp":"L1ID21.x", "val":5.754106044769287}, "y":{"exp":"L1ID21.y", "val":4.030930995941162}, "heading":{"exp":"L1ID21.heading", "val":3.14159}, "intervals":24, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
-    {"x":{"exp":"6.212946891784668 m", "val":6.212946891784668}, "y":{"exp":"5.14822244644165 m", "val":5.14822244644165}, "heading":{"exp":"3.0393854704943584 rad", "val":3.0393854704943584}, "intervals":29, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
-    {"x":{"exp":"4.488908290863037 m", "val":4.488908290863037}, "y":{"exp":"5.896818161010742 m", "val":5.896818161010742}, "heading":{"exp":"2.976444131115117 rad", "val":2.976444131115117}, "intervals":45, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
+    {"x":{"exp":"L1ID21.x", "val":5.754106044769287}, "y":{"exp":"L1ID21.y", "val":4.030930995941162}, "heading":{"exp":"L1ID21.heading", "val":3.14159}, "intervals":32, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
+    {"x":{"exp":"6.212946891784668 m", "val":6.212946891784668}, "y":{"exp":"5.14822244644165 m", "val":5.14822244644165}, "heading":{"exp":"3.0393854704943584 rad", "val":3.0393854704943584}, "intervals":38, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
+    {"x":{"exp":"4.488908290863037 m", "val":4.488908290863037}, "y":{"exp":"5.896818161010742 m", "val":5.896818161010742}, "heading":{"exp":"2.976444131115117 rad", "val":2.976444131115117}, "intervals":60, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
     {"x":{"exp":"ID13Station.x", "val":1.202786564826965}, "y":{"exp":"ID13Station.y", "val":7.137902736663818}, "heading":{"exp":"ID13Station.heading", "val":-2.507336133861457}, "intervals":54, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false}],
   "constraints":[
     {"from":"first", "to":"last", "data":{"type":"KeepInRectangle", "props":{"x":{"exp":"0 m", "val":0.0}, "y":{"exp":"0 m", "val":0.0}, "w":{"exp":"17.548 m", "val":17.548}, "h":{"exp":"8.052 m", "val":8.052}}}, "enabled":true},

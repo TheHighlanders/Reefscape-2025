@@ -94,4 +94,8 @@ public class CoralScorer extends SubsystemBase {
   public Command depositCMD() {
     return Commands.run(this::effectorForward, this).finallyDo(this::effectorStop);
   }
+
+  public Command slowDepositCMD() {
+    return Commands.run(this::effectorSlowForward, this).finallyDo(this::effectorStop);
+  }
 }

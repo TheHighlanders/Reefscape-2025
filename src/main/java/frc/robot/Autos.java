@@ -13,14 +13,12 @@ import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Swerve;
 
-
 /** Add your docs here. */
 public class Autos {
   AutoFactory autoFactory;
   Swerve drive;
   Elevator elevator;
   CoralScorer coral;
-
 
   public Autos(Swerve drive, Elevator elevator, CoralScorer coral) {
     autoFactory =
@@ -46,7 +44,9 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("testDrive");
     AutoTrajectory test = routine.trajectory("TestDrive");
 
-    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+    routine
+        .active()
+        .onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.resetOdometry(), test.cmd()));
 
     return routine;
   }
@@ -55,7 +55,9 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
     AutoTrajectory test = routine.trajectory("TestRotate");
 
-    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+    routine
+        .active()
+        .onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.resetOdometry(), test.cmd()));
 
     return routine;
   }
@@ -64,7 +66,9 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
     AutoTrajectory test = routine.trajectory("testRotateAndDrive");
 
-    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+    routine
+        .active()
+        .onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.resetOdometry(), test.cmd()));
 
     return routine;
   }
@@ -88,12 +92,13 @@ public class Autos {
   }
 
 
-  public AutoRoutine L1ID22TOID12StationTOID12StationTOL1ID17() { //it bad name but it acurate look at game manual:>
+  public AutoRoutine L1ID22TOID12StationTOID12StationTOL1ID17() { // it bad name but it acurate look at game
+    // manual:>
     AutoRoutine routine = autoFactory.newRoutine("L1ID22TOID12StationTOID12StationTOL1ID17");
-    
+
     AutoTrajectory L1ID22TOID12Station = routine.trajectory("L1ID22-ID12Station");
     AutoTrajectory ID12StationTOL1ID17 = routine.trajectory("ID12StationTOL1ID17");
-   
+
     L1ID22TOID12Station.active();
     L1ID22TOID12Station.done().onTrue(coral.intakeCMD().andThen(Commands.waitSeconds(2)));
     L1ID22TOID12Station.done().onTrue(ID12StationTOL1ID17.cmd());
@@ -111,15 +116,14 @@ public class Autos {
     return drive.driveForwardTimed(1, 4);
   }
 
-  public Command simple1Piece() { //the one piece is real
-    return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
+  public Command simple1Piece() { // the one piece is real
+    return Commands.sequence(
+        drive.driveForwardTimed(1.5, 1.5),
+        coral.slowDepositCMD().withTimeout(1),
+        drive.driveForwardTimed(-0.5, 0.75));
   }
-  
+
   public Command testSequenceCommand() {
     return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
   }
-
-
-
-
 }
