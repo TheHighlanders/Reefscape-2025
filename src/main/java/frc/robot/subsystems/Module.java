@@ -1,11 +1,14 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.math.util.Units.inchesToMeters;
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Volts;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
-import com.revrobotics.spark.SparkAbsoluteEncoder;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -22,6 +25,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants;
 
@@ -30,12 +34,12 @@ final class ModuleConstants {
   static final double angleI = 0;
   static final double angleD = 0;
 
-  static final double driveP = 0.16;
+  static final double driveP = 0.2;
   static final double driveI = 0;
   static final double driveD = 0;
 
   static final double driveS = 0;
-  static final double driveV = 2.9642857143;
+  static final double driveV = 3.5;
   static final double driveA = 0;
 
   // Wheel diameter * pi / gear ratio
@@ -66,9 +70,10 @@ public class Module {
   public double angleReference;
   public double driveReference;
 
-  public SparkAbsoluteEncoder absoluteEncoder;
+  public CANcoder absoluteEncoder;
+  public StatusSignal<Angle> absoluteEncoderPosition;
 
-  private final Rotation2d KModuleAbsoluteOffset;
+  public boolean hasZeroedAbsolute = false;
 
   /* Creates an additional FF controller for extra drive motor control */
   private static SimpleMotorFeedforward driveFeedforward =
@@ -78,7 +83,6 @@ public class Module {
   double ffOut = 0;
 
   public Module(int moduleNumber) {
-    this.KModuleAbsoluteOffset = Rotation2d.fromDegrees(Constants.absoluteOffsets[moduleNumber]);
     this.moduleNumber = moduleNumber;
 
     driveMotor = new SparkMax(Constants.driveMotorIDs[moduleNumber], MotorType.kBrushless);
@@ -95,13 +99,16 @@ public class Module {
     driveEncoder = driveMotor.getEncoder();
     angleEncoder = angleMotor.getEncoder();
 
-    absoluteEncoder = angleMotor.getAbsoluteEncoder();
+    absoluteEncoder = new CANcoder(Constants.canCoderIDs[moduleNumber]);
+    absoluteEncoderPosition = absoluteEncoder.getPosition();
 
     angleController = angleMotor.getClosedLoopController();
     driveController = driveMotor.getClosedLoopController();
 
     driveEncoder.setPosition(0);
-    angleEncoder.setPosition(0);
+
+    // Zero Angle Encoder (NEO internal) against CANcoder
+    resetAbsolute();
   }
 
   private SparkMaxConfig createDriveConfig() {
@@ -253,30 +260,18 @@ public class Module {
    * @return Position of the module between 0 and 360, as a Rotation2d
    */
   public Rotation2d getAbsolutePosition() {
-    /* Gets Position from SparkMAX absol encoder * 360 to degrees */
-    double positionDeg = absoluteEncoder.getPosition() * 360.0d;
-
-    /* Subtracts magnetic offset to get wheel position */
-    positionDeg -= KModuleAbsoluteOffset.getDegrees();
-
-    /* Inverts if necesary */
-    positionDeg *= (ModuleConstants.absolInverted ? -1 : 1);
-
-    return Rotation2d.fromDegrees(positionDeg);
-  }
-
-  // DO NOT USE THIS WITHOUT A GOOD REASON!
-  public Rotation2d findAbsoluteOffsetCalibrations() {
-    DriverStation.reportError(
-        "CALLING NO OFFSET ABSOL POSITION, if not calibrating wheels, you have done something very wrong",
-        false);
-    /* Gets Position from SparkMAX absol encoder * 360 to degrees */
-    double positionDeg = absoluteEncoder.getPosition() * 360.0d;
-
-    /* Inverts if necesary */
-    positionDeg *= (ModuleConstants.absolInverted ? -1 : 1);
-
-    return Rotation2d.fromDegrees(positionDeg);
+    /* Gets Position from CANcoder */
+    if (BaseStatusSignal.isAllGood(absoluteEncoderPosition)) {
+      return Rotation2d.fromDegrees(absoluteEncoderPosition.getValue().in(Degrees));
+    } else if (hasZeroedAbsolute) {
+      DriverStation.reportWarning(
+          "CANCODER NOT GOOD DEFAULTING TO RELATIVE: MODULE " + moduleNumber, false);
+      return Rotation2d.fromDegrees(angleEncoder.getPosition());
+    } else {
+      DriverStation.reportError(
+          "CANCODER NOT GOOD AND MODULE NOT ZEROED: MODULE " + moduleNumber, false);
+      return Rotation2d.fromDegrees(angleEncoder.getPosition());
+    }
   }
 
   /**
@@ -289,6 +284,14 @@ public class Module {
   public void driveVolts(Measure<VoltageUnit> voltage) {
     setAngleState(new SwerveModuleState(0, new Rotation2d()));
     driveMotor.setVoltage(voltage.in(Volts));
+  }
+
+  public boolean resetAbsolute() {
+    if (BaseStatusSignal.isAllGood(absoluteEncoderPosition)) {
+      angleEncoder.setPosition(absoluteEncoderPosition.getValue().in(Degrees));
+      hasZeroedAbsolute = true;
+    }
+    return hasZeroedAbsolute;
   }
 
   // TODO: Investigate
@@ -314,7 +317,7 @@ public class Module {
 
   /** Resets the Angle Motor to the position of the absolute position */
   public void setIntegratedAngleToAbsolute() {
-    angleEncoder.setPosition(/*getAbsolutePosition().getDegrees()*/ 0);
+    angleEncoder.setPosition(/* getAbsolutePosition().getDegrees() */ 0);
   }
 
   public boolean getAngleInverted() {
