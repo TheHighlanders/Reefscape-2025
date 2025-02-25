@@ -86,20 +86,22 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("ID13StationTOL1ID18");
     AutoTrajectory test = routine.trajectory("ID13StationTOL1ID18");
 
-    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+    routine
+        .active()
+        .onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.resetOdometry(), test.cmd()));
 
     return routine;
   }
 
-
-  public AutoRoutine L1ID22TOID12StationTOID12StationTOL1ID17() { // it bad name but it acurate look at game
+  public AutoRoutine
+      L1ID22TOID12StationTOID12StationTOL1ID17() { // it bad name but it acurate look at game
     // manual:>
     AutoRoutine routine = autoFactory.newRoutine("L1ID22TOID12StationTOID12StationTOL1ID17");
 
     AutoTrajectory L1ID22TOID12Station = routine.trajectory("L1ID22-ID12Station");
     AutoTrajectory ID12StationTOL1ID17 = routine.trajectory("ID12StationTOL1ID17");
 
-    L1ID22TOID12Station.active();
+    L1ID22TOID12Station.active().onTrue(L1ID22TOID12Station.resetOdometry());
     L1ID22TOID12Station.done().onTrue(coral.intakeCMD().andThen(Commands.waitSeconds(2)));
     L1ID22TOID12Station.done().onTrue(ID12StationTOL1ID17.cmd());
     ID12StationTOL1ID17.active();
