@@ -58,13 +58,19 @@ final class SwerveConstants {
 
   static final double accelLim = 3;
 
-  static double translateP = 0;
-  static double translateI = 0;
+  static final double headingCorrectionDeadband = 0.05;
+
+  static double headingCorrectionP = 1.75;
+  static double headingCorrectionI = 0.05;
+  static double headingCorrectionD = 0;
+
+  static double translateP = 1.75;
+  static double translateI = 0.05;
   static double translateD = 0;
 
-  static double rotateP = 0;
+  static double rotateP = 1.5;
   static double rotateI = 0;
-  static double rotateD = 0;
+  static double rotateD = 0.6;
 }
 
 public class Swerve extends SubsystemBase {
@@ -83,6 +89,12 @@ public class Swerve extends SubsystemBase {
   DoubleSupplier elevatorHeight;
 
   private List<Module> needZeroing = new ArrayList<Module>();
+
+  PIDController headingDeadbandController =
+      new PIDController(
+          SwerveConstants.headingCorrectionP,
+          SwerveConstants.headingCorrectionI,
+          SwerveConstants.headingCorrectionD);
 
   Module[] modules = new Module[4];
   AHRS gyro;
@@ -165,6 +177,8 @@ public class Swerve extends SubsystemBase {
 
     SmartDashboard.putNumber(
         "ElevatorSlowCoefficient", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
+
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     sysId =
         new SysIdRoutine(
@@ -380,6 +394,23 @@ public class Swerve extends SubsystemBase {
   }
 
   /**
+   * If the robot isnt commanded to rotate and we are moving will attempt to keep the robot at its
+   * current roation
+   *
+   * @param x Alliance Relative X Speed, as defined above (m/s)
+   * @param y Alliance Relative Y Speed, as defined above (m/s)
+   * @param omega Rotational Speed (rad/s)
+   * @return the desired rotational speed of the robot
+   */
+  public double headingCorrection(double x, double y, double omega) {
+    if (MathUtil.isNear(0, omega, SwerveConstants.headingCorrectionDeadband)
+        && Math.max(Math.abs(x), Math.abs(y)) > SwerveConstants.headingCorrectionDeadband) {
+      return headingDeadbandController.calculate(Units.degreesToRadians(gyro.getRate()), 0);
+    }
+    return omega;
+  }
+
+  /**
    * Method to drive the robot
    *
    * @param x Alliance Relative X Speed, as defined above (m/s)
@@ -390,6 +421,7 @@ public class Swerve extends SubsystemBase {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
     double slowModeYCoefficient;
     double slowModeXCoefficient;
+
     if (current == SwerveState.NORMAL) {
       slowModeYCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
       slowModeXCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
@@ -410,6 +442,9 @@ public class Swerve extends SubsystemBase {
     // x = xLim.calculate(x);
     // y = yLim.calculate(y);
     // TODO: Reenable if wheelieing
+
+    // Comment to disable heading correction
+    omega = headingCorrection(x, y, omega);
 
     ChassisSpeeds chassisSpeeds;
 
@@ -648,6 +683,10 @@ public class Swerve extends SubsystemBase {
   public void updateDashboardGUI() {
     Module m = modules[0];
 
+    SmartDashboard.putNumber("Tuning/Swerve/Correction P", SwerveConstants.headingCorrectionP);
+    SmartDashboard.putNumber("Tuning/Swerve/Correction I", SwerveConstants.headingCorrectionI);
+    SmartDashboard.putNumber("Tuning/Swerve/Correction D", SwerveConstants.headingCorrectionD);
+
     SmartDashboard.putNumber("Tuning/Swerve/Angle P", m.getAngleP());
     SmartDashboard.putNumber("Tuning/Swerve/Angle I", m.getAngleI());
     SmartDashboard.putNumber("Tuning/Swerve/Angle D", m.getAngleD());
@@ -677,9 +716,17 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.getNumber("Tuning/Swerve/Angle D", ModuleConstants.angleD)
     };
 
+    double[] correction = {
+      SmartDashboard.getNumber("Tuning/Swerve/Correction P", SwerveConstants.headingCorrectionP),
+      SmartDashboard.getNumber("Tuning/Swerve/Correction I", SwerveConstants.headingCorrectionI),
+      SmartDashboard.getNumber("Tuning/Swerve/Correction D", SwerveConstants.headingCorrectionD)
+    };
+
     for (Module m : modules) {
       m.setNewControlConstants(drive, angle);
     }
+
+    headingDeadbandController.setPID(correction[0], correction[1], correction[2]);
 
     updateDashboardGUI();
   }
