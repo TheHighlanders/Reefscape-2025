@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Swerve;
-import frc.robot.subsystems.Elevator.ElevatorState;
 
 /** Add your docs here. */
 public class Autos {
@@ -20,7 +19,6 @@ public class Autos {
   Swerve drive;
   Elevator elevator;
   CoralScorer coral;
-
 
   public Autos(Swerve drive, Elevator elevator, CoralScorer coral) {
     autoFactory =
@@ -77,12 +75,15 @@ public class Autos {
 
     return routine;
   }
-  public AutoRoutine L1ID22TOID12StationTOID12StationTOL1ID17() { //it bad name but it acurate look at game manual:>
+
+  public AutoRoutine
+      L1ID22TOID12StationTOID12StationTOL1ID17() { // it bad name but it acurate look at game
+    // manual:>
     AutoRoutine routine = autoFactory.newRoutine("L1ID22TOID12StationTOID12StationTOL1ID17");
-    
+
     AutoTrajectory L1ID22TOID12Station = routine.trajectory("L1ID22-ID12Station");
     AutoTrajectory ID12StationTOL1ID17 = routine.trajectory("ID12StationTOL1ID17");
-   
+
     L1ID22TOID12Station.active();
     L1ID22TOID12Station.done().onTrue(coral.intakeCMD().andThen(Commands.waitSeconds(2)));
     L1ID22TOID12Station.done().onTrue(ID12StationTOL1ID17.cmd());
@@ -90,7 +91,6 @@ public class Autos {
     ID12StationTOL1ID17.done().onTrue(coral.depositCMD().andThen(Commands.waitSeconds(.5)));
 
     return routine;
-
   }
 
   public Command updateTrajectoryPIDCMD() {
@@ -103,10 +103,8 @@ public class Autos {
 
   public Command simple1Piece() {
     return Commands.sequence(
-      drive.driveForwardTimed(1.5, 1.5),
-      coral.depositCMD().withTimeout(1),
-      drive.driveForwardTimed(-0.5, 0.5)
-    );
+        drive.driveForwardTimed(1.5, 1.5),
+        coral.depositCMD().withTimeout(1),
+        drive.driveForwardTimed(-0.5, 0.5));
   }
-
 }

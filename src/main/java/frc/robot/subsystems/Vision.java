@@ -4,17 +4,6 @@
 
 package frc.robot.subsystems;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import org.photonvision.EstimatedRobotPose;
-import org.photonvision.PhotonCamera;
-import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
-import org.photonvision.targeting.PhotonPipelineResult;
-import org.photonvision.targeting.PhotonTrackedTarget;
-
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
@@ -26,20 +15,34 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonCamera;
+import org.photonvision.PhotonPoseEstimator;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
+
+final class VisionConstants {
+  static final Transform3d frontFacingCam = new Transform3d(
+      new Translation3d(0.205486, -0.122174, 0.4376928),
+      new Rotation3d(0, Units.degreesToRadians(25.5), 0));
+
+  // static final Transform3d robotRightCamPosition = new Transform3d(
+  //     new Translation3d(0.233, -0.288, 16.965),
+  //     new Rotation3d(0, -Units.degreesToRadians(25), -Units.degreesToRadians(25)));
+
+  static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8); //TODO: BS
+  static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1); //TODO: BS
+}
 
 public class Vision extends SubsystemBase {
   List<PhotonCamera> cameras;
   List<PhotonPoseEstimator> photonPoseEstimators;
 
   private List<Matrix<N3, N1>> allStdDevs;
-
-  private Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8);
-  private Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1);
-
-  Transform3d robotToLeftCam = new Transform3d(new Translation3d(0.233, -0.288, 0.259),
-      new Rotation3d(0, -Units.degreesToRadians(25), -Units.degreesToRadians(25)));
-  Transform3d robotToFrontCam = new Transform3d(new Translation3d(0.233, -0.288, 0.259),
-      new Rotation3d(0, -Units.degreesToRadians(25), -Units.degreesToRadians(25)));
 
   /** Creates a new Vision. */
   public Vision() {
@@ -48,10 +51,12 @@ public class Vision extends SubsystemBase {
     cameras.add(new PhotonCamera("leftCamera"));
     cameras.add(new PhotonCamera("frontCamera"));
 
-    photonPoseEstimators
-        .add(new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToLeftCam));
-    photonPoseEstimators
-        .add(new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToFrontCam));
+    photonPoseEstimators.add(
+        new PhotonPoseEstimator(
+            aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, VisionConstants.frontFacingCam));
+    // photonPoseEstimators.add(
+    //     new PhotonPoseEstimator(
+    //         aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, VisionConstants.robotRightCamPosition));
   }
 
   @Override
@@ -61,7 +66,10 @@ public class Vision extends SubsystemBase {
     for (int i = 0; i < estPoses.size(); i++) {
       Optional<EstimatedRobotPose> estPose = estPoses.get(i);
       if (estPose.isPresent()) {
-        allStdDevs.set(i,updateEstimationStdDevs(estPose, estPose.get().targetsUsed, photonPoseEstimators.get(i)));
+        allStdDevs.set(
+            i,
+            updateEstimationStdDevs(
+                estPose, estPose.get().targetsUsed, photonPoseEstimators.get(i)));
       }
     }
   }
@@ -103,17 +111,19 @@ public class Vision extends SubsystemBase {
    * @param estimatedPose The estimated pose to guess standard deviations for.
    * @param targets       All targets in this camera frame
    */
-  private Matrix<N3,N1> updateEstimationStdDevs(
-      Optional<EstimatedRobotPose> estimatedPose, List<PhotonTrackedTarget> targets, PhotonPoseEstimator poseEst) {
-      Matrix<N3,N1> curStdDevs;
-    
+  private Matrix<N3, N1> updateEstimationStdDevs(
+      Optional<EstimatedRobotPose> estimatedPose,
+      List<PhotonTrackedTarget> targets,
+      PhotonPoseEstimator poseEst) {
+    Matrix<N3, N1> curStdDevs;
+
     if (estimatedPose.isEmpty()) {
       // No pose input. Default to single-tag std devs
-      curStdDevs = kSingleTagStdDevs;
+      curStdDevs = VisionConstants.kSingleTagStdDevs;
 
     } else {
       // Pose present. Start running Heuristic
-      var estStdDevs = kSingleTagStdDevs;
+      var estStdDevs = VisionConstants.kSingleTagStdDevs;
       int numTags = 0;
       double avgDist = 0;
 
@@ -133,13 +143,13 @@ public class Vision extends SubsystemBase {
 
       if (numTags == 0) {
         // No tags visible. Default to single-tag std devs
-        curStdDevs = kSingleTagStdDevs;
+        curStdDevs = VisionConstants.kSingleTagStdDevs;
       } else {
         // One or more tags visible, run the full heuristic.
         avgDist /= numTags;
         // Decrease std devs if multiple targets are visible
         if (numTags > 1)
-          estStdDevs = kMultiTagStdDevs;
+          estStdDevs = VisionConstants.kMultiTagStdDevs;
         // Increase std devs based on (average) distance
         if (numTags == 1 && avgDist > 4)
           estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
@@ -155,5 +165,4 @@ public class Vision extends SubsystemBase {
   public List<Matrix<N3, N1>> getEstimationStdDevs() {
     return allStdDevs;
   }
-
 }
