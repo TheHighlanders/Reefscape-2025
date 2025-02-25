@@ -74,44 +74,6 @@ public class Autos {
     return routine;
   }
 
-  public AutoRoutine BackReefRightToHPStationRight() { // L1ID22TOID12Station
-    AutoRoutine routine = autoFactory.newRoutine("L1ID22-ID12Station");
-    AutoTrajectory test = routine.trajectory("L1ID22-ID12Station");
-
-    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
-
-    return routine;
-  }
-
-  public AutoRoutine HPStationLeftToFrontReef() { // ID13StationTOL1ID18
-    AutoRoutine routine = autoFactory.newRoutine("ID13StationTOL1ID18");
-    AutoTrajectory test = routine.trajectory("ID13StationTOL1ID18");
-
-    routine
-        .active()
-        .onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.resetOdometry(), test.cmd()));
-
-    return routine;
-  }
-
-  public AutoRoutine
-      L1ID22TOID12StationTOID12StationTOL1ID17() { // it bad name but it acurate look at game
-    // manual:>
-    AutoRoutine routine = autoFactory.newRoutine("L1ID22TOID12StationTOID12StationTOL1ID17");
-
-    AutoTrajectory L1ID22TOID12Station = routine.trajectory("L1ID22-ID12Station");
-    AutoTrajectory ID12StationTOL1ID17 = routine.trajectory("ID12StationTOL1ID17");
-
-    L1ID22TOID12Station.active().onTrue(L1ID22TOID12Station.resetOdometry());
-    L1ID22TOID12Station.done().onTrue(coral.intakeCMD().andThen(Commands.waitSeconds(2)));
-    L1ID22TOID12Station.done().onTrue(ID12StationTOL1ID17.cmd());
-    ID12StationTOL1ID17.active();
-    ID12StationTOL1ID17.done().onTrue(coral.depositCMD().andThen(Commands.waitSeconds(.5)));
-
-    return routine;
-  }
-
-
   public AutoRoutine LeftTwoPiece() {
     AutoRoutine routine = autoFactory.newRoutine("LeftTwoPiece");
 
@@ -122,14 +84,16 @@ public class Autos {
 
     leftStart_leftFar.active();
     leftStart_leftFar.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
-    leftStart_leftFar.done().onTrue(leftFar_leftStation.cmd);
+    leftStart_leftFar.done().onTrue(leftFar_leftStation.cmd());
 
     leftFar_leftStation.active(); // pick up coral on done
-    leftFar_leftStation.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(coral.intakeCMD().withTimeout(1))
-    leftFar_leftStation.done().onTrue(leftStation_leftClose.cmd);
+    leftFar_leftStation.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(coral.intakeCMD().withTimeout(1)));
+    leftFar_leftStation.done().onTrue(leftStation_leftClose.cmd());
 
     leftStation_leftClose.active(); // place coral on done
     leftStation_leftClose.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
+    
+    return routine;
   }
 
   public AutoRoutine RightTwoPiece() {
@@ -143,14 +107,16 @@ public class Autos {
 
     rightStart_rightFar.active();
     rightStart_rightFar.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
-    rightStart_rightFar.done().onTrue(rightFar_rightStation.cmd);
+    rightStart_rightFar.done().onTrue(rightFar_rightStation.cmd());
 
     rightFar_rightStation.active(); // pick up coral on done
-    rightFar_rightStation.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(coral.intakeCMD().withTimeout(1))
-    rightFar_rightStation.done().onTrue(rightStation_rightClose.cmd);
+    rightFar_rightStation.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(coral.intakeCMD().withTimeout(1)));
+    rightFar_rightStation.done().onTrue(rightStation_rightClose.cmd());
 
     rightStation_rightClose.active(); // place coral on done
     rightStation_rightClose.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
+
+    return routine;
   }
 
     public AutoRoutine CenterOnePiece(){ // the one piece is real :>
@@ -160,6 +126,8 @@ public class Autos {
 
     centerStart_rightFar.active();
     centerStart_rightFar.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
+
+    return routine;
     }
 
 

@@ -100,8 +100,10 @@ public class RobotContainer {
     chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
     chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
     chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
-    chooser.addRoutine("BackReefRightToHPStationRight", autos::BackReefRightToHPStationRight);
-    chooser.addRoutine("HPStationLeftToFrontReef", autos::HPStationLeftToFrontReef);
+    chooser.addRoutine("Left 2 Piece", autos::LeftTwoPiece);
+    chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
+    chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
+
     chooser.addCmd("SYSID", drive::sysId);
     chooser.addCmd("FORWARD", () -> drive.pidTuningJogDrive());
     chooser.addCmd("Bad 1 piece", autos::simple1Piece);
