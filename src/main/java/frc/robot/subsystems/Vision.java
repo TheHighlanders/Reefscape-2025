@@ -26,16 +26,17 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 final class VisionConstants {
-  static final Transform3d frontFacingCam = new Transform3d(
-      new Translation3d(0.205486, -0.122174, 0.4376928),
-      new Rotation3d(0, Units.degreesToRadians(25.5), 0));
+  static final Transform3d frontFacingCam =
+      new Transform3d(
+          new Translation3d(0.205486, -0.122174, 0.4376928),
+          new Rotation3d(0, Units.degreesToRadians(25.5), 0));
 
   // static final Transform3d robotRightCamPosition = new Transform3d(
   //     new Translation3d(0.233, -0.288, 16.965),
   //     new Rotation3d(0, -Units.degreesToRadians(25), -Units.degreesToRadians(25)));
 
-  static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8); //TODO: BS
-  static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1); //TODO: BS
+  static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8); // TODO: BS
+  static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1); // TODO: BS
 }
 
 public class Vision extends SubsystemBase {
@@ -46,17 +47,21 @@ public class Vision extends SubsystemBase {
 
   /** Creates a new Vision. */
   public Vision() {
-    AprilTagFieldLayout aprilTagFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+    AprilTagFieldLayout aprilTagFieldLayout =
+        AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark);
 
     cameras.add(new PhotonCamera("leftCamera"));
     cameras.add(new PhotonCamera("frontCamera"));
 
     photonPoseEstimators.add(
         new PhotonPoseEstimator(
-            aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, VisionConstants.frontFacingCam));
+            aprilTagFieldLayout,
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            VisionConstants.frontFacingCam));
     // photonPoseEstimators.add(
     //     new PhotonPoseEstimator(
-    //         aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, VisionConstants.robotRightCamPosition));
+    //         aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    // VisionConstants.robotRightCamPosition));
   }
 
   @Override
@@ -103,13 +108,11 @@ public class Vision extends SubsystemBase {
   }
 
   /**
-   * Calculates new standard deviations This algorithm is a heuristic that creates
-   * dynamic standard
-   * deviations based on number of tags, estimation strategy, and distance from
-   * the tags.
+   * Calculates new standard deviations This algorithm is a heuristic that creates dynamic standard
+   * deviations based on number of tags, estimation strategy, and distance from the tags.
    *
    * @param estimatedPose The estimated pose to guess standard deviations for.
-   * @param targets       All targets in this camera frame
+   * @param targets All targets in this camera frame
    */
   private Matrix<N3, N1> updateEstimationStdDevs(
       Optional<EstimatedRobotPose> estimatedPose,
@@ -131,14 +134,14 @@ public class Vision extends SubsystemBase {
       // average-distance metric
       for (var tgt : targets) {
         var tagPose = poseEst.getFieldTags().getTagPose(tgt.getFiducialId());
-        if (tagPose.isEmpty())
-          continue;
+        if (tagPose.isEmpty()) continue;
         numTags++;
-        avgDist += tagPose
-            .get()
-            .toPose2d()
-            .getTranslation()
-            .getDistance(estimatedPose.get().estimatedPose.toPose2d().getTranslation());
+        avgDist +=
+            tagPose
+                .get()
+                .toPose2d()
+                .getTranslation()
+                .getDistance(estimatedPose.get().estimatedPose.toPose2d().getTranslation());
       }
 
       if (numTags == 0) {
@@ -148,13 +151,11 @@ public class Vision extends SubsystemBase {
         // One or more tags visible, run the full heuristic.
         avgDist /= numTags;
         // Decrease std devs if multiple targets are visible
-        if (numTags > 1)
-          estStdDevs = VisionConstants.kMultiTagStdDevs;
+        if (numTags > 1) estStdDevs = VisionConstants.kMultiTagStdDevs;
         // Increase std devs based on (average) distance
         if (numTags == 1 && avgDist > 4)
           estStdDevs = VecBuilder.fill(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE);
-        else
-          estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
+        else estStdDevs = estStdDevs.times(1 + (avgDist * avgDist / 30));
         curStdDevs = estStdDevs;
       }
     }
