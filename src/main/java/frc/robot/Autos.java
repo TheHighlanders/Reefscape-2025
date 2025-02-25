@@ -73,7 +73,7 @@ public class Autos {
     return routine;
   }
 
-  public AutoRoutine L1ID22TOID12Station() {
+  public AutoRoutine BackReefRightToHPStationRight() { //L1ID22TOID12Station
     AutoRoutine routine = autoFactory.newRoutine("L1ID22-ID12Station");
     AutoTrajectory test = routine.trajectory("L1ID22-ID12Station");
 
@@ -82,7 +82,7 @@ public class Autos {
     return routine;
   }
 
-  public AutoRoutine ID13StationTOL1ID18() {
+  public AutoRoutine HPStationLeftToFrontReef() { // ID13StationTOL1ID18
     AutoRoutine routine = autoFactory.newRoutine("ID13StationTOL1ID18");
     AutoTrajectory test = routine.trajectory("ID13StationTOL1ID18");
 
