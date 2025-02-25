@@ -44,7 +44,9 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("testDrive");
     AutoTrajectory test = routine.trajectory("TestDrive");
 
-    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+    routine
+        .active()
+        .onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.resetOdometry(), test.cmd()));
 
     return routine;
   }
@@ -53,7 +55,9 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("testDriveRotate");
     AutoTrajectory test = routine.trajectory("TestRotate");
 
-    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+    routine
+        .active()
+        .onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.resetOdometry(), test.cmd()));
 
     return routine;
   }

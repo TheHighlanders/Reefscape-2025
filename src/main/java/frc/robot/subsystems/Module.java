@@ -34,12 +34,12 @@ final class ModuleConstants {
   static final double angleI = 0;
   static final double angleD = 0;
 
-  static final double driveP = 0.16;
+  static final double driveP = 0.2;
   static final double driveI = 0;
   static final double driveD = 0;
 
   static final double driveS = 0;
-  static final double driveV = 2.9642857143;
+  static final double driveV = 3;
   static final double driveA = 0;
 
   // Wheel diameter * pi / gear ratio

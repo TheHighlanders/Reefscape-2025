@@ -58,9 +58,9 @@ final class SwerveConstants {
 
   static final double accelLim = 3;
 
-  static double translateP = 0.07500000298023224;
+  static double translateP = 0;
   static double translateI = 0;
-  static double translateD = 0.05000000074505806;
+  static double translateD = 0;
 
   static double rotateP = 0;
   static double rotateI = 0;
@@ -564,9 +564,9 @@ public class Swerve extends SubsystemBase {
     // Generate the next speeds for the robot
     ChassisSpeeds speeds =
         new ChassisSpeeds(
-            (sample.vx + xController.calculate(pose.getX(), sample.x)),
-            (sample.vy + yController.calculate(pose.getY(), sample.y)),
-            (sample.omega
+            -(sample.vx + xController.calculate(pose.getX(), sample.x)),
+            -(sample.vy + yController.calculate(pose.getY(), sample.y)),
+            -(sample.omega
                 + headingController.calculate(pose.getRotation().getRadians(), sample.heading)));
 
     SmartDashboard.putNumber("Trajectory/XError", xController.getError());
@@ -584,8 +584,8 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "FFoutput", m.getFFDriveOutput());
       SmartDashboard.putNumber(
-          "ModuleDebug/Module" + m.getModuleNumber() + "AngleMotorOutput",
-          m.getAppliedOutputAngle());
+          "ModuleDebug/Module" + m.getModuleNumber() + "DriveMotorOutput",
+          m.getAppliedOutputDrive());
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity", m.getDriveVelocity());
       SmartDashboard.putNumber(
@@ -614,19 +614,27 @@ public class Swerve extends SubsystemBase {
   }
 
   public void updateTrajectoryPID() {
-    SwerveConstants.translateP =
-        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP);
-    SwerveConstants.translateI =
-        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate I", SwerveConstants.translateI);
-    SwerveConstants.translateD =
-        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate D", SwerveConstants.translateD);
+    xController.setP(
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP));
+    yController.setP(
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP));
 
-    SwerveConstants.rotateP =
-        SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate P", SwerveConstants.rotateP);
-    SwerveConstants.rotateI =
-        SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI);
-    SwerveConstants.rotateD =
-        SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD);
+    xController.setI(
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate I", SwerveConstants.translateI));
+    yController.setI(
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate I", SwerveConstants.translateI));
+
+    xController.setD(
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate D", SwerveConstants.translateD));
+    yController.setD(
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Translate D", SwerveConstants.translateD));
+
+    headingController.setP(
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate P", SwerveConstants.rotateP));
+    headingController.setI(
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI));
+    headingController.setD(
+        SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD));
   }
 
   public Command resetOdometry() {
