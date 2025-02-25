@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Elevator.ElevatorState;
 
 /** Add your docs here. */
 public class Autos {
@@ -107,6 +108,58 @@ public class Autos {
 
     return routine;
   }
+
+
+  public AutoRoutine LeftTwoPiece() {
+    AutoRoutine routine = autoFactory.newRoutine("LeftTwoPiece");
+
+    AutoTrajectory leftStart_leftFar = routine.trajectory("leftStart-LeftFar");
+    AutoTrajectory leftFar_leftStation = routine.trajectory("leftFar-leftStation");
+    AutoTrajectory leftStation_leftClose = routine.trajectory("leftStation-LeftClose");
+
+
+    leftStart_leftFar.active();
+    leftStart_leftFar.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
+    leftStart_leftFar.done().onTrue(leftFar_leftStation.cmd);
+
+    leftFar_leftStation.active(); // pick up coral on done
+    leftFar_leftStation.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(coral.intakeCMD().withTimeout(1))
+    leftFar_leftStation.done().onTrue(leftStation_leftClose.cmd);
+
+    leftStation_leftClose.active(); // place coral on done
+    leftStation_leftClose.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
+  }
+
+  public AutoRoutine RightTwoPiece() {
+    AutoRoutine routine = autoFactory.newRoutine("RightTwoPiece");
+
+
+    AutoTrajectory rightStart_rightFar = routine.trajectory("rightStart-rightFar");
+    AutoTrajectory rightFar_rightStation = routine.trajectory("rightFar-rightStation");
+    AutoTrajectory rightStation_rightClose = routine.trajectory("rightStation-rightClose");
+
+
+    rightStart_rightFar.active();
+    rightStart_rightFar.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
+    rightStart_rightFar.done().onTrue(rightFar_rightStation.cmd);
+
+    rightFar_rightStation.active(); // pick up coral on done
+    rightFar_rightStation.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(coral.intakeCMD().withTimeout(1))
+    rightFar_rightStation.done().onTrue(rightStation_rightClose.cmd);
+
+    rightStation_rightClose.active(); // place coral on done
+    rightStation_rightClose.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
+  }
+
+    public AutoRoutine CenterOnePiece(){ // the one piece is real :>
+    AutoRoutine routine = autoFactory.newRoutine("CenterOnePiece");
+
+    AutoTrajectory centerStart_rightFar = routine.trajectory("centerStart-centerFar");
+
+    centerStart_rightFar.active();
+    centerStart_rightFar.done().onTrue(elevator.elevatorAuto(ElevatorState.L4_POSITION).andThen(coral.depositCMD()).withTimeout(.5)); // move elevator then score coral
+    }
+
 
   public Command updateTrajectoryPIDCMD() {
     return Commands.runOnce(drive::updateTrajectoryPID);
