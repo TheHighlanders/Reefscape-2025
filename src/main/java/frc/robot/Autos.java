@@ -77,6 +77,17 @@ public class Autos {
 
     return routine;
   }
+
+  public AutoRoutine ID13StationTOL1ID18() {
+    AutoRoutine routine = autoFactory.newRoutine("ID13StationTOL1ID18");
+    AutoTrajectory test = routine.trajectory("ID13StationTOL1ID18");
+
+    routine.active().onTrue(Commands.sequence(updateTrajectoryPIDCMD(), test.cmd()));
+
+    return routine;
+  }
+
+
   public AutoRoutine L1ID22TOID12StationTOID12StationTOL1ID17() { //it bad name but it acurate look at game manual:>
     AutoRoutine routine = autoFactory.newRoutine("L1ID22TOID12StationTOID12StationTOL1ID17");
     
@@ -90,7 +101,6 @@ public class Autos {
     ID12StationTOL1ID17.done().onTrue(coral.depositCMD().andThen(Commands.waitSeconds(.5)));
 
     return routine;
-
   }
 
   public Command updateTrajectoryPIDCMD() {

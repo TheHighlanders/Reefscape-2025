@@ -103,6 +103,8 @@ public class RobotContainer {
     chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
     chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
     chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
+    chooser.addRoutine("ID13StationTOL1ID18", autos::ID13StationTOL1ID18);
+    chooser.addRoutine("L1ID22-ID12Station", autos::L1ID22TOID12Station);
     chooser.addCmd("SYSID", drive::sysId);
     chooser.addCmd("FORWARD", () -> drive.pidTuningJogDrive());
 
