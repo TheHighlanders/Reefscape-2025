@@ -42,9 +42,11 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
-import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -65,7 +67,7 @@ final class SwerveConstants {
 
   static final double headingCorrectionDeadband = 0.05;
 
-  static double headingCorrectionP = 1.75;
+  static double headingCorrectionP = 0.5;
   static double headingCorrectionI = 0.05;
   static double headingCorrectionD = 0;
 
@@ -93,7 +95,7 @@ public class Swerve extends SubsystemBase {
 
   DoubleSupplier elevatorHeight;
 
-  private List<Module> needZeroing = new ArrayList<Module>();
+  private Set<Module> needZeroing = new HashSet<Module>();
 
   PIDController headingDeadbandController =
       new PIDController(
@@ -264,11 +266,12 @@ public class Swerve extends SubsystemBase {
   }
 
   public void attemptZeroingAbsolute() {
-    if (needZeroing.size() >= 0) {
-      for (int i = 0; i < needZeroing.size(); i++) {
-        if (needZeroing.get(i).resetAbsolute()) {
-          needZeroing.remove(i);
-          i--;
+    if (!needZeroing.isEmpty()) {
+      Iterator<Module> iterator = needZeroing.iterator();
+      while (iterator.hasNext()) {
+        Module module = iterator.next();
+        if (module.resetAbsolute()) {
+          iterator.remove();
         }
       }
     }
@@ -468,7 +471,7 @@ public class Swerve extends SubsystemBase {
     // TODO: Reenable if wheelieing
 
     // Comment to disable heading correction
-    omega = headingCorrection(x, y, omega);
+    // omega = headingCorrection(x, y, omega);
 
     ChassisSpeeds chassisSpeeds;
 
@@ -707,9 +710,9 @@ public class Swerve extends SubsystemBase {
   public void updateDashboardGUI() {
     Module m = modules[0];
 
-    SmartDashboard.putNumber("Tuning/Swerve/Correction P", SwerveConstants.headingCorrectionP);
-    SmartDashboard.putNumber("Tuning/Swerve/Correction I", SwerveConstants.headingCorrectionI);
-    SmartDashboard.putNumber("Tuning/Swerve/Correction D", SwerveConstants.headingCorrectionD);
+    SmartDashboard.putNumber("Tuning/Swerve/Correction P", headingDeadbandController.getP());
+    SmartDashboard.putNumber("Tuning/Swerve/Correction I", headingDeadbandController.getI());
+    SmartDashboard.putNumber("Tuning/Swerve/Correction D", headingDeadbandController.getD());
 
     SmartDashboard.putNumber("Tuning/Swerve/Angle P", m.getAngleP());
     SmartDashboard.putNumber("Tuning/Swerve/Angle I", m.getAngleI());

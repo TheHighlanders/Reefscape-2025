@@ -152,4 +152,8 @@ public class Climber extends SubsystemBase {
   public Command holdClimbPosition() {
     return Commands.runOnce(holdPosition(), this);
   }
+
+  public Command createClimbInSlowCommand() {
+    return Commands.startEnd(() -> climbMotor.set(0.4), () -> climbMotor.set(0.0), this);
+  }
 }

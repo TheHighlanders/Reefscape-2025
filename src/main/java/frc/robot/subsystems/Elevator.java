@@ -259,8 +259,7 @@ public class Elevator extends SubsystemBase {
       case HOME:
         return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtHome(0.5)));
       default:
-        return setPosition(targetState)
-            .alongWith(Commands.waitUntil(() -> isAtSetpoint(antiSlamVoltageOffset)));
+        return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtSetpoint(0.5)));
     }
   }
 
