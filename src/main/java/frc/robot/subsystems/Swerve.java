@@ -14,6 +14,7 @@ import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -24,6 +25,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
@@ -41,10 +44,13 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.photonvision.EstimatedRobotPose;
 
 final class SwerveConstants {
 
@@ -121,8 +127,17 @@ public class Swerve extends SubsystemBase {
 
   SwerveState current = SwerveState.NORMAL;
 
+  Supplier<List<Optional<EstimatedRobotPose>>> estPoseSup;
+  Supplier<List<Matrix<N3, N1>>> stdDevsSup;
+
   /** Creates a new Swerve. */
-  public Swerve(DoubleSupplier elevatorHeight) {
+  public Swerve(
+      Supplier<List<Optional<EstimatedRobotPose>>> estPosesSup,
+      Supplier<List<Matrix<N3, N1>>> stdDevsSup,
+      DoubleSupplier elevatorHeight) {
+    this.estPoseSup = estPosesSup;
+    this.stdDevsSup = stdDevsSup;
+
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
     }
@@ -218,6 +233,16 @@ public class Swerve extends SubsystemBase {
         getGyroAngle(),
         getModulePostions());
     field.setRobotPose(getPose());
+
+    var estPoses = estPoseSup.get();
+    var stdDevs = stdDevsSup.get();
+    for (int i = 0; i < estPoses.size(); i++) {
+      var pose = estPoses.get(i);
+      if (pose.isPresent()) {
+        poseEst.addVisionMeasurement(
+            pose.get().estimatedPose.toPose2d(), RobotController.getFPGATime(), stdDevs.get(i));
+      }
+    }
 
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
 
@@ -616,6 +641,27 @@ public class Swerve extends SubsystemBase {
         ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getPose().getRotation()));
   }
 
+  public Command resetGyro() {
+    return Commands.runOnce(
+            () ->
+                poseEst.resetPosition(
+                    getGyroAngle(),
+                    getModulePostions(),
+                    new Pose2d(
+                        poseEst.getEstimatedPosition().getX(),
+                        poseEst.getEstimatedPosition().getY(),
+                        new Rotation2d())))
+        .ignoringDisable(true);
+  }
+
+  public Command resetOdometry() {
+    return Commands.runOnce(
+        () -> {
+          poseEst.resetTranslation(new Translation2d());
+          resetGyro();
+        });
+  }
+
   public void sendDiagnostics() {
     for (Module m : modules) {
       SmartDashboard.putNumber(
@@ -635,19 +681,6 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "SwerveSlowCoeff", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
     }
-  }
-
-  public Command resetGyro() {
-    return Commands.runOnce(
-            () ->
-                poseEst.resetPosition(
-                    getGyroAngle(),
-                    getModulePostions(),
-                    new Pose2d(
-                        poseEst.getEstimatedPosition().getX(),
-                        poseEst.getEstimatedPosition().getY(),
-                        new Rotation2d())))
-        .ignoringDisable(true);
   }
 
   public void updateTrajectoryPID() {
@@ -672,14 +705,6 @@ public class Swerve extends SubsystemBase {
         SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI));
     headingController.setD(
         SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD));
-  }
-
-  public Command resetOdometry() {
-    return Commands.runOnce(
-        () -> {
-          poseEst.resetTranslation(new Translation2d());
-          resetGyro();
-        });
   }
 
   public void updateDashboardGUI() {
