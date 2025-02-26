@@ -8,6 +8,7 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -16,6 +17,7 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
@@ -31,9 +33,11 @@ final class VisionConstants {
           new Translation3d(0.205486, -0.122174, 0.4376928),
           new Rotation3d(0, Units.degreesToRadians(25.5), 0));
 
+  public static final int[] reefTagIds = {1, 2, 3, 4}; // TODO: make real tags
+
   // static final Transform3d robotRightCamPosition = new Transform3d(
-  //     new Translation3d(0.233, -0.288, 16.965),
-  //     new Rotation3d(0, -Units.degreesToRadians(25), -Units.degreesToRadians(25)));
+  // new Translation3d(0.233, -0.288, 16.965),
+  // new Rotation3d(0, -Units.degreesToRadians(25), -Units.degreesToRadians(25)));
 
   static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8); // TODO: BS
   static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1); // TODO: BS
@@ -42,13 +46,13 @@ final class VisionConstants {
 public class Vision extends SubsystemBase {
   List<PhotonCamera> cameras;
   List<PhotonPoseEstimator> photonPoseEstimators;
+  AprilTagFieldLayout aprilTagFieldLayout;
 
   private List<Matrix<N3, N1>> allStdDevs;
 
   /** Creates a new Vision. */
   public Vision() {
-    AprilTagFieldLayout aprilTagFieldLayout =
-        AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark);
+    this.aprilTagFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark);
 
     cameras.add(new PhotonCamera("leftCamera"));
     cameras.add(new PhotonCamera("frontCamera"));
@@ -59,8 +63,8 @@ public class Vision extends SubsystemBase {
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             VisionConstants.frontFacingCam));
     // photonPoseEstimators.add(
-    //     new PhotonPoseEstimator(
-    //         aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+    // new PhotonPoseEstimator(
+    // aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
     // VisionConstants.robotRightCamPosition));
   }
 
@@ -161,6 +165,52 @@ public class Vision extends SubsystemBase {
     }
 
     return curStdDevs;
+  }
+
+  /**
+   * Finds the closest reef tag to the robot's current position.
+   *
+   * @param robotPose The current estimated robot pose
+   * @return Optional containing the pose of the closest reef tag, or empty if none found
+   */
+  public Optional<Pose2d> findClosestReefTag(Pose2d robotPose) {
+    List<Integer> visibleReefTagIds = new ArrayList<>();
+
+    List<Optional<EstimatedRobotPose>> estPoses = getEstimatedRobotPoses();
+
+    // Find all visible reef tag IDs
+    for (Optional<EstimatedRobotPose> estPose : estPoses) {
+      if (estPose.isPresent()) {
+        for (PhotonTrackedTarget target : estPose.get().targetsUsed) {
+          int tagId = target.getFiducialId();
+          for (int reefId : VisionConstants.reefTagIds) {
+            if (tagId == reefId && !visibleReefTagIds.contains(tagId)) {
+              visibleReefTagIds.add(tagId);
+            }
+          }
+        }
+      }
+    }
+
+    // Get poses for all visible reef tags from the field layout
+    List<Pose2d> reefTagPoses = new ArrayList<>();
+
+    for (int tagId : visibleReefTagIds) {
+      var tagPoseOptional = aprilTagFieldLayout.getTagPose(tagId);
+      if (tagPoseOptional.isPresent()) {
+        reefTagPoses.add(tagPoseOptional.get().toPose2d());
+      }
+    }
+
+    // Find the closest reef tag
+    if (!reefTagPoses.isEmpty()) {
+      return reefTagPoses.stream()
+          .min(
+              Comparator.comparingDouble(
+                  pose -> pose.getTranslation().getDistance(robotPose.getTranslation())));
+    }
+
+    return Optional.empty();
   }
 
   public List<Matrix<N3, N1>> getEstimationStdDevs() {
