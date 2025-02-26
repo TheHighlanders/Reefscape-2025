@@ -39,8 +39,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -88,7 +89,7 @@ public class Swerve extends SubsystemBase {
 
   DoubleSupplier elevatorHeight;
 
-  private List<Module> needZeroing = new ArrayList<Module>();
+  private Set<Module> needZeroing = new HashSet<Module>();
 
   PIDController headingDeadbandController =
       new PIDController(
@@ -240,11 +241,12 @@ public class Swerve extends SubsystemBase {
   }
 
   public void attemptZeroingAbsolute() {
-    if (needZeroing.size() >= 0) {
-      for (int i = 0; i < needZeroing.size(); i++) {
-        if (needZeroing.get(i).resetAbsolute()) {
-          needZeroing.remove(i);
-          i--;
+    if (!needZeroing.isEmpty()) {
+      Iterator<Module> iterator = needZeroing.iterator();
+      while (iterator.hasNext()) {
+        Module module = iterator.next();
+        if (module.resetAbsolute()) {
+          iterator.remove();
         }
       }
     }
