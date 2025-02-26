@@ -87,6 +87,7 @@ public class RobotContainer {
         .or(operator.povUpRight())
         .whileTrue(climber.createClimbInCommand());
     operator.povRight().onTrue(climber.holdClimbPosition());
+    operator.povLeft().whileTrue(climber.createClimbInSlowCommand());
 
     operator.start().toggleOnTrue(drive.pointWheelsForward());
     operator.back().whileTrue(drive.pidTuningJogAngle());
