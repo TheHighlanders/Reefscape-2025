@@ -463,9 +463,7 @@ public class Swerve extends SubsystemBase {
       // x = 0;
       // }
 
-      // chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(y, -x, omega,
-      // getGyroAngle());
-      chassisSpeeds = new ChassisSpeeds(y, x, omega);
+      chassisSpeeds = new ChassisSpeeds(x, y, omega);
     }
 
     chassisSpeeds.vxMetersPerSecond *= SwerveConstants.maxSpeed;
