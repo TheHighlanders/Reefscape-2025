@@ -463,7 +463,7 @@ public class Swerve extends SubsystemBase {
       // x = 0;
       // }
 
-      chassisSpeeds = new ChassisSpeeds(x, y, omega);
+      chassisSpeeds = new ChassisSpeeds(y, x, omega);
     }
 
     chassisSpeeds.vxMetersPerSecond *= SwerveConstants.maxSpeed;
