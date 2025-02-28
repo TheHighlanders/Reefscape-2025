@@ -315,11 +315,6 @@ public class Module {
     return moduleNumber;
   }
 
-  /** Resets the Angle Motor to the position of the absolute position */
-  public void setIntegratedAngleToAbsolute() {
-    angleEncoder.setPosition(/* getAbsolutePosition().getDegrees() */ 0);
-  }
-
   public boolean getAngleInverted() {
     return angleMotor.configAccessor.getInverted();
   }
