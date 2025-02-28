@@ -9,9 +9,11 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.util.PixelFormat;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
@@ -93,6 +95,10 @@ public class RobotContainer {
     operator.back().whileTrue(drive.pidTuningJogAngle());
     operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
+    operator
+        .rightStick()
+        .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
+
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
   }
@@ -105,8 +111,9 @@ public class RobotContainer {
     chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
     chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
 
-    chooser.addCmd("SYSID", drive::sysId);
-    chooser.addCmd("FORWARD", () -> drive.pidTuningJogDrive());
+    // chooser.addCmd("SYSID", drive::sysId);
+    // chooser.addCmd("FORWARD", ()->Commands.sequence(drive.enableSlowMode(), drive.driveCMD(()->1,
+    // ()->0, ()->0).withTimeout(1), drive.disableSlowMode()));
     chooser.addCmd("Bad 1 piece", autos::simple1Piece);
 
     SmartDashboard.putData("AutoChooser", chooser);

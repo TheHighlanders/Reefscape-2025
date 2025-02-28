@@ -72,18 +72,19 @@ final class SwerveConstants {
   static double rotateP = 1.5;
   static double rotateI = 0;
   static double rotateD = 0.6;
+
+  static double preAutoWheelTolerance = 2.5; // deg
 }
 
 public class Swerve extends SubsystemBase {
 
   enum SwerveState {
     NORMAL,
-    LINEUP,
-    SLOW
+    LINEUP
   }
 
   private static final double MAX_SLOW_MODE = 0.3;
-  private static final double MICROS_SECONDS_CONVERSION = Math.pow(10, 6);
+  private static final double MICROS_SECONDS_CONVERSION = Math.pow(10, -6);
 
   private static final double MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED = 0.25;
 
@@ -395,6 +396,39 @@ public class Swerve extends SubsystemBase {
         });
   }
 
+  public Command presetWheelsToTraj(SwerveSample sample) {
+    SwerveModuleState[] wheelDirections = new SwerveModuleState[4];
+
+    SwerveModuleState[] wheelStates = kinematics.toSwerveModuleStates(sample.getChassisSpeeds());
+
+    for (int i = 0; i < wheelStates.length; i++) {
+      wheelDirections[i] = new SwerveModuleState(0, wheelStates[i].angle);
+    }
+
+    return Commands.sequence(
+        Commands.runOnce(
+            () -> {
+              for (int i = 0; i < modules.length; i++) {
+                wheelDirections[i].optimize(getModulePostions()[i].angle);
+                modules[i].setModuleState(wheelDirections[i], false);
+              }
+            }),
+        Commands.waitUntil(() -> areModulesAtAngleSetpoint(wheelDirections)));
+  }
+
+  public boolean areModulesAtAngleSetpoint(SwerveModuleState[] directions) {
+    for (int i = 0; i < directions.length; i++) {
+      if (!MathUtil.isNear(
+          directions[i].angle.getDegrees(),
+          modules[i].getAnglePosition().getDegrees(),
+          SwerveConstants.preAutoWheelTolerance)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   /**
    * If the robot isnt commanded to rotate and we are moving will attempt to keep the robot at its
    * current roation
@@ -436,10 +470,10 @@ public class Swerve extends SubsystemBase {
     y *= slowModeYCoefficient;
     x *= slowModeXCoefficient;
 
-    if (current != SwerveState.NORMAL) {
-      y = MathUtil.clamp(y + (0.1 * Math.signum(y)), -1, 1);
-      x = MathUtil.clamp(x + (0.1 * Math.signum(x)), -1, 1);
-    }
+    // if (current != SwerveState.NORMAL) {
+    //   y = MathUtil.clamp(y + (0.1 * Math.signum(y)), -1, 1);
+    //   x = MathUtil.clamp(x + (0.1 * Math.signum(x)), -1, 1);
+    // }
 
     // x = xLim.calculate(x);
     // y = yLim.calculate(y);
