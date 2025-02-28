@@ -17,12 +17,16 @@ import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.LimitSwitchConfig.Type;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 class ElevatorConstants {
   static final int elevMotorID = 41;
@@ -51,6 +55,7 @@ class ElevatorConstants {
   static final double maxAccel = 3600;
   static final double maxClosedLoopError = 5;
 }
+
 
 public class Elevator extends SubsystemBase {
   public enum ElevatorState {
@@ -83,20 +88,17 @@ public class Elevator extends SubsystemBase {
     SparkMaxConfig elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(ElevatorConstants.elevMotorID, MotorType.kBrushless);
     reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
-    elevatorMotorConfig
-        .encoder
+    elevatorMotorConfig.encoder
         .positionConversionFactor(ElevatorConstants.elevPCF)
         .velocityConversionFactor(ElevatorConstants.elevPCF);
 
     elevatorMotorConfig.idleMode(IdleMode.kBrake).inverted(true);
 
-    elevatorMotorConfig
-        .limitSwitch
+    elevatorMotorConfig.limitSwitch
         .reverseLimitSwitchType(Type.kNormallyOpen)
         .reverseLimitSwitchEnabled(true);
 
-    elevatorMotorConfig
-        .softLimit
+    elevatorMotorConfig.softLimit
         .forwardSoftLimit(ElevatorConstants.forwardSoftLimit)
         .forwardSoftLimitEnabled(true)
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
@@ -107,8 +109,7 @@ public class Elevator extends SubsystemBase {
     elevatorMotorConfig.closedLoopRampRate(0.05);
 
     // Set PID gains
-    elevatorMotorConfig
-        .closedLoop // pid loop to control elevator elevating rate
+    elevatorMotorConfig.closedLoop // pid loop to control elevator elevating rate
         .p(ElevatorConstants.elevP)
         .i(ElevatorConstants.elevI) // TODO find these desirerd values
         .d(ElevatorConstants.elevD);
@@ -151,20 +152,23 @@ public class Elevator extends SubsystemBase {
     }
 
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
-    SmartDashboard.putNumber("Tuning/Elevator/VoltagekF", arbFF);
-    SmartDashboard.putNumber("Tuning/Elevator/Setpoint", targetPosition);
-    SmartDashboard.putNumber("Tuning/Elevator/Output", elevatorMotor.getAppliedOutput());
-    SmartDashboard.putNumber("Tuning/Elevator/Velocity", elevatorEncoder.getVelocity());
 
-    SmartDashboard.putNumber(
-        "Tuning/Elevator/Error", targetPosition - elevatorEncoder.getPosition());
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("Tuning/Elevator/VoltagekF", arbFF);
+      SmartDashboard.putNumber("Tuning/Elevator/Setpoint", targetPosition);
+      SmartDashboard.putNumber("Tuning/Elevator/Output", elevatorMotor.getAppliedOutput());
+      SmartDashboard.putNumber("Tuning/Elevator/Velocity", elevatorEncoder.getVelocity());
+
+      SmartDashboard.putNumber(
+          "Tuning/Elevator/Error", targetPosition - elevatorEncoder.getPosition());
+    }
   }
 
   public Command zeroElevator() {
     return Commands.runOnce(
-            () -> {
-              elevatorEncoder.setPosition(0);
-            })
+        () -> {
+          elevatorEncoder.setPosition(0);
+        })
         .ignoringDisable(true);
   }
 
@@ -214,15 +218,13 @@ public class Elevator extends SubsystemBase {
     double p = SmartDashboard.getNumber("Tuning/Elevator/Elevator P", ElevatorConstants.elevP);
     double i = SmartDashboard.getNumber("Tuning/Elevator/Elevator I", ElevatorConstants.elevI);
     double d = SmartDashboard.getNumber("Tuning/Elevator/Elevator D", ElevatorConstants.elevD);
-    double f =
-        SmartDashboard.getNumber("Tuning/Elevator/Elevator F", ElevatorConstants.feedForward);
+    double f = SmartDashboard.getNumber("Tuning/Elevator/Elevator F", ElevatorConstants.feedForward);
 
     double mV = SmartDashboard.getNumber("Tuning/Elevator/Max V", maxV);
     double mA = SmartDashboard.getNumber("Tuning/Elevator/Max A", maxA);
 
-    antiSlamVoltageOffset =
-        SmartDashboard.getNumber(
-            "Tuning/Elevator/Anti Slam Voltage", ElevatorConstants.antiSlamVoltageOffset);
+    antiSlamVoltageOffset = SmartDashboard.getNumber(
+        "Tuning/Elevator/Anti Slam Voltage", ElevatorConstants.antiSlamVoltageOffset);
 
     SparkMaxConfig config = new SparkMaxConfig();
     config.closedLoop.pid(p, i, d);
@@ -236,13 +238,14 @@ public class Elevator extends SubsystemBase {
         config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
+  @Logged(name= "Elevator Position", importance = Importance.INFO)
   public double getElevatorPosition() {
     return elevatorEncoder.getPosition();
   }
 
   public Command jogElevator(double voltage) {
     return Commands.run(
-            () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
+        () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
         .finallyDo(() -> elevatorMotor.stopMotor());
   }
 
@@ -273,5 +276,20 @@ public class Elevator extends SubsystemBase {
           positionOffset = 0;
           setPosition(uppydowny).schedule();
         });
+  }
+
+  @Logged(name = "Elevator Target", importance = Importance.INFO)
+  public double getTargetPosition(){
+    return targetPosition;
+  }
+
+  @Logged(name= "Elevator at Home", importance = Importance.INFO)
+  public boolean loggingElevatorHome(){
+    return isAtHome(0.5);
+  }
+
+  @Logged(name= "Elevator at Setpoint", importance = Importance.INFO)
+  public boolean loggingElevatorSetpoint(){
+    return isAtSetpoint(0.5);
   }
 }

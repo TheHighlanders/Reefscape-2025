@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import frc.robot.subsystems.ClimberConstants.PowerPoint;
 
 final class ClimberConstants {
@@ -34,10 +35,11 @@ final class ClimberConstants {
 
   static final double timeToZeroClimber = 1; // Seconds
 
-  static final record PowerPoint(double position, double power) {}
+  static final record PowerPoint(double position, double power) {
+  }
 
   // Position, Power
-  static final PowerPoint[] CLIMB_POINTS = {new PowerPoint(0.0, 1.0), new PowerPoint(0.6, 0.5)};
+  static final PowerPoint[] CLIMB_POINTS = { new PowerPoint(0.0, 1.0), new PowerPoint(0.6, 0.5) };
 }
 
 public class Climber extends SubsystemBase {
@@ -82,10 +84,13 @@ public class Climber extends SubsystemBase {
   }
 
   public void periodic() {
+
     SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
-    climberHoldVoltage =
-        SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
-    SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
+
+    if (Constants.devMode) {
+      climberHoldVoltage = SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
+      SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
+    }
   }
 
   public void findClimberZeroTick() {
@@ -139,9 +144,8 @@ public class Climber extends SubsystemBase {
   public Command climbCommand() {
     return Commands.run(this::climbIn, this)
         .until(
-            () ->
-                MathUtil.isNear(
-                    ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
+            () -> MathUtil.isNear(
+                ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
         .finallyDo(holdPosition());
   }
 

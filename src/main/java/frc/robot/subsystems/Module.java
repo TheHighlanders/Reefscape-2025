@@ -31,7 +31,7 @@ import frc.robot.Constants;
 
 final class ModuleConstants {
   static final double angleP = 0.05;
-  static final double angleI = 0;
+  static final double angleI = 0.00001;
   static final double angleD = 0;
 
   static final double driveP = 0.2;
@@ -313,11 +313,6 @@ public class Module {
   /** Returns the assigned module number */
   public int getModuleNumber() {
     return moduleNumber;
-  }
-
-  /** Resets the Angle Motor to the position of the absolute position */
-  public void setIntegratedAngleToAbsolute() {
-    angleEncoder.setPosition(/* getAbsolutePosition().getDegrees() */ 0);
   }
 
   public boolean getAngleInverted() {
