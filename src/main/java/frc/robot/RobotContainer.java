@@ -9,6 +9,7 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.util.PixelFormat;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -36,8 +37,13 @@ public class RobotContainer {
 
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
+  
+  @Logged(name = "Elevator")
   Elevator elevator = new Elevator();
+
+  @Logged(name = "Swerve")
   Swerve drive = new Swerve(elevator::getElevatorPosition);
+  
   Autos autos = new Autos(drive, elevator, coralScorer);
 
   AutoChooser chooser;
@@ -104,23 +110,21 @@ public class RobotContainer {
   }
 
   private void configureAutonomous() {
-    chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
-    chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
-    chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
     chooser.addRoutine("Left 2 Piece", autos::LeftTwoPiece);
     chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
     chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
+    chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
 
-    // chooser.addCmd("SYSID", drive::sysId);
-    // chooser.addCmd("FORWARD", ()->Commands.sequence(drive.enableSlowMode(), drive.driveCMD(()->1,
-    // ()->0, ()->0).withTimeout(1), drive.disableSlowMode()));
-    chooser.addCmd("Bad 1 piece", autos::simple1Piece);
+    if(Constants.devMode){
+      chooser.addCmd("SYSID", drive::sysId);
+      chooser.addCmd("FORWARD", ()->Commands.sequence(drive.enableSlowMode(), drive.driveCMD(()->1,
+      ()->0, ()->0).withTimeout(1), drive.disableSlowMode()));
+      chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
+      chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
+      chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
+    }
 
     SmartDashboard.putData("AutoChooser", chooser);
-  }
-
-  public Command findClimberZero() {
-    return climber.findZeroPosition();
   }
 
   public Command getAutonomousCommand() {
