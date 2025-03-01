@@ -35,11 +35,10 @@ final class ClimberConstants {
 
   static final double timeToZeroClimber = 1; // Seconds
 
-  static final record PowerPoint(double position, double power) {
-  }
+  static final record PowerPoint(double position, double power) {}
 
   // Position, Power
-  static final PowerPoint[] CLIMB_POINTS = { new PowerPoint(0.0, 1.0), new PowerPoint(0.6, 0.5) };
+  static final PowerPoint[] CLIMB_POINTS = {new PowerPoint(0.0, 1.0), new PowerPoint(0.6, 0.5)};
 }
 
 public class Climber extends SubsystemBase {
@@ -88,7 +87,9 @@ public class Climber extends SubsystemBase {
     SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
 
     if (Constants.devMode) {
-      climberHoldVoltage = SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
+      climberHoldVoltage =
+          SmartDashboard.getNumber(
+              "Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
       SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
     }
   }
@@ -144,8 +145,9 @@ public class Climber extends SubsystemBase {
   public Command climbCommand() {
     return Commands.run(this::climbIn, this)
         .until(
-            () -> MathUtil.isNear(
-                ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
+            () ->
+                MathUtil.isNear(
+                    ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
         .finallyDo(holdPosition());
   }
 

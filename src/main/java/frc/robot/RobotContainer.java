@@ -37,13 +37,13 @@ public class RobotContainer {
 
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
-  
+
   @Logged(name = "Elevator")
   Elevator elevator = new Elevator();
 
   @Logged(name = "Swerve")
   Swerve drive = new Swerve(elevator::getElevatorPosition);
-  
+
   Autos autos = new Autos(drive, elevator, coralScorer);
 
   AutoChooser chooser;
@@ -99,7 +99,7 @@ public class RobotContainer {
 
     operator.start().toggleOnTrue(drive.pointWheelsForward());
     operator.back().whileTrue(drive.pidTuningJogAngle());
-    operator.rightBumper().whileTrue(coralScorer.slowDepositCMD());
+    operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
     operator
         .rightStick()
@@ -115,10 +115,15 @@ public class RobotContainer {
     chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
     chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
 
-    if(Constants.devMode){
+    if (Constants.devMode) {
       chooser.addCmd("SYSID", drive::sysId);
-      chooser.addCmd("FORWARD", ()->Commands.sequence(drive.enableSlowMode(), drive.driveCMD(()->1,
-      ()->0, ()->0).withTimeout(1), drive.disableSlowMode()));
+      chooser.addCmd(
+          "FORWARD",
+          () ->
+              Commands.sequence(
+                  drive.enableSlowMode(),
+                  drive.driveCMD(() -> 1, () -> 0, () -> 0).withTimeout(1),
+                  drive.disableSlowMode()));
       chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
       chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
       chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);

@@ -9,7 +9,7 @@ public class Constants {
   public static final int[] angleMotorIDs = {2, 12, 22, 32};
   public static final int[] canCoderIDs = {3, 13, 23, 33};
 
-  public static final double maxSpeed = Units.feetToMeters(13);
+  public static final double maxSpeed = Units.feetToMeters(15);
 
   public static final boolean sim = RobotBase.isSimulation();
 

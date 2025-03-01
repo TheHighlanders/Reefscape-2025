@@ -50,8 +50,8 @@ public class Algae extends SubsystemBase {
   public void periodic() {
     SmartDashboard.putNumber("Algae position", algaeBendMotor.getEncoder().getPosition());
 
-    if(Constants.devMode){
-    SmartDashboard.putNumber("algae current", algaeBendMotor.getAppliedOutput());
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("algae current", algaeBendMotor.getAppliedOutput());
     }
     //  SmartDashboard.putNumber("algae current", algaeIntakePosition.getPosition());;
 
