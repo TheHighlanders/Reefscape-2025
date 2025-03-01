@@ -227,10 +227,6 @@ public class Swerve extends SubsystemBase {
     field.setRobotPose(getPose());
 
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
-    SmartDashboard.putNumber("Applied output angle 0", modules[0].getAppliedOutputAngle());
-    SmartDashboard.putNumber("Applied output angle 1", modules[1].getAppliedOutputAngle());
-    SmartDashboard.putNumber("Applied output angle 2", modules[2].getAppliedOutputAngle());
-    SmartDashboard.putNumber("Applied output angle 3", modules[3].getAppliedOutputAngle());
 
     sendDiagnostics();
   }
@@ -699,6 +695,12 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity Setpoint",
           m.getSetpoint().speedMetersPerSecond);
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Output Percentage Angle",
+          m.getAppliedOutputAngle());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Output Percentage Drive",
+          m.getAppliedOutputDrive());
 
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Position", m.getPosition().distanceMeters);
