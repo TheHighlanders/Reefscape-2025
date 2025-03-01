@@ -33,7 +33,7 @@ import frc.robot.Constants;
 final class ModuleConstants {
   static final double angleP = 0.25;
   static final double angleI = 0.00001;
-  static final double angleD = 0.1;
+  static final double angleD = 0;
 
   static final double driveP = 0.2;
   static final double driveI = 0;
@@ -48,8 +48,8 @@ final class ModuleConstants {
 
   static final double anglePCF = 360.0 / 12.8d;
 
-  static final int driveCurrentLimit = 35;
-  static final int angleCurrentLimit = 15;
+  static final int driveCurrentLimit = 40;
+,  static final int angleCurrentLimit = 40;
 
   static final boolean absolInverted = false;
 
