@@ -19,6 +19,7 @@ import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -31,7 +32,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 final class ModuleConstants {
-  static final double angleP = 0.25;
+  static final double angleP = 0.2;
   static final double angleI = 0.0;
   static final double angleD = 0;
 
@@ -48,8 +49,8 @@ final class ModuleConstants {
 
   static final double anglePCF = 360.0 / 12.8d;
 
-  static final int driveCurrentLimit = 40;
-  static final int angleCurrentLimit = 25;
+  static final int driveCurrentLimit = 60;
+  static final int angleCurrentLimit = 40;
 
   static final boolean absolInverted = false;
 
@@ -210,9 +211,11 @@ public class Module {
    */
   public void setAngleState(SwerveModuleState state) {
     Rotation2d angle = state.angle;
-    if (angle != null) {
+    if (angle != null && !MathUtil.isNear(angleReference, angleEncoder.getPosition(), 0.75)) {
       angleController.setReference(angle.getDegrees(), ControlType.kPosition);
       angleReference = angle.getDegrees();
+    } else {
+      angleMotor.set(0);
     }
 
     if (Constants.devMode) {
