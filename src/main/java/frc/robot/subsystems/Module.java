@@ -49,7 +49,7 @@ final class ModuleConstants {
   static final double anglePCF = 360.0 / 12.8d;
 
   static final int driveCurrentLimit = 40;
-,  static final int angleCurrentLimit = 40;
+  static final int angleCurrentLimit = 40;
 
   static final boolean absolInverted = false;
 
