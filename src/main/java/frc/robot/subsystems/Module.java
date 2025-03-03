@@ -271,6 +271,7 @@ public class Module {
   public Rotation2d getAbsolutePosition() {
     /* Gets Position from CANcoder */
     if (BaseStatusSignal.isAllGood(absoluteEncoderPosition)) {
+      absoluteEncoderPosition.refresh();
       return Rotation2d.fromDegrees(absoluteEncoderPosition.getValue().in(Degrees));
     } else if (hasZeroedAbsolute) {
       DriverStation.reportWarning(

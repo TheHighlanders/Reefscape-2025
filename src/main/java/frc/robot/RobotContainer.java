@@ -102,7 +102,6 @@ public class RobotContainer {
     operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
     // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
-
     operator
         .rightStick()
         .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
