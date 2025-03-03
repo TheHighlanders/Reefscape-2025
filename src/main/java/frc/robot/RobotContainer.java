@@ -99,7 +99,9 @@ public class RobotContainer {
 
     operator.start().toggleOnTrue(drive.pointWheelsForward());
     operator.back().whileTrue(drive.pidTuningJogAngle());
-    operator.rightBumper().whileTrue(coralScorer.depositCMD());
+    operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
+    // operator.rightBumper().whileTrue(coralScorer.depositCMD());
+
 
     operator
         .rightStick()

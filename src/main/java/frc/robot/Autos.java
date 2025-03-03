@@ -22,15 +22,14 @@ public class Autos {
   CoralScorer coral;
 
   public Autos(Swerve drive, Elevator elevator, CoralScorer coral) {
-    autoFactory =
-        new AutoFactory(
-            drive::getPose, // A function that returns the current robot pose
-            drive::resetOdometry, // A function that resets the current robot pose to the provided
-            // Pose2d
-            drive::followTraj, // The drive subsystem trajectory follower
-            true, // If alliance flipping should be enabled
-            drive // The drive subsystem
-            );
+    autoFactory = new AutoFactory(
+        drive::getPose, // A function that returns the current robot pose
+        drive::resetOdometry, // A function that resets the current robot pose to the provided
+        // Pose2d
+        drive::followTraj, // The drive subsystem trajectory follower
+        true, // If alliance flipping should be enabled
+        drive // The drive subsystem
+    );
 
     this.drive = drive;
     this.elevator = elevator;
@@ -102,7 +101,7 @@ public class Autos {
         .done()
         .onTrue(
             elevator.elevatorAuto(ElevatorState.L4_POSITION)
-            /*.andThen(coral.depositCMD().withTimeout(.5))*/ ); // move elevator then score coral
+        /* .andThen(coral.depositCMD().withTimeout(.5)) */ ); // move elevator then score coral
 
     return routine;
   }
@@ -138,8 +137,8 @@ public class Autos {
         .done()
         .onTrue(
             elevator.elevatorAuto(ElevatorState.L4_POSITION)
-            // .andThen(coral.depositCMD().withTimeout(.5))
-            ); // move elevator then score coral
+        // .andThen(coral.depositCMD().withTimeout(.5))
+        ); // move elevator then score coral
 
     return routine;
   }
@@ -170,6 +169,33 @@ public class Autos {
 
     return routine;
   }
+
+  // public AutoRoutine CenterOnePieceToStation() { // the one piece is real :>
+  //   AutoRoutine routine = autoFactory.newRoutine("CenterOnePieceToStation");
+ 
+  //   AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");
+  //   AutoTrajectory centerStart_centerFar_left = routine.trajectory("centerStart-centerFar-Left-station");
+  //   routine
+  //       .active()
+  //       .onTrue(
+  //           Commands.sequence(
+  //               centerStart_centerFar.resetOdometry(),
+  //               // drive.presetWheelsToTraj((SwerveSample)
+  //               // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+  //               centerStart_centerFar.cmd()));
+
+  //   centerStart_centerFar
+  //       .done()
+  //       .onTrue(
+  //           elevator
+  //               .elevatorAuto(ElevatorState.L4_POSITION)
+  //               .andThen(Commands.waitSeconds(0.5))
+  //               .andThen(coral.slowDepositCMD().withTimeout(3))
+  //               .andThen(
+  //                   elevator.elevatorAuto(ElevatorState.HOME)
+  //                       .andThen(centerStart_centerFar_left.cmd())));
+  //   return routine;
+  // }
 
   public Command updateTrajectoryPIDCMD() {
     return Commands.runOnce(drive::updateTrajectoryPID);

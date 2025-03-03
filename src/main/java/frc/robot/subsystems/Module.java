@@ -34,7 +34,7 @@ import frc.robot.Constants;
 final class ModuleConstants {
   static final double angleP = 0.2;
   static final double angleI = 0.0;
-  static final double angleD = 0;
+  static final double angleD = 0.05;
 
   static final double driveP = 0.2;
   static final double driveI = 0;
