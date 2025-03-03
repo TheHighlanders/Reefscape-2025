@@ -703,15 +703,22 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity Setpoint",
           m.getSetpoint().speedMetersPerSecond);
-      // SmartDashboard.putNumber(
-      //     "ModuleDebug/Module" + m.getModuleNumber() + "Output Percentage Angle",
-      //     m.getAppliedOutputAngle());
-      // SmartDashboard.putNumber(
-      //     "ModuleDebug/Module" + m.getModuleNumber() + "Output Percentage Drive",
-      //     m.getAppliedOutputDrive());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Output Percentage Angle",
+          m.getAppliedOutputAngle());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Output Percentage Drive",
+          m.getAppliedOutputDrive());
 
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Position", m.getPosition().distanceMeters);
+
+      SmartDashboard.putNumber(
+          "ModuleDebug/ModuleRelative" + m.getModuleNumber() + "Position",
+          m.getPosition().angle.getDegrees());
+      SmartDashboard.putNumber(
+          "ModuleDebug/ModuleAbsolute" + m.getModuleNumber() + "Position",
+          m.getAbsolutePosition().getDegrees());
 
       SmartDashboard.putNumber(
           "SwerveSlowCoeff", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
