@@ -17,12 +17,15 @@ import com.revrobotics.spark.config.ClosedLoopConfigAccessor;
 import com.revrobotics.spark.config.LimitSwitchConfig.Type;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 class ElevatorConstants {
   static final int elevMotorID = 41;
@@ -34,7 +37,7 @@ class ElevatorConstants {
   static final double homeTarget = 5; // Position before autolanding
   static final double l2Target = 11.5;
   static final double l3Target = 28;
-  static final double l4Target = 52.5 + (5.0d / 8.0d);
+  static final double l4Target = 52.125;
 
   static final double coralBetweenReefOffset = 2;
 
@@ -151,13 +154,16 @@ public class Elevator extends SubsystemBase {
     }
 
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
-    SmartDashboard.putNumber("Tuning/Elevator/VoltagekF", arbFF);
-    SmartDashboard.putNumber("Tuning/Elevator/Setpoint", targetPosition);
-    SmartDashboard.putNumber("Tuning/Elevator/Output", elevatorMotor.getAppliedOutput());
-    SmartDashboard.putNumber("Tuning/Elevator/Velocity", elevatorEncoder.getVelocity());
 
-    SmartDashboard.putNumber(
-        "Tuning/Elevator/Error", targetPosition - elevatorEncoder.getPosition());
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("Tuning/Elevator/VoltagekF", arbFF);
+      SmartDashboard.putNumber("Tuning/Elevator/Setpoint", targetPosition);
+      SmartDashboard.putNumber("Tuning/Elevator/Output", elevatorMotor.getAppliedOutput());
+      SmartDashboard.putNumber("Tuning/Elevator/Velocity", elevatorEncoder.getVelocity());
+
+      SmartDashboard.putNumber(
+          "Tuning/Elevator/Error", targetPosition - elevatorEncoder.getPosition());
+    }
   }
 
   public Command zeroElevator() {
@@ -236,6 +242,7 @@ public class Elevator extends SubsystemBase {
         config, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
+  @Logged(name = "Elevator Position", importance = Importance.INFO)
   public double getElevatorPosition() {
     return elevatorEncoder.getPosition();
   }
@@ -273,5 +280,20 @@ public class Elevator extends SubsystemBase {
           positionOffset = 0;
           setPosition(uppydowny).schedule();
         });
+  }
+
+  @Logged(name = "Elevator Target", importance = Importance.INFO)
+  public double getTargetPosition() {
+    return targetPosition;
+  }
+
+  @Logged(name = "Elevator at Home", importance = Importance.INFO)
+  public boolean loggingElevatorHome() {
+    return isAtHome(0.5);
+  }
+
+  @Logged(name = "Elevator at Setpoint", importance = Importance.INFO)
+  public boolean loggingElevatorSetpoint() {
+    return isAtSetpoint(0.5);
   }
 }

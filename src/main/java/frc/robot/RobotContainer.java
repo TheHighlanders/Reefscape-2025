@@ -9,9 +9,12 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.util.PixelFormat;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
@@ -36,12 +39,17 @@ public class RobotContainer {
   Vision vision = new Vision();
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
+
+  @Logged(name = "Elevator")
   Elevator elevator = new Elevator();
+
+  @Logged(name = "Swerve")
   Swerve drive =
       new Swerve(
           vision::getEstimatedRobotPose,
           vision::getEstimationStdDev,
           elevator::getElevatorPosition);
+
   Autos autos = new Autos(drive, elevator, coralScorer);
   AutoChooser chooser;
 
@@ -95,25 +103,38 @@ public class RobotContainer {
 
     operator.start().toggleOnTrue(drive.pointWheelsForward());
     operator.back().whileTrue(drive.pidTuningJogAngle());
-    operator.rightBumper().whileTrue(coralScorer.depositCMD());
+    operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
+    // operator.rightBumper().whileTrue(coralScorer.depositCMD());
+
+    operator
+        .rightStick()
+        .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
   }
 
   private void configureAutonomous() {
-    chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
-    chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
-    chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
-    chooser.addCmd("SYSID", drive::sysId);
-    chooser.addCmd("FORWARD", () -> drive.pidTuningJogDrive());
-    chooser.addCmd("Bad 1 piece", autos::simple1Piece);
+    chooser.addRoutine("Left 2 Piece", autos::LeftTwoPiece);
+    chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
+    chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
+    chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
+
+    if (Constants.devMode) {
+      chooser.addCmd("SYSID", drive::sysId);
+      chooser.addCmd(
+          "FORWARD",
+          () ->
+              Commands.sequence(
+                  drive.enableSlowMode(),
+                  drive.driveCMD(() -> 1, () -> 0, () -> 0).withTimeout(1),
+                  drive.disableSlowMode()));
+      chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
+      chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
+      chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
+    }
 
     SmartDashboard.putData("AutoChooser", chooser);
-  }
-
-  public Command findClimberZero() {
-    return climber.findZeroPosition();
   }
 
   public Command getAutonomousCommand() {
