@@ -22,6 +22,7 @@ import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Vision;
 import java.util.HashMap;
 import java.util.Map;
 import org.opencv.core.Mat;
@@ -35,6 +36,7 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
+  Vision vision = new Vision();
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
 
@@ -42,10 +44,13 @@ public class RobotContainer {
   Elevator elevator = new Elevator();
 
   @Logged(name = "Swerve")
-  Swerve drive = new Swerve(elevator::getElevatorPosition);
+  Swerve drive =
+      new Swerve(
+          vision::getEstimatedRobotPose,
+          vision::getEstimationStdDev,
+          elevator::getElevatorPosition);
 
   Autos autos = new Autos(drive, elevator, coralScorer);
-
   AutoChooser chooser;
 
   public RobotContainer() {
@@ -95,7 +100,6 @@ public class RobotContainer {
         .or(operator.povUpRight())
         .whileTrue(climber.createClimbInCommand());
     operator.povRight().onTrue(climber.holdClimbPosition());
-    operator.povLeft().whileTrue(climber.createClimbInSlowCommand());
 
     operator.start().toggleOnTrue(drive.pointWheelsForward());
     operator.back().whileTrue(drive.pidTuningJogAngle());

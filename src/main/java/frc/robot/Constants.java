@@ -13,5 +13,5 @@ public class Constants {
 
   public static final boolean sim = RobotBase.isSimulation();
 
-  public static final boolean devMode = true;
+  public static final boolean devMode = false;
 }
