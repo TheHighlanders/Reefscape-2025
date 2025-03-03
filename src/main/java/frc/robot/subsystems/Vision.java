@@ -39,76 +39,59 @@ final class VisionConstants {
   // new Translation3d(0.233, -0.288, 16.965),
   // new Rotation3d(0, -Units.degreesToRadians(25), -Units.degreesToRadians(25)));
 
-  static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8); // TODO: BS
+  static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(0.5, 0.5, 0.5); // TODO: BS
   static final Matrix<N3, N1> kMultiTagStdDevs = VecBuilder.fill(0.5, 0.5, 1); // TODO: BS
 }
 
 public class Vision extends SubsystemBase {
-  List<PhotonCamera> cameras;
-  List<PhotonPoseEstimator> photonPoseEstimators;
+  PhotonCamera camera = new PhotonCamera("ReefCamera");
+  PhotonPoseEstimator poseEst;
   AprilTagFieldLayout aprilTagFieldLayout;
 
-  private List<Matrix<N3, N1>> allStdDevs;
+  private Matrix<N3, N1> stdDev;
 
   /** Creates a new Vision. */
   public Vision() {
+    // this.aprilTagFieldLayout =
+    // AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark);
     this.aprilTagFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark);
 
-    cameras.add(new PhotonCamera("leftCamera"));
-    cameras.add(new PhotonCamera("frontCamera"));
-
-    photonPoseEstimators.add(
+    poseEst =
         new PhotonPoseEstimator(
             aprilTagFieldLayout,
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            VisionConstants.frontFacingCam));
-    // photonPoseEstimators.add(
-    // new PhotonPoseEstimator(
-    // aprilTagFieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-    // VisionConstants.robotRightCamPosition));
+            VisionConstants.frontFacingCam);
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    var estPoses = getEstimatedRobotPoses();
-    for (int i = 0; i < estPoses.size(); i++) {
-      Optional<EstimatedRobotPose> estPose = estPoses.get(i);
-      if (estPose.isPresent()) {
-        allStdDevs.set(
-            i,
-            updateEstimationStdDevs(
-                estPose, estPose.get().targetsUsed, photonPoseEstimators.get(i)));
-      }
+    Optional<EstimatedRobotPose> estPose = getEstimatedRobotPose();
+
+    if (estPose.isPresent()) {
+      stdDev = updateEstimationStdDevs(estPose, estPose.get().targetsUsed, poseEst);
     }
   }
 
-  public List<Optional<EstimatedRobotPose>> getEstimatedRobotPoses() {
-    List<Optional<PhotonPipelineResult>> results = new ArrayList<Optional<PhotonPipelineResult>>();
+  public Optional<EstimatedRobotPose> getEstimatedRobotPose() {
+    Optional<PhotonPipelineResult> result;
 
-    for (PhotonCamera camera : cameras) {
-      var camResults = camera.getAllUnreadResults();
-      if (camResults.size() >= 1) {
-        results.add(Optional.of(camResults.get(camResults.size() - 1)));
-      } else {
-        results.add(Optional.empty());
-      }
+    var camResult = camera.getAllUnreadResults();
+    if (camResult.size() != 0) {
+      result = Optional.of(camResult.get(0));
+    } else {
+      result = Optional.empty();
     }
 
-    List<Optional<EstimatedRobotPose>> estPoses = new ArrayList<Optional<EstimatedRobotPose>>();
-    // Build array of est poses from each camera
-
-    for (int i = 0; i < results.size(); i++) {
-      var result = results.get(i);
-
-      if (result.isPresent()) {
-        estPoses.add(photonPoseEstimators.get(i).update(result.get()));
-      } else {
-        estPoses.add(Optional.empty());
-      }
+    Optional<EstimatedRobotPose> estPose;
+    if (result.isPresent()) {
+      estPose = poseEst.update(result.get());
+    } else {
+      estPose = Optional.empty();
     }
 
-    return estPoses;
+    return estPose;
+    // return Optional.empty();
   }
 
   /**
@@ -176,17 +159,15 @@ public class Vision extends SubsystemBase {
   public Optional<Pose2d> findClosestReefTag(Pose2d robotPose) {
     List<Integer> visibleReefTagIds = new ArrayList<>();
 
-    List<Optional<EstimatedRobotPose>> estPoses = getEstimatedRobotPoses();
+    Optional<EstimatedRobotPose> estPose = getEstimatedRobotPose();
 
     // Find all visible reef tag IDs
-    for (Optional<EstimatedRobotPose> estPose : estPoses) {
-      if (estPose.isPresent()) {
-        for (PhotonTrackedTarget target : estPose.get().targetsUsed) {
-          int tagId = target.getFiducialId();
-          for (int reefId : VisionConstants.reefTagIds) {
-            if (tagId == reefId && !visibleReefTagIds.contains(tagId)) {
-              visibleReefTagIds.add(tagId);
-            }
+    if (estPose.isPresent()) {
+      for (PhotonTrackedTarget target : estPose.get().targetsUsed) {
+        int tagId = target.getFiducialId();
+        for (int reefId : VisionConstants.reefTagIds) {
+          if (tagId == reefId && !visibleReefTagIds.contains(tagId)) {
+            visibleReefTagIds.add(tagId);
           }
         }
       }
@@ -213,7 +194,7 @@ public class Vision extends SubsystemBase {
     return Optional.empty();
   }
 
-  public List<Matrix<N3, N1>> getEstimationStdDevs() {
-    return allStdDevs;
+  public Matrix<N3, N1> getEstimationStdDev() {
+    return stdDev;
   }
 }

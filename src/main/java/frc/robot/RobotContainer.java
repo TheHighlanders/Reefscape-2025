@@ -39,8 +39,8 @@ public class RobotContainer {
   Elevator elevator = new Elevator();
   Swerve drive =
       new Swerve(
-          vision::getEstimatedRobotPoses,
-          vision::getEstimationStdDevs,
+          vision::getEstimatedRobotPose,
+          vision::getEstimationStdDev,
           elevator::getElevatorPosition);
   Autos autos = new Autos(drive, elevator, coralScorer);
   AutoChooser chooser;
@@ -92,7 +92,6 @@ public class RobotContainer {
         .or(operator.povUpRight())
         .whileTrue(climber.createClimbInCommand());
     operator.povRight().onTrue(climber.holdClimbPosition());
-    operator.povLeft().whileTrue(climber.createClimbInSlowCommand());
 
     operator.start().toggleOnTrue(drive.pointWheelsForward());
     operator.back().whileTrue(drive.pidTuningJogAngle());
@@ -100,19 +99,12 @@ public class RobotContainer {
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
-
-    // new Trigger(() -> driver.getHID().getBackButton())
-    //     .onTrue(new AlignWithReefCoral(drive, vision, driver.leftBumper()));
   }
 
   private void configureAutonomous() {
     chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
     chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
     chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
-    chooser.addRoutine("Left 2 Piece", autos::LeftTwoPiece);
-    chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
-    chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
-
     chooser.addCmd("SYSID", drive::sysId);
     chooser.addCmd("FORWARD", () -> drive.pidTuningJogDrive());
     chooser.addCmd("Bad 1 piece", autos::simple1Piece);

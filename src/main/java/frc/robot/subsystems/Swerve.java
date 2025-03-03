@@ -44,7 +44,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
@@ -89,7 +88,7 @@ public class Swerve extends SubsystemBase {
   }
 
   private static final double MAX_SLOW_MODE = 0.3;
-  private static final double MICROS_SECONDS_CONVERSION = Math.pow(10, 6);
+  private static final double MICROSECONDS_CONVERSION = Math.pow(10, -6);
 
   private static final double MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED = 0.25;
 
@@ -127,16 +126,16 @@ public class Swerve extends SubsystemBase {
 
   SwerveState current = SwerveState.NORMAL;
 
-  Supplier<List<Optional<EstimatedRobotPose>>> estPoseSup;
-  Supplier<List<Matrix<N3, N1>>> stdDevsSup;
+  Supplier<Optional<EstimatedRobotPose>> estPoseSup;
+  Supplier<Matrix<N3, N1>> stdDevSup;
 
   /** Creates a new Swerve. */
   public Swerve(
-      Supplier<List<Optional<EstimatedRobotPose>>> estPosesSup,
-      Supplier<List<Matrix<N3, N1>>> stdDevsSup,
+      Supplier<Optional<EstimatedRobotPose>> estPoseSup,
+      Supplier<Matrix<N3, N1>> stdDevSup,
       DoubleSupplier elevatorHeight) {
-    this.estPoseSup = estPosesSup;
-    this.stdDevsSup = stdDevsSup;
+    this.estPoseSup = estPoseSup;
+    this.stdDevSup = stdDevSup;
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
@@ -229,19 +228,17 @@ public class Swerve extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     poseEst.updateWithTime(
-        RobotController.getFPGATime() * MICROS_SECONDS_CONVERSION,
+        RobotController.getFPGATime() * MICROSECONDS_CONVERSION,
         getGyroAngle(),
         getModulePostions());
     field.setRobotPose(getPose());
 
-    var estPoses = estPoseSup.get();
-    var stdDevs = stdDevsSup.get();
-    for (int i = 0; i < estPoses.size(); i++) {
-      var pose = estPoses.get(i);
-      if (pose.isPresent()) {
-        poseEst.addVisionMeasurement(
-            pose.get().estimatedPose.toPose2d(), RobotController.getFPGATime(), stdDevs.get(i));
-      }
+    var estPose = estPoseSup.get();
+    var stdDev = stdDevSup.get();
+
+    if (estPose.isPresent()) {
+      poseEst.addVisionMeasurement(
+          estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
     }
 
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
