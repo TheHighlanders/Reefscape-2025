@@ -528,16 +528,16 @@ public class Swerve extends SubsystemBase {
     // y = MathUtil.clamp(y + (0.1 * Math.signum(y)), -1, 1);
     // x = MathUtil.clamp(x + (0.1 * Math.signum(x)), -1, 1);
     // }
-    double accelLimX = xLim.calculate(x);
-    double accelLimY = yLim.calculate(y);
+    // double accelLimX = xLim.calculate(x);
+    // double accelLimY = yLim.calculate(y);
 
-    if (yLim.lastValue() > y) {
-      y = accelLimY;
-    }
+    // if (yLim.lastValue() > y) {
+    //   y = accelLimY;
+    // }
 
-    if (xLim.lastValue() > x) {
-      x = accelLimX;
-    }
+    // if (xLim.lastValue() > x) {
+    //   x = accelLimX;
+    // }
 
     // TODO: Reenable if wheelieing
 

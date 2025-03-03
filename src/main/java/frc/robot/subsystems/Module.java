@@ -34,7 +34,7 @@ import frc.robot.Constants;
 final class ModuleConstants {
   static final double angleP = 0.2;
   static final double angleI = 0.0;
-  static final double angleD = 0.05;
+  static final double angleD = 0.0;
 
   static final double driveP = 0.2;
   static final double driveI = 0;
@@ -211,12 +211,9 @@ public class Module {
    */
   public void setAngleState(SwerveModuleState state) {
     Rotation2d angle = state.angle;
-    if (angle != null && !MathUtil.isNear(angleReference, angleEncoder.getPosition(), 0.75)) {
-      angleController.setReference(angle.getDegrees(), ControlType.kPosition);
-      angleReference = angle.getDegrees();
-    } else {
-      angleMotor.set(0);
-    }
+
+    angleController.setReference(angle.getDegrees(), ControlType.kPosition);
+    angleReference = angle.getDegrees();
 
     if (Constants.devMode) {
       SmartDashboard.putNumber(
@@ -271,6 +268,7 @@ public class Module {
   public Rotation2d getAbsolutePosition() {
     /* Gets Position from CANcoder */
     if (BaseStatusSignal.isAllGood(absoluteEncoderPosition)) {
+      absoluteEncoderPosition.refresh();
       return Rotation2d.fromDegrees(absoluteEncoderPosition.getValue().in(Degrees));
     } else if (hasZeroedAbsolute) {
       DriverStation.reportWarning(
