@@ -1,4 +1,4 @@
-// Copyright (c) FIRST and other WPILib contributors.
+// Copyrght (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
@@ -13,6 +13,8 @@ import static edu.wpi.first.units.Units.Volts;
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -39,15 +41,16 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 final class SwerveConstants {
 
-  public static final double maxRotSpeed = Units.degreesToRadians(270);
+  public static final double maxRotSpeed = Units.degreesToRadians(360);
   // Implicit /sec
 
   static final double width = Units.inchesToMeters(20.5);
@@ -58,31 +61,44 @@ final class SwerveConstants {
 
   static final double accelLim = 3;
 
-  static double translateP = 0;
-  static double translateI = 0;
+  static final double headingCorrectionDeadband = 0.05;
+
+  static double headingCorrectionP = 0.5;
+  static double headingCorrectionI = 0.05;
+  static double headingCorrectionD = 0;
+
+  static double translateP = 1.75;
+  static double translateI = 0.05;
   static double translateD = 0;
 
-  static double rotateP = 0;
+  static double rotateP = 1.5;
   static double rotateI = 0;
-  static double rotateD = 0;
+  static double rotateD = 0.6;
+
+  static double preAutoWheelTolerance = 2.5; // deg
 }
 
 public class Swerve extends SubsystemBase {
 
   enum SwerveState {
     NORMAL,
-    LINEUP,
-    SLOW
+    LINEUP
   }
 
   private static final double MAX_SLOW_MODE = 0.3;
-  private static final double MICROS_SECONDS_CONVERSION = Math.pow(10, 6);
+  private static final double MICROS_SECONDS_CONVERSION = Math.pow(10, -6);
 
   private static final double MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED = 0.25;
 
   DoubleSupplier elevatorHeight;
 
-  private List<Module> needZeroing = new ArrayList<Module>();
+  private Set<Module> needZeroing = new HashSet<Module>();
+
+  PIDController headingDeadbandController =
+      new PIDController(
+          SwerveConstants.headingCorrectionP,
+          SwerveConstants.headingCorrectionI,
+          SwerveConstants.headingCorrectionD);
 
   Module[] modules = new Module[4];
   AHRS gyro;
@@ -136,35 +152,41 @@ public class Swerve extends SubsystemBase {
         new SwerveDrivePoseEstimator(
             kinematics, startPose.getRotation(), getModulePostions(), startPose);
 
-    SmartDashboard.putData(
-        "Swerve/States", builder -> swerveStatesBuild(builder, this::getModuleStates));
-    SmartDashboard.putData(
-        "Swerve/Setpoints", builder -> swerveStatesBuild(builder, this::getModuleSetpoints));
-    SmartDashboard.putData(
-        "Swerve/Gyro",
-        builder -> {
-          builder.setSmartDashboardType("Gyro");
-          builder.addDoubleProperty("Value", () -> getPose().getRotation().getDegrees(), null);
-        });
-
     SmartDashboard.putData("Swerve/Field", field);
-    SmartDashboard.putNumber("Tuning/Swerve/Velocity Setpoint", 0);
-    SmartDashboard.putNumber("Tuning/Swerve/Angle Setpoint", 0);
 
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP);
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Translate I", SwerveConstants.translateI);
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Translate D", SwerveConstants.translateD);
+    if (Constants.devMode) {
+      // Only send lots of data via NT if in devMode
+      SmartDashboard.putData(
+          "Swerve/States", builder -> swerveStatesBuild(builder, this::getModuleStates));
+      SmartDashboard.putData(
+          "Swerve/Setpoints", builder -> swerveStatesBuild(builder, this::getModuleSetpoints));
+      SmartDashboard.putData(
+          "Swerve/Gyro",
+          builder -> {
+            builder.setSmartDashboardType("Gyro");
+            builder.addDoubleProperty("Value", () -> getPose().getRotation().getDegrees(), null);
+          });
 
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate P", SwerveConstants.rotateP);
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI);
-    SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD);
+      SmartDashboard.putNumber("Tuning/Swerve/Velocity Setpoint", 0);
+      SmartDashboard.putNumber("Tuning/Swerve/Angle Setpoint", 0);
 
-    SmartDashboard.putNumber("Trajectory/XError", 0);
-    SmartDashboard.putNumber("Trajectory/YError", 0);
-    SmartDashboard.putNumber("Trajectory/HeadingError", 0);
+      SmartDashboard.putNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP);
+      SmartDashboard.putNumber("Tuning/Swerve/Traj Translate I", SwerveConstants.translateI);
+      SmartDashboard.putNumber("Tuning/Swerve/Traj Translate D", SwerveConstants.translateD);
 
-    SmartDashboard.putNumber(
-        "ElevatorSlowCoefficient", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
+      SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate P", SwerveConstants.rotateP);
+      SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI);
+      SmartDashboard.putNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD);
+
+      SmartDashboard.putNumber("Trajectory/XError", 0);
+      SmartDashboard.putNumber("Trajectory/YError", 0);
+      SmartDashboard.putNumber("Trajectory/HeadingError", 0);
+
+      SmartDashboard.putNumber(
+          "ElevatorSlowCoefficient", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
+    }
+
+    headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     sysId =
         new SysIdRoutine(
@@ -209,6 +231,7 @@ public class Swerve extends SubsystemBase {
     sendDiagnostics();
   }
 
+  @Logged(name = "Estimated Pose", importance = Importance.INFO)
   public Pose2d getPose() {
     return poseEst.getEstimatedPosition();
   }
@@ -217,20 +240,45 @@ public class Swerve extends SubsystemBase {
     return Stream.of(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
   }
 
+  @Logged(name = "Swerve Module States", importance = Importance.INFO)
   public SwerveModuleState[] getModuleStates() {
     return Stream.of(modules).map(Module::getState).toArray(SwerveModuleState[]::new);
   }
 
+  @Logged(name = "Swerve Module Setpoints", importance = Importance.INFO)
   public SwerveModuleState[] getModuleSetpoints() {
     return Stream.of(modules).map(Module::getSetpoint).toArray(SwerveModuleState[]::new);
   }
 
+  @Logged(name = "Drive Applied Outputs", importance = Importance.INFO)
+  public double[] getDriveAppliedOutputs() {
+    double[] outputs = new double[4];
+
+    for (int i = 0; i < outputs.length; i++) {
+      outputs[i] = modules[i].getAppliedOutputDrive();
+    }
+
+    return outputs;
+  }
+
+  @Logged(name = "Angle Applied Outputs", importance = Importance.INFO)
+  public double[] getAngleAppliedOutputs() {
+    double[] outputs = new double[4];
+
+    for (int i = 0; i < outputs.length; i++) {
+      outputs[i] = modules[i].getAppliedOutputAngle();
+    }
+
+    return outputs;
+  }
+
   public void attemptZeroingAbsolute() {
-    if (needZeroing.size() >= 0) {
-      for (int i = 0; i < needZeroing.size(); i++) {
-        if (needZeroing.get(i).resetAbsolute()) {
-          needZeroing.remove(i);
-          i--;
+    if (!needZeroing.isEmpty()) {
+      Iterator<Module> iterator = needZeroing.iterator();
+      while (iterator.hasNext()) {
+        Module module = iterator.next();
+        if (module.resetAbsolute()) {
+          iterator.remove();
         }
       }
     }
@@ -250,6 +298,7 @@ public class Swerve extends SubsystemBase {
         .ignoringDisable(true);
   }
 
+  @Logged(name = "Gyro", importance = Importance.INFO)
   public Rotation2d getGyroAngle() {
     return gyro.getRotation2d();
   }
@@ -379,6 +428,56 @@ public class Swerve extends SubsystemBase {
         });
   }
 
+  public Command presetWheelsToTraj(SwerveSample sample) {
+    SwerveModuleState[] wheelDirections = new SwerveModuleState[4];
+
+    SwerveModuleState[] wheelStates = kinematics.toSwerveModuleStates(sample.getChassisSpeeds());
+
+    for (int i = 0; i < wheelStates.length; i++) {
+      wheelDirections[i] = new SwerveModuleState(0, wheelStates[i].angle);
+    }
+
+    return Commands.sequence(
+        Commands.runOnce(
+            () -> {
+              for (int i = 0; i < modules.length; i++) {
+                wheelDirections[i].optimize(getModulePostions()[i].angle);
+                modules[i].setModuleState(wheelDirections[i], false);
+              }
+            }),
+        Commands.waitUntil(() -> areModulesAtAngleSetpoint(wheelDirections)));
+  }
+
+  public boolean areModulesAtAngleSetpoint(SwerveModuleState[] directions) {
+    for (int i = 0; i < directions.length; i++) {
+      if (!MathUtil.isNear(
+          directions[i].angle.getDegrees(),
+          modules[i].getAnglePosition().getDegrees(),
+          SwerveConstants.preAutoWheelTolerance)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * If the robot isnt commanded to rotate and we are moving will attempt to keep the robot at its
+   * current roation
+   *
+   * @param x Alliance Relative X Speed, as defined above (m/s)
+   * @param y Alliance Relative Y Speed, as defined above (m/s)
+   * @param omega Rotational Speed (rad/s)
+   * @return the desired rotational speed of the robot
+   */
+  public double headingCorrection(double x, double y, double omega) {
+    if (MathUtil.isNear(0, omega, SwerveConstants.headingCorrectionDeadband)
+        && Math.max(Math.abs(x), Math.abs(y)) > SwerveConstants.headingCorrectionDeadband) {
+      return headingDeadbandController.calculate(Units.degreesToRadians(gyro.getRate()), 0);
+    }
+    return omega;
+  }
+
   /**
    * Method to drive the robot
    *
@@ -390,6 +489,7 @@ public class Swerve extends SubsystemBase {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
     double slowModeYCoefficient;
     double slowModeXCoefficient;
+
     if (current == SwerveState.NORMAL) {
       slowModeYCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
       slowModeXCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
@@ -402,14 +502,25 @@ public class Swerve extends SubsystemBase {
     y *= slowModeYCoefficient;
     x *= slowModeXCoefficient;
 
-    if (current != SwerveState.NORMAL) {
-      y = MathUtil.clamp(y + (0.1 * Math.signum(y)), -1, 1);
-      x = MathUtil.clamp(x + (0.1 * Math.signum(x)), -1, 1);
-    }
+    // if (current != SwerveState.NORMAL) {
+    // y = MathUtil.clamp(y + (0.1 * Math.signum(y)), -1, 1);
+    // x = MathUtil.clamp(x + (0.1 * Math.signum(x)), -1, 1);
+    // }
+    // double accelLimX = xLim.calculate(x);
+    // double accelLimY = yLim.calculate(y);
 
-    // x = xLim.calculate(x);
-    // y = yLim.calculate(y);
+    // if (yLim.lastValue() > y) {
+    //   y = accelLimY;
+    // }
+
+    // if (xLim.lastValue() > x) {
+    //   x = accelLimX;
+    // }
+
     // TODO: Reenable if wheelieing
+
+    // Comment to disable heading correction
+    // omega = headingCorrection(x, y, omega);
 
     ChassisSpeeds chassisSpeeds;
 
@@ -426,8 +537,6 @@ public class Swerve extends SubsystemBase {
       // x = 0;
       // }
 
-      // chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(y, -x, omega,
-      // getGyroAngle());
       chassisSpeeds = new ChassisSpeeds(y, x, omega);
     }
 
@@ -535,7 +644,10 @@ public class Swerve extends SubsystemBase {
                   * Math.pow(elevatorHeightPercent - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
                   / Math.pow(1 - MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED, 2)
               + 1;
-      SmartDashboard.putNumber("ElevatorSlowCoefficient", out);
+
+      if (Constants.devMode) {
+        SmartDashboard.putNumber("ElevatorSlowCoefficient", out);
+      }
 
       return out;
     }
@@ -591,9 +703,22 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Velocity Setpoint",
           m.getSetpoint().speedMetersPerSecond);
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Output Percentage Angle",
+          m.getAppliedOutputAngle());
+      SmartDashboard.putNumber(
+          "ModuleDebug/Module" + m.getModuleNumber() + "Output Percentage Drive",
+          m.getAppliedOutputDrive());
 
       SmartDashboard.putNumber(
           "ModuleDebug/Module" + m.getModuleNumber() + "Position", m.getPosition().distanceMeters);
+
+      SmartDashboard.putNumber(
+          "ModuleDebug/ModuleRelative" + m.getModuleNumber() + "Position",
+          m.getPosition().angle.getDegrees());
+      SmartDashboard.putNumber(
+          "ModuleDebug/ModuleAbsolute" + m.getModuleNumber() + "Position",
+          m.getAbsolutePosition().getDegrees());
 
       SmartDashboard.putNumber(
           "SwerveSlowCoeff", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
@@ -648,6 +773,10 @@ public class Swerve extends SubsystemBase {
   public void updateDashboardGUI() {
     Module m = modules[0];
 
+    SmartDashboard.putNumber("Tuning/Swerve/Correction P", headingDeadbandController.getP());
+    SmartDashboard.putNumber("Tuning/Swerve/Correction I", headingDeadbandController.getI());
+    SmartDashboard.putNumber("Tuning/Swerve/Correction D", headingDeadbandController.getD());
+
     SmartDashboard.putNumber("Tuning/Swerve/Angle P", m.getAngleP());
     SmartDashboard.putNumber("Tuning/Swerve/Angle I", m.getAngleI());
     SmartDashboard.putNumber("Tuning/Swerve/Angle D", m.getAngleD());
@@ -677,9 +806,17 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.getNumber("Tuning/Swerve/Angle D", ModuleConstants.angleD)
     };
 
+    double[] correction = {
+      SmartDashboard.getNumber("Tuning/Swerve/Correction P", SwerveConstants.headingCorrectionP),
+      SmartDashboard.getNumber("Tuning/Swerve/Correction I", SwerveConstants.headingCorrectionI),
+      SmartDashboard.getNumber("Tuning/Swerve/Correction D", SwerveConstants.headingCorrectionD)
+    };
+
     for (Module m : modules) {
       m.setNewControlConstants(drive, angle);
     }
+
+    headingDeadbandController.setPID(correction[0], correction[1], correction[2]);
 
     updateDashboardGUI();
   }
