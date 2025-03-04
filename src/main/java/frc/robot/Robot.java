@@ -20,9 +20,13 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 @Logged
 public class Robot extends TimedRobot {
 
+  private final LEDS leds;
+  
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
+
+
 
   private double loops = 0;
 
@@ -91,6 +95,8 @@ public class Robot extends TimedRobot {
       }
     }
     loops++;
+
+    leds.
   }
 
   @Override
