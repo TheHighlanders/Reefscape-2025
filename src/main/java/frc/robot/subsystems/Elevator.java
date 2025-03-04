@@ -38,6 +38,7 @@ class ElevatorConstants {
   static final double l2Target = 11.5;
   static final double l3Target = 28;
   static final double l4Target = 52.125;
+  static final double algaeLow = 7;
 
   static final double coralBetweenReefOffset = 2;
 
@@ -61,6 +62,7 @@ public class Elevator extends SubsystemBase {
     L2_POSITION,
     L3_POSITION,
     L4_POSITION,
+    ALGAELOW
   }
 
   private SparkMax elevatorMotor;
@@ -191,6 +193,8 @@ public class Elevator extends SubsystemBase {
             case L4_POSITION:
               targetPosition = ElevatorConstants.l4Target;
               break;
+            case ALGAELOW:
+              targetPosition = ElevatorConstants.algaeLow;
           }
           elevatorController.setReference(
               targetPosition + positionOffset, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);

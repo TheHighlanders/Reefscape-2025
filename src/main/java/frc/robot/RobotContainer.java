@@ -22,6 +22,8 @@ import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
+
+import java.lang.annotation.ElementType;
 import java.util.HashMap;
 import java.util.Map;
 import org.opencv.core.Mat;
@@ -71,6 +73,7 @@ public class RobotContainer {
     operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
     operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+    operator.leftBumper().onTrue(elevator.setPosition(ElevatorState.ALGAELOW));
     operator.leftBumper().whileTrue(elevator.offsetElevator());
 
     driver.start().whileTrue(elevator.zeroElevator());
