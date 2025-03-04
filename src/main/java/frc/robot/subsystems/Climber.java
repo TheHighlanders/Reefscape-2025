@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import frc.robot.subsystems.ClimberConstants.PowerPoint;
 
 final class ClimberConstants {
@@ -82,10 +83,15 @@ public class Climber extends SubsystemBase {
   }
 
   public void periodic() {
+
     SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
-    climberHoldVoltage =
-        SmartDashboard.getNumber("Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
-    SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
+
+    if (Constants.devMode) {
+      climberHoldVoltage =
+          SmartDashboard.getNumber(
+              "Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
+      SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
+    }
   }
 
   public void findClimberZeroTick() {
