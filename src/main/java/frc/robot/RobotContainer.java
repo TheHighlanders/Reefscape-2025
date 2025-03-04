@@ -11,21 +11,15 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.util.PixelFormat;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
-
-import java.lang.annotation.ElementType;
-import java.util.HashMap;
-import java.util.Map;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -33,7 +27,6 @@ import org.opencv.imgproc.Imgproc;
 
 public class RobotContainer {
 
-  private final Map<String, Subsystem> subsystems = new HashMap<>();
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
@@ -52,11 +45,6 @@ public class RobotContainer {
 
   public RobotContainer() {
     chooser = new AutoChooser();
-
-    subsystems.put("drive", drive);
-    subsystems.put("CoralScorer", coralScorer);
-    subsystems.put("climber", climber);
-    subsystems.put("elevator", elevator);
 
     configureBindings();
     configureAutonomous();
@@ -143,16 +131,6 @@ public class RobotContainer {
   private void cameraSetUp() {
 
     Thread m_visionThread;
-
-    m_visionThread =
-        new Thread(
-            () -> {
-              // Get the UsbCamera from CameraServer
-              UsbCamera camera = CameraServer.startAutomaticCapture();
-              // Set the resolution
-              camera.setResolution(320, 240);
-              camera.setPixelFormat(PixelFormat.kMJPEG);
-            });
 
     m_visionThread =
         new Thread(

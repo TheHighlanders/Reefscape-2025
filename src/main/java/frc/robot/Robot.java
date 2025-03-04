@@ -31,7 +31,10 @@ public class Robot extends TimedRobot {
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
     DataLogManager.start();
 
-    /*https://docs.wpilib.org/en/stable/docs/software/telemetry/robot-telemetry-with-annotations.html */
+    /*
+     * https://docs.wpilib.org/en/stable/docs/software/telemetry/robot-telemetry-
+     * with-annotations.html
+     */
     Epilogue.configure(
         config -> {
           // Log only to disk, instead of the default NetworkTables logging
