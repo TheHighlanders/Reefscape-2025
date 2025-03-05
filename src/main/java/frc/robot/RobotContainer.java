@@ -24,7 +24,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
-
+import frc.robot.subsystems.LEDs;
 
 
 
@@ -32,6 +32,12 @@ public class RobotContainer {
 
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
+
+
+
+  LEDs leds = new LEDs();
+
+  
 
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
@@ -55,6 +61,7 @@ public class RobotContainer {
     drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
 
     cameraSetUp();
+
   }
 
   private void configureBindings() {
@@ -64,6 +71,10 @@ public class RobotContainer {
     operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
     operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+
+    operator.b().onTrue(elevator.setPosition(leds.runPattern(blue)));
+
+
     operator.leftBumper().onTrue(elevator.setPosition(ElevatorState.ALGAELOW));
     operator.leftBumper().whileTrue(elevator.offsetElevator());
 
