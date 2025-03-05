@@ -23,6 +23,7 @@ import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
+import frc.robot.commands.AlignWithReefCMD;
 import java.util.HashMap;
 import java.util.Map;
 import org.opencv.core.Mat;
@@ -87,6 +88,8 @@ public class RobotContainer {
 
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
+
+    driver.leftBumper().whileTrue(new AlignWithReefCMD(drive,vision,()->true));
 
     operator
         .povDown()
