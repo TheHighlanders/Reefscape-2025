@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.security.auth.login.FailedLoginException;
+
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -42,6 +44,9 @@ final class VisionConstants {
       17, 18, 19, 20, 21, 22 // BLUE
   };
 
+  static final double cameraFPS = 20;
+  static final double debounceFrames = Math.ceil(50 / cameraFPS);
+
   // static final Transform3d robotRightCamPosition = new Transform3d(
   // new Translation3d(0.233, -0.288, 16.965),
   // new Rotation3d(0, -Units.degreesToRadians(25), -Units.degreesToRadians(25)));
@@ -61,7 +66,8 @@ public class Vision extends SubsystemBase {
       .getStructTopic("/Vision/Vision Estimated Pose", Pose2d.struct).publish();
 
   List<Pose2d> reefTagPoses = new ArrayList<>();
-
+  private boolean hasTarget = false;
+  private int frameCounter = 0;
 
   /** Creates a new Vision. */
   public Vision() {
@@ -75,7 +81,6 @@ public class Vision extends SubsystemBase {
         VisionConstants.frontFacingCam);
     poseEst.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
-
     for (int tagId : VisionConstants.reefTagIds) {
       var tagPoseOptional = aprilTagFieldLayout.getTagPose(tagId);
       if (tagPoseOptional.isPresent()) {
@@ -88,11 +93,22 @@ public class Vision extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     Optional<EstimatedRobotPose> estPose = getEstimatedRobotPose();
+    SmartDashboard.putBoolean("Pose is present", estPose.isPresent());
 
     if (estPose.isPresent()) {
+      frameCounter = 0;
+      hasTarget = true;
       stdDev = updateEstimationStdDevs(estPose, estPose.get().targetsUsed, poseEst);
       visionEstPose.set(estPose.get().estimatedPose.toPose2d());
+    } else {
+      if (frameCounter > VisionConstants.debounceFrames) {
+        hasTarget = false;
+      } else {
+        frameCounter++;
+      }
     }
+    SmartDashboard.putBoolean("Has Target", hasTarget);
+
   }
 
   public Optional<EstimatedRobotPose> getEstimatedRobotPose() {
@@ -109,9 +125,9 @@ public class Vision extends SubsystemBase {
     if (result.isPresent()) {
       boolean resultAmbiguous = false;
       double ambiguityRatio = -666;
-      for(PhotonTrackedTarget target : result.get().getTargets()){
+      for (PhotonTrackedTarget target : result.get().getTargets()) {
         ambiguityRatio = target.poseAmbiguity;
-        if(target.poseAmbiguity > 0.001){
+        if (target.poseAmbiguity > 0.2) {
           resultAmbiguous = true;
         }
       }
@@ -119,11 +135,15 @@ public class Vision extends SubsystemBase {
 
       SmartDashboard.putNumber("Vision/Ambiguity", ambiguityRatio);
 
-      if(!resultAmbiguous){
+      if (!resultAmbiguous) {
         estPose = poseEst.update(result.get());
-      } else {estPose = Optional.empty();}
+      } else {
+        estPose = Optional.empty();
+      }
 
     } else {
+      SmartDashboard.putNumber("EstimationReturnPoint", 2.0d);
+
       estPose = Optional.empty();
     }
 
@@ -199,14 +219,16 @@ public class Vision extends SubsystemBase {
    *         none found
    */
   public Pose2d findClosestReefTag(Pose2d robotPose) {
-    // Get poses 
-
-
+    // Get poses
 
     return robotPose.nearest(reefTagPoses);
   }
 
   public Matrix<N3, N1> getEstimationStdDev() {
     return stdDev;
+  }
+
+  public boolean hasTarget() {
+    return hasTarget;
   }
 }
