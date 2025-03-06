@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import java.util.function.DoubleSupplier;
 
 class ElevatorConstants {
   static final int elevMotorID = 41;
@@ -71,6 +72,8 @@ public class Elevator extends SubsystemBase {
 
   double targetPosition;
   double positionOffset;
+
+  double trim;
 
   double arbFF;
   double antiSlamVoltageOffset;
@@ -131,6 +134,8 @@ public class Elevator extends SubsystemBase {
     elevatorEncoder = elevatorMotor.getEncoder();
 
     elevatorEncoder.setPosition(0);
+
+    trim = 0;
   }
 
   @Override
@@ -185,19 +190,19 @@ public class Elevator extends SubsystemBase {
               targetPosition = ElevatorConstants.homeTarget;
               break;
             case L2_POSITION:
-              targetPosition = ElevatorConstants.l2Target;
+              targetPosition = ElevatorConstants.l2Target + trim + positionOffset;
               break;
             case L3_POSITION:
-              targetPosition = ElevatorConstants.l3Target;
+              targetPosition = ElevatorConstants.l3Target + trim + positionOffset;
               break;
             case L4_POSITION:
-              targetPosition = ElevatorConstants.l4Target;
+              targetPosition = ElevatorConstants.l4Target + trim + positionOffset;
               break;
             case ALGAELOW:
               targetPosition = ElevatorConstants.algaeLow;
           }
           elevatorController.setReference(
-              targetPosition + positionOffset, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
+              targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
         });
   }
 
@@ -272,6 +277,14 @@ public class Elevator extends SubsystemBase {
       default:
         return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtSetpoint(0.5)));
     }
+  }
+
+  public void trim(double trimAmount) {
+    trim += trimAmount * 2d / 50d;
+  }
+
+  public Command trimCMD(DoubleSupplier trimSup) {
+    return Commands.run(() -> trim(trimSup.getAsDouble()));
   }
 
   public Command offsetElevator() {

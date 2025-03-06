@@ -16,6 +16,8 @@ import com.studica.frc.AHRS.NavXComType;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -26,6 +28,8 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.VoltageUnit;
@@ -43,10 +47,12 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.photonvision.EstimatedRobotPose;
 
 final class SwerveConstants {
 
@@ -124,8 +130,17 @@ public class Swerve extends SubsystemBase {
 
   SwerveState current = SwerveState.NORMAL;
 
+  Supplier<Optional<EstimatedRobotPose>> estPoseSup;
+  Supplier<Matrix<N3, N1>> stdDevSup;
+
   /** Creates a new Swerve. */
-  public Swerve(DoubleSupplier elevatorHeight) {
+  public Swerve(
+      Supplier<Optional<EstimatedRobotPose>> estPoseSup,
+      Supplier<Matrix<N3, N1>> stdDevSup,
+      DoubleSupplier elevatorHeight) {
+    this.estPoseSup = estPoseSup;
+    this.stdDevSup = stdDevSup;
+
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
     }
@@ -150,7 +165,12 @@ public class Swerve extends SubsystemBase {
 
     poseEst =
         new SwerveDrivePoseEstimator(
-            kinematics, startPose.getRotation(), getModulePostions(), startPose);
+            kinematics,
+            startPose.getRotation(),
+            getModulePostions(),
+            startPose,
+            VecBuilder.fill(0.5, 0.5, 0.5),
+            stdDevSup.get());
 
     SmartDashboard.putData("Swerve/Field", field);
 
@@ -226,6 +246,14 @@ public class Swerve extends SubsystemBase {
         getModulePostions());
     field.setRobotPose(getPose());
 
+    var estPose = estPoseSup.get();
+    var stdDev = stdDevSup.get();
+
+    if (estPose.isPresent()) {
+      poseEst.addVisionMeasurement(
+          estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
+    }
+
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
 
     sendDiagnostics();
@@ -272,16 +300,22 @@ public class Swerve extends SubsystemBase {
     return outputs;
   }
 
-  public void attemptZeroingAbsolute() {
+  public boolean attemptZeroingAbsolute() {
+
     if (!needZeroing.isEmpty()) {
+      DriverStation.reportWarning(
+          "ZEROING SOME CANCODERS FAILED, " + needZeroing.size() + " ARE BEING REZEROED", false);
+
       Iterator<Module> iterator = needZeroing.iterator();
       while (iterator.hasNext()) {
         Module module = iterator.next();
-        if (module.resetAbsolute()) {
-          iterator.remove();
-        }
+        module.resetAbsolute();
+        iterator.remove();
       }
+
+      return false;
     }
+    return true;
   }
 
   public Command readAngleEncoders() {
@@ -502,21 +536,6 @@ public class Swerve extends SubsystemBase {
     y *= slowModeYCoefficient;
     x *= slowModeXCoefficient;
 
-    // if (current != SwerveState.NORMAL) {
-    // y = MathUtil.clamp(y + (0.1 * Math.signum(y)), -1, 1);
-    // x = MathUtil.clamp(x + (0.1 * Math.signum(x)), -1, 1);
-    // }
-    // double accelLimX = xLim.calculate(x);
-    // double accelLimY = yLim.calculate(y);
-
-    // if (yLim.lastValue() > y) {
-    //   y = accelLimY;
-    // }
-
-    // if (xLim.lastValue() > x) {
-    //   x = accelLimX;
-    // }
-
     // TODO: Reenable if wheelieing
 
     // Comment to disable heading correction
@@ -691,6 +710,27 @@ public class Swerve extends SubsystemBase {
         ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getPose().getRotation()));
   }
 
+  public Command resetGyro() {
+    return Commands.runOnce(
+            () ->
+                poseEst.resetPosition(
+                    getGyroAngle(),
+                    getModulePostions(),
+                    new Pose2d(
+                        poseEst.getEstimatedPosition().getX(),
+                        poseEst.getEstimatedPosition().getY(),
+                        new Rotation2d())))
+        .ignoringDisable(true);
+  }
+
+  public Command resetOdometry() {
+    return Commands.runOnce(
+        () -> {
+          poseEst.resetTranslation(new Translation2d());
+          resetGyro();
+        });
+  }
+
   public void sendDiagnostics() {
     for (Module m : modules) {
       SmartDashboard.putNumber(
@@ -725,19 +765,6 @@ public class Swerve extends SubsystemBase {
     }
   }
 
-  public Command resetGyro() {
-    return Commands.runOnce(
-            () ->
-                poseEst.resetPosition(
-                    getGyroAngle(),
-                    getModulePostions(),
-                    new Pose2d(
-                        poseEst.getEstimatedPosition().getX(),
-                        poseEst.getEstimatedPosition().getY(),
-                        new Rotation2d())))
-        .ignoringDisable(true);
-  }
-
   public void updateTrajectoryPID() {
     xController.setP(
         SmartDashboard.getNumber("Tuning/Swerve/Traj Translate P", SwerveConstants.translateP));
@@ -760,14 +787,6 @@ public class Swerve extends SubsystemBase {
         SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate I", SwerveConstants.rotateI));
     headingController.setD(
         SmartDashboard.getNumber("Tuning/Swerve/Traj Rotate D", SwerveConstants.rotateD));
-  }
-
-  public Command resetOdometry() {
-    return Commands.runOnce(
-        () -> {
-          poseEst.resetTranslation(new Translation2d());
-          resetGyro();
-        });
   }
 
   public void updateDashboardGUI() {

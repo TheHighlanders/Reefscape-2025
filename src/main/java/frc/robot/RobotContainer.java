@@ -11,15 +11,21 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.util.PixelFormat;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.commands.AlignWithReefCMD;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Vision;
+import java.util.HashMap;
+import java.util.Map;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -30,6 +36,7 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
+  Vision vision = new Vision();
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
 
@@ -37,10 +44,13 @@ public class RobotContainer {
   Elevator elevator = new Elevator();
 
   @Logged(name = "Swerve")
-  Swerve drive = new Swerve(elevator::getElevatorPosition);
+  Swerve drive =
+      new Swerve(
+          vision::getEstimatedRobotPose,
+          vision::getEstimationStdDev,
+          elevator::getElevatorPosition);
 
   Autos autos = new Autos(drive, elevator, coralScorer);
-
   AutoChooser chooser;
 
   public RobotContainer() {
@@ -63,16 +73,23 @@ public class RobotContainer {
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
     operator.leftBumper().onTrue(elevator.setPosition(ElevatorState.ALGAELOW));
     operator.leftBumper().whileTrue(elevator.offsetElevator());
+    operator.leftStick().whileTrue(coralScorer.manualIntakeCMD());
 
     driver.start().whileTrue(elevator.zeroElevator());
     driver.povRight().onTrue(drive.resetGyro());
 
     driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
     driver.a().whileTrue(coralScorer.reverseCommand());
-    driver.rightBumper().whileTrue(coralScorer.manualIntakeCMD());
 
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
+
+    driver
+        .leftBumper()
+        .whileTrue(new AlignWithReefCMD(drive, vision, () -> false, this::vibrateDriverController));
+    driver
+        .rightBumper()
+        .whileTrue(new AlignWithReefCMD(drive, vision, () -> true, this::vibrateDriverController));
 
     operator
         .povDown()
@@ -86,16 +103,17 @@ public class RobotContainer {
         .or(operator.povUpRight())
         .whileTrue(climber.createClimbInCommand());
     operator.povRight().onTrue(climber.holdClimbPosition());
-    operator.povLeft().whileTrue(climber.createClimbInSlowCommand());
 
-    operator.start().toggleOnTrue(drive.pointWheelsForward());
-    operator.back().whileTrue(drive.pidTuningJogAngle());
+    // operator.start().toggleOnTrue(drive.pointWheelsForward());
+    // operator.back().whileTrue(drive.pidTuningJogAngle());
     operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
     // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
     operator
-        .rightStick()
+        .start()
         .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
+
+    operator.rightStick().onTrue(elevator.trimCMD(operator::getRightY));
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
@@ -169,5 +187,13 @@ public class RobotContainer {
 
     m_visionThread.setDaemon(true);
     m_visionThread.start();
+  }
+
+  public void vibrateDriverController(double length) {
+    Commands.startEnd(
+            () -> driver.setRumble(RumbleType.kBothRumble, 1),
+            () -> driver.setRumble(RumbleType.kBothRumble, 0))
+        .withTimeout(length)
+        .schedule();
   }
 }
