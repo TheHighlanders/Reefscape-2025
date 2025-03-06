@@ -108,6 +108,11 @@ public class AlignWithReefCMD extends Command {
     // vibrate.accept(0.5);
 
     hasTargetTagOnInit = vision.hasTarget();
+
+    if (hasTargetTagOnInit) {
+      swerve.resetOdometry(vision.getEstimatedRobotPose().get().estimatedPose.toPose2d());
+    }
+
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
     closestReefTagPose = vision.findClosestReefTag(swerve.getPose());
     if (Constants.devMode) {
