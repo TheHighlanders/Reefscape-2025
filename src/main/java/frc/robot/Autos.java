@@ -9,6 +9,7 @@ import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
@@ -86,6 +87,10 @@ public class Autos {
         .onTrue(Commands.sequence(leftStartToleftFar.resetOdometry(), leftStartToleftFar.cmd()));
 
     leftStartToleftFar
+    .atTime("WAIT")
+    .onTrue(Commands.waitSeconds(5));
+
+    leftStartToleftFar
         .done()
         .onTrue(
             elevator
@@ -97,6 +102,11 @@ public class Autos {
     leftFarToleftStation
         .done()
         .onTrue(Commands.waitSeconds(2).andThen(leftStationToleftClose.cmd()));
+
+
+    leftStationToleftClose
+        .atTime("WAIT")
+        .onTrue(Commands.waitSeconds(5));
 
     leftStationToleftClose
         .done()
@@ -183,6 +193,7 @@ public class Autos {
                 centerStart_centerFar.resetOdometry(),
                 // drive.presetWheelsToTraj((SwerveSample)
                 // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+
                 centerStart_centerFar.cmd()));
 
     centerStart_centerFar
@@ -196,7 +207,6 @@ public class Autos {
                     elevator.elevatorAuto(ElevatorState.HOME))
                 .andThen(centerStart_centerFar_Left_station.cmd())
                     ); // move elevator then score coral
-
     return routine;
   }
 
@@ -213,6 +223,7 @@ public class Autos {
                 centerStart_centerFar.resetOdometry(),
                 // drive.presetWheelsToTraj((SwerveSample)
                 // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+
                 centerStart_centerFar.cmd()));
 
     centerStart_centerFar
