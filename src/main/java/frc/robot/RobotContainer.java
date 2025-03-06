@@ -122,6 +122,9 @@ public class RobotContainer {
     chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
     chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
     chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
+    chooser.addRoutine("Left 2 Piece and scadatle", autos::CenterOnePieceAndLeftStation);
+    chooser.addRoutine("Right 2 Piece and scadatle", autos::CenterOnePieceAndRightStation);
+
 
     if (Constants.devMode) {
       chooser.addCmd("SYSID", drive::sysId);

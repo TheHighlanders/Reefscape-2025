@@ -171,6 +171,83 @@ public class Autos {
 
     return routine;
   }
+  public AutoRoutine CenterOnePieceAndLeftStation() { // the one piece is real :>
+    AutoRoutine routine = autoFactory.newRoutine("CenterOnePieceAndLeftStation");
+
+    AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");
+    AutoTrajectory centerStart_centerFar_Left_station = routine.trajectory("centerStart-centerFar-Left-station");
+    
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                centerStart_centerFar.resetOdometry(),
+                // drive.presetWheelsToTraj((SwerveSample)
+                // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+                centerStart_centerFar.cmd()));
+
+    centerStart_centerFar
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(coral.slowDepositCMD().withTimeout(3))
+                .andThen(
+                    elevator.elevatorAuto(ElevatorState.HOME))
+                .andThen(centerStart_centerFar_Left_station.cmd())
+                    ); // move elevator then score coral
+
+    return routine;
+  }
+
+  public AutoRoutine CenterOnePieceAndRightStation() { // the one piece is real :>
+    AutoRoutine routine = autoFactory.newRoutine("CenterOnePieceAndRightStation");
+
+    AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");
+    AutoTrajectory centerStart_centerFar_right_station = routine.trajectory("centerStart-centerFar-right-station");
+    
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                centerStart_centerFar.resetOdometry(),
+                // drive.presetWheelsToTraj((SwerveSample)
+                // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+                centerStart_centerFar.cmd()));
+
+    centerStart_centerFar
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(coral.slowDepositCMD().withTimeout(3))
+                .andThen(
+                    elevator.elevatorAuto(ElevatorState.HOME))
+                .andThen(centerStart_centerFar_right_station.cmd())
+                    ); // move elevator then score coral
+
+    return routine;
+  }
+
+
+  // public AutoRoutine practicepath() {
+  //   AutoRoutine routine = autoFactory.newRoutine("LeftTwoPiece");
+
+  //   AutoTrajectory practicepath = routine.trajectory("path-making-test");
+
+
+  //   routine
+  //       .active()
+  //       .onTrue(Commands.sequence(practicepath.resetOdometry(), .cmd()));
+
+  //   routine
+  //       .active()
+  //       .
+
+  //   return routine;
+  // }
 
   // public AutoRoutine CenterOnePieceToStation() { // the one piece is real :>
   //   AutoRoutine routine = autoFactory.newRoutine("CenterOnePieceToStation");
