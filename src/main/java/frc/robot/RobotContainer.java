@@ -90,8 +90,8 @@ public class RobotContainer {
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
 
-    driver.leftBumper().whileTrue(new AlignWithReefCMD(drive, vision, () -> false, this));
-    driver.rightBumper().whileTrue(new AlignWithReefCMD(drive, vision, () -> true, this));
+    driver.leftBumper().whileTrue(new AlignWithReefCMD(drive, vision, () -> false, this::vibrateDriverController));
+    driver.rightBumper().whileTrue(new AlignWithReefCMD(drive, vision, () -> true, this::vibrateDriverController));
 
 
     operator
@@ -197,10 +197,10 @@ public class RobotContainer {
     m_visionThread.start();
   }
 
-  public void vibrateDrive(double length) {
+  public void vibrateDriverController(double length) {
     Commands
         .startEnd(() -> driver.setRumble(RumbleType.kBothRumble, 1), () -> driver.setRumble(RumbleType.kBothRumble, 0))
-        .withTimeout(length);
+        .withTimeout(length).schedule();
 
   }
 }

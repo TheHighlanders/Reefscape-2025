@@ -1,6 +1,7 @@
 package frc.robot.commands;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleConsumer;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
@@ -10,10 +11,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.RobotContainer;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 
@@ -57,7 +56,6 @@ public class AlignWithReefCMD extends Command {
 
   private final Swerve swerve;
   private final Vision vision;
-  private final RobotContainer robotContainer;
   private final BooleanSupplier targetRightCoralSupplier; // true = right
 
   private final PIDController xController = new PIDController(
@@ -76,22 +74,24 @@ public class AlignWithReefCMD extends Command {
 
   StructPublisher<Pose2d> targetPosePublisher = NetworkTableInstance.getDefault()
       .getStructTopic("Vision/AlignTarget", Pose2d.struct).publish();
-
-  /**
-   * Creates a command to align with coral of a reef tag.
-   *
-   * @param swerve                   The swerve drive subsystem
-   * @param vision                   The vision subsystem
-   * @param targetRightCoralSupplier Supplies whether to target right coral (true)
-   *                                 or left coral
-   *                                 (false)
-   */
-  public AlignWithReefCMD(
-      Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, RobotContainer RobotContainer) {
-    this.swerve = swerve;
-    this.vision = vision;
-    this.robotContainer = RobotContainer;
-    this.targetRightCoralSupplier = targetRightCoralSupplier;
+        private DoubleConsumer vibrate;
+      
+        /**
+         * Creates a command to align with coral of a reef tag.
+         *
+         * @param swerve                   The swerve drive subsystem
+         * @param vision                   The vision subsystem
+         * @param targetRightCoralSupplier Supplies whether to target right coral (true)
+         *                                 or left coral
+         *                                 (false)
+         */
+        public AlignWithReefCMD(
+            Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, DoubleConsumer vibrate) {
+          this.swerve = swerve;
+          this.vision = vision;
+          this.targetRightCoralSupplier = targetRightCoralSupplier;
+      
+          this.vibrate = vibrate;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
 
@@ -100,7 +100,7 @@ public class AlignWithReefCMD extends Command {
 
   @Override
   public void initialize() {
-    robotContainer.vibrateDrive(0.5);
+    // vibrate.accept(0.5);
 
     hasTargetTagOnInit = vision.hasTarget();
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
@@ -162,7 +162,7 @@ public class AlignWithReefCMD extends Command {
   @Override
   public void end(boolean interrupted) {
     swerve.stopDrive();
-    robotContainer.vibrateDrive(0.5);
+    vibrate.accept(0.1);
     SmartDashboard.putBoolean("ReefAlign/Completed", true);
   }
 
