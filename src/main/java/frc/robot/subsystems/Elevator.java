@@ -40,7 +40,7 @@ class ElevatorConstants {
   static final double l3Target = 28;
   static final double l4Target = 52.125;
   static final double algaeLow = 7;
-  static final double algaeHigh = 20;
+  static final double algaeHigh = 25;
 
   static final double coralBetweenReefOffset = 2;
 
@@ -65,7 +65,8 @@ public class Elevator extends SubsystemBase {
     L3_POSITION,
     L4_POSITION,
     ALGAELOW,
-    ALGAEHIGH
+    ALGAEHIGH,
+    CURRENT
   }
 
   private SparkMax elevatorMotor;
@@ -163,6 +164,7 @@ public class Elevator extends SubsystemBase {
     }
 
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
+    SmartDashboard.putNumber("Tuning/Elevator/Trim", trim);
 
     if (Constants.devMode) {
       SmartDashboard.putNumber("Tuning/Elevator/VoltagekF", arbFF);
@@ -186,7 +188,9 @@ public class Elevator extends SubsystemBase {
   public Command setPosition(ElevatorState position) {
     return Commands.runOnce(
         () -> {
-          uppydowny = position;
+          if (position != ElevatorState.CURRENT) {
+            uppydowny = position;
+          }
           switch (uppydowny) {
             case HOME:
               targetPosition = ElevatorConstants.homeTarget;
@@ -205,6 +209,9 @@ public class Elevator extends SubsystemBase {
               break;
             case ALGAEHIGH:
               targetPosition = ElevatorConstants.algaeHigh + trim;
+              break;
+            default:
+              targetPosition = ElevatorConstants.homeTarget;
               break;
           }
           elevatorController.setReference(
@@ -286,13 +293,11 @@ public class Elevator extends SubsystemBase {
   }
 
   public void trim(double trimAmount) {
-    trim = trimAmount * 2;
+    trim = -trimAmount * 2;
   }
 
   public Command trimCMD(DoubleSupplier trimSup) {
-    return Commands.run(() -> trim(trimSup.getAsDouble()))
-        .andThen(
-            setPosition(uppydowny).alongWith(Commands.print("TrimSup:" + trimSup.getAsDouble())));
+    return Commands.run(() -> trim(trimSup.getAsDouble()));
   }
 
   public Command offsetElevator() {
