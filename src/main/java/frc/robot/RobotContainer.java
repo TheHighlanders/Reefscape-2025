@@ -18,13 +18,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.commands.AlignWithReefCMD;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
-import frc.robot.commands.AlignWithReefCMD;
 import java.util.HashMap;
 import java.util.Map;
 import org.opencv.core.Mat;
@@ -46,10 +46,11 @@ public class RobotContainer {
   Elevator elevator = new Elevator();
 
   @Logged(name = "Swerve")
-  Swerve drive = new Swerve(
-      vision::getEstimatedRobotPose,
-      vision::getEstimationStdDev,
-      elevator::getElevatorPosition);
+  Swerve drive =
+      new Swerve(
+          vision::getEstimatedRobotPose,
+          vision::getEstimationStdDev,
+          elevator::getElevatorPosition);
 
   Autos autos = new Autos(drive, elevator, coralScorer);
   AutoChooser chooser;
@@ -80,7 +81,6 @@ public class RobotContainer {
     operator.leftBumper().whileTrue(elevator.offsetElevator());
     operator.leftStick().whileTrue(coralScorer.manualIntakeCMD());
 
-
     driver.start().whileTrue(elevator.zeroElevator());
     driver.povRight().onTrue(drive.resetGyro());
 
@@ -90,9 +90,12 @@ public class RobotContainer {
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
 
-    driver.leftBumper().whileTrue(new AlignWithReefCMD(drive, vision, () -> false, this::vibrateDriverController));
-    driver.rightBumper().whileTrue(new AlignWithReefCMD(drive, vision, () -> true, this::vibrateDriverController));
-
+    driver
+        .leftBumper()
+        .whileTrue(new AlignWithReefCMD(drive, vision, () -> false, this::vibrateDriverController));
+    driver
+        .rightBumper()
+        .whileTrue(new AlignWithReefCMD(drive, vision, () -> true, this::vibrateDriverController));
 
     operator
         .povDown()
@@ -107,14 +110,16 @@ public class RobotContainer {
         .whileTrue(climber.createClimbInCommand());
     operator.povRight().onTrue(climber.holdClimbPosition());
 
-    operator.start().toggleOnTrue(drive.pointWheelsForward());
-    operator.back().whileTrue(drive.pidTuningJogAngle());
+    // operator.start().toggleOnTrue(drive.pointWheelsForward());
+    // operator.back().whileTrue(drive.pidTuningJogAngle());
     operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
     // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
     operator
-        .rightStick()
+        .start()
         .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
+
+    operator.rightStick().onTrue(elevator.trimCMD(operator::getRightY));
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
@@ -130,10 +135,11 @@ public class RobotContainer {
       chooser.addCmd("SYSID", drive::sysId);
       chooser.addCmd(
           "FORWARD",
-          () -> Commands.sequence(
-              drive.enableSlowMode(),
-              drive.driveCMD(() -> 1, () -> 0, () -> 0).withTimeout(1),
-              drive.disableSlowMode()));
+          () ->
+              Commands.sequence(
+                  drive.enableSlowMode(),
+                  drive.driveCMD(() -> 1, () -> 0, () -> 0).withTimeout(1),
+                  drive.disableSlowMode()));
       chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
       chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
       chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
@@ -150,57 +156,60 @@ public class RobotContainer {
 
     Thread m_visionThread;
 
-    m_visionThread = new Thread(
-        () -> {
-          // Get the UsbCamera from CameraServer
-          UsbCamera camera = CameraServer.startAutomaticCapture();
-          // Set the resolution
-          camera.setResolution(320, 240);
-          camera.setPixelFormat(PixelFormat.kMJPEG);
-        });
+    m_visionThread =
+        new Thread(
+            () -> {
+              // Get the UsbCamera from CameraServer
+              UsbCamera camera = CameraServer.startAutomaticCapture();
+              // Set the resolution
+              camera.setResolution(320, 240);
+              camera.setPixelFormat(PixelFormat.kMJPEG);
+            });
 
-    m_visionThread = new Thread(
-        () -> {
+    m_visionThread =
+        new Thread(
+            () -> {
 
-          // Get the UsbCamera from CameraServer
-          UsbCamera camera = CameraServer.startAutomaticCapture();
+              // Get the UsbCamera from CameraServer
+              UsbCamera camera = CameraServer.startAutomaticCapture();
 
-          // Set the resolution
-          camera.setResolution(320, 240);
+              // Set the resolution
+              camera.setResolution(320, 240);
 
-          // Get a CvSink. This will capture Mats from the camera
-          CvSink cvSink = CameraServer.getVideo();
+              // Get a CvSink. This will capture Mats from the camera
+              CvSink cvSink = CameraServer.getVideo();
 
-          // Setup a CvSource. This will send images back to the Dashboard
-          CvSource outputStream = CameraServer.putVideo("DriverReefCam", 320, 240);
+              // Setup a CvSource. This will send images back to the Dashboard
+              CvSource outputStream = CameraServer.putVideo("DriverReefCam", 320, 240);
 
-          // Mats are very memory expensive. Lets reuse this Mat.
-          Mat mat = new Mat();
-          while (!Thread.interrupted()) {
-            if (cvSink.grabFrame(mat) == 0) {
-              // Send the output the error.
-              outputStream.notifyError(cvSink.getError());
-              // skip the rest of the current iteration
-              continue;
-            }
+              // Mats are very memory expensive. Lets reuse this Mat.
+              Mat mat = new Mat();
+              while (!Thread.interrupted()) {
+                if (cvSink.grabFrame(mat) == 0) {
+                  // Send the output the error.
+                  outputStream.notifyError(cvSink.getError());
+                  // skip the rest of the current iteration
+                  continue;
+                }
 
-            // Put a rectangle on the image
-            Imgproc.rectangle(
-                mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
-            // Give the output stream a new image to display
+                // Put a rectangle on the image
+                Imgproc.rectangle(
+                    mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
+                // Give the output stream a new image to display
 
-            outputStream.putFrame(mat);
-          }
-        });
+                outputStream.putFrame(mat);
+              }
+            });
 
     m_visionThread.setDaemon(true);
     m_visionThread.start();
   }
 
   public void vibrateDriverController(double length) {
-    Commands
-        .startEnd(() -> driver.setRumble(RumbleType.kBothRumble, 1), () -> driver.setRumble(RumbleType.kBothRumble, 0))
-        .withTimeout(length).schedule();
-
+    Commands.startEnd(
+            () -> driver.setRumble(RumbleType.kBothRumble, 1),
+            () -> driver.setRumble(RumbleType.kBothRumble, 0))
+        .withTimeout(length)
+        .schedule();
   }
 }

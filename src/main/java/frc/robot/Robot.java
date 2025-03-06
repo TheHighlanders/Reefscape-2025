@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 public class Robot extends TimedRobot {
   private boolean zeroedCANCoders = false;
 
-
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
@@ -79,8 +78,8 @@ public class Robot extends TimedRobot {
     if (loops % 50 == 0) {
       loops = 0;
     } else if (loops % 25 == 0) {
-      if(!zeroedCANCoders){
-      zeroedCANCoders = m_robotContainer.drive.attemptZeroingAbsolute();
+      if (!zeroedCANCoders) {
+        zeroedCANCoders = m_robotContainer.drive.attemptZeroingAbsolute();
       }
     }
     if (loops % 50 == 37) {
