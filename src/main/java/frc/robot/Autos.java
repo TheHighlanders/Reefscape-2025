@@ -84,7 +84,6 @@ public class Autos {
     routine
         .active()
         .onTrue(Commands.sequence(leftStartToleftFar.resetOdometry(), leftStartToleftFar.cmd()));
-        
 
     leftStartToleftFar
         .done()

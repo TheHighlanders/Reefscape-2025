@@ -94,7 +94,6 @@ public class Vision extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     Optional<EstimatedRobotPose> estPose = getEstimatedRobotPose();
-    SmartDashboard.putBoolean("Pose is present", estPose.isPresent());
 
     if (estPose.isPresent()) {
       frameCounter = 0;

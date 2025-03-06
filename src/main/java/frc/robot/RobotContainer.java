@@ -69,6 +69,7 @@ public class RobotContainer {
     operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
     operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY));
+    operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator());
 
     // operator.leftBumper().whileTrue(elevator.offsetElevator());
     operator.leftStick().whileTrue(coralScorer.manualIntakeCMD());
@@ -111,7 +112,12 @@ public class RobotContainer {
         .start()
         .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
 
-    operator.rightStick().onTrue(elevator.trimCMD(operator::getRightY));
+    operator
+        .rightStick()
+        .whileTrue(
+            elevator
+                .trimCMD(operator::getRightY)
+                .andThen(elevator.setPosition(ElevatorState.CURRENT)));
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
