@@ -32,8 +32,7 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
     DataLogManager.start();
-    URCL.start();
-
+    URCL.start(DataLogManager.getLog());
     /*
      * https://docs.wpilib.org/en/stable/docs/software/telemetry/robot-telemetry-
      * with-annotations.html

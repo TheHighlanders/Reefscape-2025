@@ -290,7 +290,7 @@ public class Elevator extends SubsystemBase {
   }
 
   public Command trimCMD(DoubleSupplier trimSup) {
-    return Commands.run(() -> trim(trimSup.getAsDouble()));
+    return Commands.run(() -> trim(trimSup.getAsDouble())).andThen(setPosition(uppydowny));
   }
 
   public Command offsetElevator() {
@@ -318,11 +318,12 @@ public class Elevator extends SubsystemBase {
   public Command algaeCMD(DoubleSupplier algae) {
     return runOnce(
         () -> {
-          if (algae.getAsDouble() >= 0.5) {
+          if (algae.getAsDouble() <= -0.5) {
             setPosition(ElevatorState.ALGAEHIGH);
-          } else if (algae.getAsDouble() <= -0.5) {
+          } else if (algae.getAsDouble() >= 0.5) {
             setPosition(ElevatorState.ALGAELOW);
           }
+          System.out.print(algae.getAsDouble());
         });
   }
 
