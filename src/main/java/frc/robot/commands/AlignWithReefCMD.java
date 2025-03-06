@@ -10,6 +10,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import java.util.function.BooleanSupplier;
@@ -109,10 +110,12 @@ public class AlignWithReefCMD extends Command {
     hasTargetTagOnInit = vision.hasTarget();
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
     closestReefTagPose = vision.findClosestReefTag(swerve.getPose());
-    SmartDashboard.putNumber("ReefAlign/TagX", closestReefTagPose.getX());
-    SmartDashboard.putNumber("ReefAlign/TagY", closestReefTagPose.getY());
-    SmartDashboard.putString("ReefAlign/TargetSide", targetRightCoral ? "RIGHT" : "LEFT");
-    SmartDashboard.putBoolean("ReefAlign/Started With Vision Target", hasTargetTagOnInit);
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("ReefAlign/TagX", closestReefTagPose.getX());
+      SmartDashboard.putNumber("ReefAlign/TagY", closestReefTagPose.getY());
+      SmartDashboard.putString("ReefAlign/TargetSide", targetRightCoral ? "RIGHT" : "LEFT");
+      SmartDashboard.putBoolean("ReefAlign/Started With Vision Target", hasTargetTagOnInit);
+    }
 
     calculateTargetPose();
 
@@ -137,10 +140,11 @@ public class AlignWithReefCMD extends Command {
             closestReefTagPose.getX() + lateralOffsetTranslation.getX() + approachOffset.getX(),
             closestReefTagPose.getY() + lateralOffsetTranslation.getY() + approachOffset.getY(),
             closestReefTagPose.getRotation().rotateBy(Rotation2d.k180deg));
-
-    SmartDashboard.putNumber("ReefAlign/TargetX", targetPose.getX());
-    SmartDashboard.putNumber("ReefAlign/TargetY", targetPose.getY());
-    SmartDashboard.putNumber("ReefAlign/TargetRot", targetPose.getRotation().getDegrees());
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("ReefAlign/TargetX", targetPose.getX());
+      SmartDashboard.putNumber("ReefAlign/TargetY", targetPose.getY());
+      SmartDashboard.putNumber("ReefAlign/TargetRot", targetPose.getRotation().getDegrees());
+    }
   }
 
   @Override
@@ -159,10 +163,11 @@ public class AlignWithReefCMD extends Command {
         MathUtil.clamp(ySpeed, -AlignConstants.maxApproachSpeed, AlignConstants.maxApproachSpeed);
     rotSpeed =
         MathUtil.clamp(rotSpeed, -AlignConstants.maxRotationSpeed, AlignConstants.maxRotationSpeed);
-
-    SmartDashboard.putNumber("ReefAlign/XSpeed", xSpeed);
-    SmartDashboard.putNumber("ReefAlign/YSpeed", ySpeed);
-    SmartDashboard.putNumber("ReefAlign/RotSpeed", rotSpeed);
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("ReefAlign/XSpeed", xSpeed);
+      SmartDashboard.putNumber("ReefAlign/YSpeed", ySpeed);
+      SmartDashboard.putNumber("ReefAlign/RotSpeed", rotSpeed);
+    }
 
     swerve.driveChassisSpeedsRobotRelative(
         ChassisSpeeds.fromFieldRelativeSpeeds(
@@ -183,8 +188,10 @@ public class AlignWithReefCMD extends Command {
     double rotationError =
         Math.abs(currentPose.getRotation().minus(targetPose.getRotation()).getRadians());
 
-    SmartDashboard.putNumber("ReefAlign/DistToTarget", distanceToTarget);
-    SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("ReefAlign/DistToTarget", distanceToTarget);
+      SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
+    }
 
     if (distanceToTarget > 1.5 || !hasTargetTagOnInit) {
       return true;

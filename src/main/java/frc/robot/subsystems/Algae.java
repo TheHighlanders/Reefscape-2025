@@ -48,13 +48,11 @@ public class Algae extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Algae position", algaeBendMotor.getEncoder().getPosition());
 
     if (Constants.devMode) {
+      SmartDashboard.putNumber("Algae position", algaeBendMotor.getEncoder().getPosition());
       SmartDashboard.putNumber("algae current", algaeBendMotor.getAppliedOutput());
     }
-    //  SmartDashboard.putNumber("algae current", algaeIntakePosition.getPosition());;
-
   }
 
   private SparkMaxConfig algaeBendConfig(boolean coast) {
