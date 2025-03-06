@@ -11,7 +11,6 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.util.PixelFormat;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -24,8 +23,6 @@ import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
-import java.util.HashMap;
-import java.util.Map;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -71,8 +68,9 @@ public class RobotContainer {
     operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
     operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
-    operator.leftBumper().onTrue(elevator.setPosition(ElevatorState.ALGAELOW));
-    operator.leftBumper().whileTrue(elevator.offsetElevator());
+    operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY));
+
+    // operator.leftBumper().whileTrue(elevator.offsetElevator());
     operator.leftStick().whileTrue(coralScorer.manualIntakeCMD());
 
     driver.start().whileTrue(elevator.zeroElevator());
