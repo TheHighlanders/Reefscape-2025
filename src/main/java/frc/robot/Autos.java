@@ -87,8 +87,8 @@ public class Autos {
         .onTrue(Commands.sequence(leftStartToleftFar.resetOdometry(), leftStartToleftFar.cmd()));
 
     leftStartToleftFar
-    .atTime("WAIT")
-    .onTrue(Commands.waitSeconds(5));
+        .atTime("WAIT")
+        .onTrue(Commands.waitSeconds(5));
 
     leftStartToleftFar
         .done()
@@ -127,6 +127,10 @@ public class Autos {
     routine
         .active()
         .onTrue(Commands.sequence(rightStart_rightFar.resetOdometry(), rightStart_rightFar.cmd()));
+    
+    // rightStart_rightFar
+    //     .atTime("WAIT")
+    //     .onTrue(Commands.waitSeconds(5));
 
     rightStart_rightFar
         .done()
@@ -143,6 +147,10 @@ public class Autos {
                 .elevatorAuto(ElevatorState.HOME)
                 .andThen(coral.intakeCMD().withTimeout(1))
                 .andThen(rightStation_rightClose.cmd()));
+   
+    // rightStation_rightClose
+    //     .atTime("WAIT")
+    //     .onTrue(Commands.waitSeconds(5));
 
     rightStation_rightClose
         .done()

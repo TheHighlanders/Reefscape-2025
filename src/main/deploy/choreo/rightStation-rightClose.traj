@@ -144,5 +144,5 @@
   "splits":[0]
  },
  "events":[
-   {"name":"WAIT", "from":{"target":1, "targetTimestamp":2.42018, "offset":{"exp":"0 s", "val":0.0}}, "event":null}]
+   {"name":"WAIT", "from":{"target":1, "targetTimestamp":2.42018, "offset":{"exp":"0 s", "val":0.0}}, "event":{"type":"wait", "data":{"waitTime":{"exp":"5 s", "val":5.0}}}}]
 }
