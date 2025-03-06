@@ -13,8 +13,12 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
+
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
+
+import org.photonvision.EstimatedRobotPose;
 
 public class AlignWithReefCMD extends Command {
 
@@ -44,11 +48,11 @@ public class AlignWithReefCMD extends Command {
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 1.0;
 
-    static final double translateP = 2.25; // ;1.5;
+    static final double translateP = 3; // 2.25;
     static final double translateI = 0.01; // 0.05;
     static final double translateD = 0;
 
-    static final double rotateP = 1.5; // 1.2;
+    static final double rotateP = 2; // 1.5;
     static final double rotateI = 0;
     static final double rotateD = 0; // 0.5;
   }
@@ -109,8 +113,12 @@ public class AlignWithReefCMD extends Command {
 
     hasTargetTagOnInit = vision.hasTarget();
 
+    Optional<EstimatedRobotPose> estRobotPose = vision.getEstimatedRobotPose();
+
     if (hasTargetTagOnInit) {
-      swerve.resetOdometry(vision.getEstimatedRobotPose().get().estimatedPose.toPose2d());
+      if(estRobotPose.isPresent()){
+        swerve.resetOdometry(estRobotPose.get().estimatedPose.toPose2d());
+      }
     }
 
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
@@ -205,7 +213,6 @@ public class AlignWithReefCMD extends Command {
     boolean atTarget =
         distanceToTarget < AlignConstants.positionTolerance
             && rotationError < AlignConstants.rotationTolerance;
-
     SmartDashboard.putBoolean("ReefAlign/AtTarget", atTarget);
 
     return atTarget;
