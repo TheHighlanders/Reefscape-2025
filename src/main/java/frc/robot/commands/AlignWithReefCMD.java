@@ -13,11 +13,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
-
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
-
 import org.photonvision.EstimatedRobotPose;
 
 public class AlignWithReefCMD extends Command {
@@ -34,7 +32,7 @@ public class AlignWithReefCMD extends Command {
     static final double coralLeftOffset = -0.165; // Left coral Y offset (negative = left)
     static final double coralRightOffset = 0.165; // Right coral Y offset (positive = right)
 
-    static final double ejectOffset = 0.30;
+    static final double defaultEjectorOffset = 0.30;
 
     // Position tolerance (meters)
     static final double positionTolerance = 0.005;
@@ -82,6 +80,7 @@ public class AlignWithReefCMD extends Command {
           .getStructTopic("Vision/AlignTarget", Pose2d.struct)
           .publish();
   private DoubleConsumer vibrate;
+  private double ejectOffset = AlignConstants.defaultEjectorOffset;
 
   /**
    * Creates a command to align with coral of a reef tag.
@@ -107,6 +106,24 @@ public class AlignWithReefCMD extends Command {
     addRequirements(swerve, vision);
   }
 
+  public AlignWithReefCMD(
+      Swerve swerve,
+      Vision vision,
+      BooleanSupplier targetRightCoralSupplier,
+      DoubleConsumer vibrate,
+      double customEjectorOffset) {
+    this.swerve = swerve;
+    this.vision = vision;
+    this.targetRightCoralSupplier = targetRightCoralSupplier;
+    ejectOffset = customEjectorOffset;
+
+    this.vibrate = vibrate;
+
+    rotController.enableContinuousInput(-Math.PI, Math.PI);
+
+    addRequirements(swerve, vision);
+  }
+
   @Override
   public void initialize() {
     // vibrate.accept(0.5);
@@ -116,7 +133,7 @@ public class AlignWithReefCMD extends Command {
     Optional<EstimatedRobotPose> estRobotPose = vision.getEstimatedRobotPose();
 
     if (hasTargetTagOnInit) {
-      if(estRobotPose.isPresent()){
+      if (estRobotPose.isPresent()) {
         swerve.resetOdometry(estRobotPose.get().estimatedPose.toPose2d());
       }
     }
@@ -139,8 +156,7 @@ public class AlignWithReefCMD extends Command {
     double lateralOffset =
         targetRightCoral ? AlignConstants.coralRightOffset : AlignConstants.coralLeftOffset;
 
-    Translation2d lateralOffsetTranslation =
-        new Translation2d(0, lateralOffset + AlignConstants.ejectOffset);
+    Translation2d lateralOffsetTranslation = new Translation2d(0, lateralOffset + ejectOffset);
     lateralOffsetTranslation = lateralOffsetTranslation.rotateBy(closestReefTagPose.getRotation());
 
     // Calculate the position that places the front bumper at the tag face

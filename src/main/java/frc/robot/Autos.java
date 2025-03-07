@@ -9,7 +9,6 @@ import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.commands.AlignWithReefCMD;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
@@ -24,6 +23,8 @@ public class Autos {
   Elevator elevator;
   CoralScorer coral;
   Vision vision;
+
+  static final double CUSTOM_EJECTOR_OFFSET = 0.25d;
 
   public Autos(Swerve drive, Elevator elevator, CoralScorer coral, Vision vision) {
     autoFactory =
@@ -96,20 +97,23 @@ public class Autos {
     leftStartToleftFar
         .done()
         .onTrue(
-          Commands.waitSeconds(.5).andThen(
-          new AlignWithReefCMD(drive, vision, () -> false, this::emptyConsumer).withTimeout(1)
-          .andThen(
-            elevator
-                .elevatorAuto(ElevatorState.L4_POSITION)
-                .andThen(coral.depositCMD().withTimeout(.5))
-                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
-                .andThen(leftFarToleftStation.cmd())))); // move elevator then score coral
-
+            Commands.waitSeconds(.5)
+                .andThen(
+                    new AlignWithReefCMD(
+                            drive, vision, () -> false, this::emptyConsumer, CUSTOM_EJECTOR_OFFSET)
+                        .withTimeout(1)
+                        .andThen(
+                            elevator
+                                .elevatorAuto(ElevatorState.L4_POSITION)
+                                .andThen(coral.depositCMD().withTimeout(.5))
+                                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+                                .andThen(
+                                    leftFarToleftStation
+                                        .cmd())))); // move elevator then score coral
 
     leftFarToleftStation
         .done()
         .onTrue(Commands.waitSeconds(2).andThen(leftStationToleftClose.cmd()));
-
 
     // leftStationToleftClose
     //     .atTime("WAIT")
@@ -118,11 +122,14 @@ public class Autos {
     leftStationToleftClose
         .done()
         .onTrue(
-          Commands.waitSeconds(.5).andThen(
-          new AlignWithReefCMD(drive, vision, () -> false, this::emptyConsumer).withTimeout(1)
-          .andThen(
-            elevator.elevatorAuto(ElevatorState.L4_POSITION))));
-            /* .andThen(coral.depositCMD().withTimeout(.5)) */  // move elevator then score coral
+            Commands.waitSeconds(.5)
+                .andThen(
+                    new AlignWithReefCMD(
+                            drive, vision, () -> false, this::emptyConsumer, CUSTOM_EJECTOR_OFFSET)
+                        .withTimeout(1)
+                        .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))));
+    /* .andThen(coral.depositCMD().withTimeout(.5)) */
+    // move elevator then score coral
 
     return routine;
   }
@@ -137,7 +144,7 @@ public class Autos {
     routine
         .active()
         .onTrue(Commands.sequence(rightStart_rightFar.resetOdometry(), rightStart_rightFar.cmd()));
-    
+
     // rightStart_rightFar
     //     .atTime("WAIT")
     //     .onTrue(Commands.waitSeconds(5));
@@ -145,13 +152,18 @@ public class Autos {
     rightStart_rightFar
         .done()
         .onTrue(
-          Commands.waitSeconds(.5).andThen(
-            new AlignWithReefCMD(drive, vision, () -> false, this::emptyConsumer).withTimeout(1)
-            .andThen(
-            elevator
-                .elevatorAuto(ElevatorState.L4_POSITION)
-                .andThen(coral.depositCMD().withTimeout(.5))
-                .andThen(rightFar_rightStation.cmd())))); // move elevator then score coral
+            Commands.waitSeconds(.5)
+                .andThen(
+                    new AlignWithReefCMD(
+                            drive, vision, () -> false, this::emptyConsumer, CUSTOM_EJECTOR_OFFSET)
+                        .withTimeout(1)
+                        .andThen(
+                            elevator
+                                .elevatorAuto(ElevatorState.L4_POSITION)
+                                .andThen(coral.depositCMD().withTimeout(.5))
+                                .andThen(
+                                    rightFar_rightStation
+                                        .cmd())))); // move elevator then score coral
 
     rightFar_rightStation
         .done()
@@ -160,7 +172,7 @@ public class Autos {
                 .elevatorAuto(ElevatorState.HOME)
                 .andThen(coral.intakeCMD().withTimeout(1))
                 .andThen(rightStation_rightClose.cmd()));
-   
+
     // rightStation_rightClose
     //     .atTime("WAIT")
     //     .onTrue(Commands.waitSeconds(5));
@@ -168,11 +180,15 @@ public class Autos {
     rightStation_rightClose
         .done()
         .onTrue(
-          Commands.waitSeconds(.5).andThen(
-            new AlignWithReefCMD(drive, vision, () -> false, this::emptyConsumer).withTimeout(1)
-            .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION)
-            // .andThen(coral.depositCMD().withTimeout(.5))
-            ))); // move elevator then score coral
+            Commands.waitSeconds(.5)
+                .andThen(
+                    new AlignWithReefCMD(
+                            drive, vision, () -> false, this::emptyConsumer, CUSTOM_EJECTOR_OFFSET)
+                        .withTimeout(1)
+                        .andThen(
+                            elevator.elevatorAuto(ElevatorState.L4_POSITION)
+                            // .andThen(coral.depositCMD().withTimeout(.5))
+                            ))); // move elevator then score coral
 
     return routine;
   }
@@ -203,12 +219,14 @@ public class Autos {
 
     return routine;
   }
+
   public AutoRoutine CenterOnePieceAndLeftStation() { // the one piece is real :>
     AutoRoutine routine = autoFactory.newRoutine("CenterOnePieceAndLeftStation");
 
     AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");
-    AutoTrajectory centerStart_centerFar_Left_station = routine.trajectory("centerStart-centerFar-Left-station");
-    
+    AutoTrajectory centerStart_centerFar_Left_station =
+        routine.trajectory("centerStart-centerFar-Left-station");
+
     routine
         .active()
         .onTrue(
@@ -226,10 +244,9 @@ public class Autos {
                 .elevatorAuto(ElevatorState.L4_POSITION)
                 .andThen(Commands.waitSeconds(0.5))
                 .andThen(coral.slowDepositCMD().withTimeout(3))
+                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
                 .andThen(
-                    elevator.elevatorAuto(ElevatorState.HOME))
-                .andThen(centerStart_centerFar_Left_station.cmd())
-                    ); // move elevator then score coral
+                    centerStart_centerFar_Left_station.cmd())); // move elevator then score coral
     return routine;
   }
 
@@ -237,8 +254,9 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("CenterOnePieceAndRightStation");
 
     AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");
-    AutoTrajectory centerStart_centerFar_right_station = routine.trajectory("centerStart-centerFar-right-station");
-    
+    AutoTrajectory centerStart_centerFar_right_station =
+        routine.trajectory("centerStart-centerFar-right-station");
+
     routine
         .active()
         .onTrue(
@@ -256,20 +274,17 @@ public class Autos {
                 .elevatorAuto(ElevatorState.L4_POSITION)
                 .andThen(Commands.waitSeconds(0.5))
                 .andThen(coral.slowDepositCMD().withTimeout(3))
+                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
                 .andThen(
-                    elevator.elevatorAuto(ElevatorState.HOME))
-                .andThen(centerStart_centerFar_right_station.cmd())
-                    ); // move elevator then score coral
+                    centerStart_centerFar_right_station.cmd())); // move elevator then score coral
 
     return routine;
   }
-
 
   // public AutoRoutine practicepath() {
   //   AutoRoutine routine = autoFactory.newRoutine("LeftTwoPiece");
 
   //   AutoTrajectory practicepath = routine.trajectory("path-making-test");
-
 
   //   routine
   //       .active()
@@ -329,6 +344,5 @@ public class Autos {
     return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
   }
 
-  private void emptyConsumer(double x) {
-  }
+  private void emptyConsumer(double x) {}
 }
