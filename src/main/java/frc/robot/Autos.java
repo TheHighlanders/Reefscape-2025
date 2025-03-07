@@ -87,8 +87,8 @@ public class Autos {
         .onTrue(Commands.sequence(leftStartToleftFar.resetOdometry(), leftStartToleftFar.cmd()));
 
     leftStartToleftFar
-        .atTime("WAIT")
-        .onTrue(Commands.waitSeconds(5));
+    .atTime("WAIT")
+    .onTrue(elevator.elevatorAuto(ElevatorState.HOME).withTimeout(1));
 
     leftStartToleftFar
         .done()
@@ -106,7 +106,7 @@ public class Autos {
 
     leftStationToleftClose
         .atTime("WAIT")
-        .onTrue(Commands.waitSeconds(5));
+        .onTrue(elevator.elevatorAuto(ElevatorState.HOME).withTimeout(1));
 
     leftStationToleftClose
         .done()
