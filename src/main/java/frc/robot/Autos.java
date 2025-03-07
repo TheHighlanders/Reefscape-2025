@@ -145,10 +145,13 @@ public class Autos {
     rightStart_rightFar
         .done()
         .onTrue(
+          Commands.waitSeconds(.5).andThen(
+            new AlignWithReefCMD(drive, vision, () -> false, this::emptyConsumer).withTimeout(1)
+            .andThen(
             elevator
                 .elevatorAuto(ElevatorState.L4_POSITION)
                 .andThen(coral.depositCMD().withTimeout(.5))
-                .andThen(rightFar_rightStation.cmd())); // move elevator then score coral
+                .andThen(rightFar_rightStation.cmd())))); // move elevator then score coral
 
     rightFar_rightStation
         .done()
@@ -165,9 +168,11 @@ public class Autos {
     rightStation_rightClose
         .done()
         .onTrue(
-            elevator.elevatorAuto(ElevatorState.L4_POSITION)
+          Commands.waitSeconds(.5).andThen(
+            new AlignWithReefCMD(drive, vision, () -> false, this::emptyConsumer).withTimeout(1)
+            .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION)
             // .andThen(coral.depositCMD().withTimeout(.5))
-            ); // move elevator then score coral
+            ))); // move elevator then score coral
 
     return routine;
   }
