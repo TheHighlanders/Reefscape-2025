@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 final class AlgaeConstants {
   static final int algaeBendMotorID = 3;
@@ -47,11 +48,11 @@ public class Algae extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Algae position", algaeBendMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("algae current", algaeBendMotor.getAppliedOutput());
-    ;
-    //  SmartDashboard.putNumber("algae current", algaeIntakePosition.getPosition());;
 
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("Algae position", algaeBendMotor.getEncoder().getPosition());
+      SmartDashboard.putNumber("algae current", algaeBendMotor.getAppliedOutput());
+    }
   }
 
   private SparkMaxConfig algaeBendConfig(boolean coast) {

@@ -17,12 +17,12 @@
   "waypoints":[
     {"x":{"exp":"leftFar.x", "val":4.897169916781737}, "y":{"exp":"leftFar.y", "val":5.250285879516602}, "heading":{"exp":"leftFar.heading", "val":-2.0923864559891645}, "intervals":54, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false},
     {"x":{"exp":"4.451855659484863 m", "val":4.451855659484863}, "y":{"exp":"5.893496513366699 m", "val":5.893496513366699}, "heading":{"exp":"0 deg", "val":0.0}, "intervals":49, "split":false, "fixTranslation":true, "fixHeading":false, "overrideIntervals":false},
-    {"x":{"exp":"1.9707467555999756 m", "val":1.9707467555999756}, "y":{"exp":"6.54024600982666 m", "val":6.54024600982666}, "heading":{"exp":"0 deg", "val":0.0}, "intervals":45, "split":false, "fixTranslation":true, "fixHeading":false, "overrideIntervals":false},
-    {"x":{"exp":"leftStation.x", "val":1.202786564826965}, "y":{"exp":"leftStation.y", "val":7.137902736663818}, "heading":{"exp":"leftStation.heading", "val":0.6342565197283361}, "intervals":40, "split":false, "fixTranslation":true, "fixHeading":true, "overrideIntervals":false}],
+    {"x":{"exp":"1.9707467555999756 m", "val":1.9707467555999756}, "y":{"exp":"6.54024600982666 m", "val":6.54024600982666}, "heading":{"exp":"0 deg", "val":0.0}, "intervals":45, "split":false, "fixTranslation":true, "fixHeading":false, "overrideIntervals":false}],
   "constraints":[
     {"from":"first", "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true},
     {"from":"last", "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true},
-    {"from":"first", "to":"last", "data":{"type":"KeepInRectangle", "props":{"x":{"exp":"0 m", "val":0.0}, "y":{"exp":"0 m", "val":0.0}, "w":{"exp":"17.548 m", "val":17.548}, "h":{"exp":"8.052 m", "val":8.052}}}, "enabled":false}],
+    {"from":"first", "to":"last", "data":{"type":"KeepInRectangle", "props":{"x":{"exp":"0 m", "val":0.0}, "y":{"exp":"0 m", "val":0.0}, "w":{"exp":"17.548 m", "val":17.548}, "h":{"exp":"8.052 m", "val":8.052}}}, "enabled":false},
+    {"from":1, "to":null, "data":{"type":"StopPoint", "props":{}}, "enabled":true}],
   "targetDt":{
    "exp":"0.05 s",
    "val":0.05
