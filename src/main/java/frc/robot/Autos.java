@@ -9,10 +9,13 @@ import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
+import frc.robot.commands.AlignWithReefCMD;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Vision;
 
 /** Add your docs here. */
 public class Autos {
@@ -20,8 +23,9 @@ public class Autos {
   Swerve drive;
   Elevator elevator;
   CoralScorer coral;
+  Vision vision;
 
-  public Autos(Swerve drive, Elevator elevator, CoralScorer coral) {
+  public Autos(Swerve drive, Elevator elevator, CoralScorer coral, Vision vision) {
     autoFactory =
         new AutoFactory(
             drive::getPose, // A function that returns the current robot pose
@@ -35,6 +39,7 @@ public class Autos {
     this.drive = drive;
     this.elevator = elevator;
     this.coral = coral;
+    this.vision = vision;
   }
 
   public Command testTraj() {
@@ -85,33 +90,37 @@ public class Autos {
         .active()
         .onTrue(Commands.sequence(leftStartToleftFar.resetOdometry(), leftStartToleftFar.cmd()));
 
-    leftStartToleftFar
-    .atTime("WAIT")
-    .onTrue(elevator.elevatorAuto(ElevatorState.HOME).withTimeout(1));
-
+    // leftStartToleftFar
+    //     .atTime("WAIT")
+    //     .onTrue(Commands.waitSeconds(5));
     leftStartToleftFar
         .done()
         .onTrue(
+          new AlignWithReefCMD(drive, vision, () -> false, this::emptyConsumer).withTimeout(5)
+          .andThen(
             elevator
                 .elevatorAuto(ElevatorState.L4_POSITION)
                 .andThen(coral.depositCMD().withTimeout(.5))
                 .andThen(elevator.elevatorAuto(ElevatorState.HOME))
-                .andThen(leftFarToleftStation.cmd())); // move elevator then score coral
+                .andThen(leftFarToleftStation.cmd()))); // move elevator then score coral
+
 
     leftFarToleftStation
         .done()
         .onTrue(Commands.waitSeconds(2).andThen(leftStationToleftClose.cmd()));
 
 
-    leftStationToleftClose
-        .atTime("WAIT")
-        .onTrue(elevator.elevatorAuto(ElevatorState.HOME).withTimeout(1));
+    // leftStationToleftClose
+    //     .atTime("WAIT")
+    //     .onTrue(elevator.elevatorAuto(ElevatorState.HOME).withTimeout(1));
 
     leftStationToleftClose
         .done()
         .onTrue(
-            elevator.elevatorAuto(ElevatorState.L4_POSITION)
-            /* .andThen(coral.depositCMD().withTimeout(.5)) */ ); // move elevator then score coral
+          new AlignWithReefCMD(drive, vision, () -> false, this::emptyConsumer).withTimeout(5)
+          .andThen(
+            elevator.elevatorAuto(ElevatorState.L4_POSITION)));
+            /* .andThen(coral.depositCMD().withTimeout(.5)) */  // move elevator then score coral
 
     return routine;
   }
@@ -311,5 +320,8 @@ public class Autos {
 
   public Command testSequenceCommand() {
     return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
+  }
+
+  private void emptyConsumer(double x) {
   }
 }
