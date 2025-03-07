@@ -9,18 +9,20 @@ import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
-import edu.wpi.first.util.PixelFormat;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.commands.AlignWithReefCMD;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
-import java.util.HashMap;
-import java.util.Map;
+import frc.robot.subsystems.Vision;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -28,25 +30,28 @@ import org.opencv.imgproc.Imgproc;
 
 public class RobotContainer {
 
-  private final Map<String, Subsystem> subsystems = new HashMap<>();
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
+  Vision vision = new Vision();
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
-  Elevator elevator = new Elevator();
-  Swerve drive = new Swerve(elevator::getElevatorPosition);
-  Autos autos = new Autos(drive, elevator, coralScorer);
 
+  @Logged(name = "Elevator")
+  Elevator elevator = new Elevator();
+
+  @Logged(name = "Swerve")
+  Swerve drive =
+      new Swerve(
+          vision::getEstimatedRobotPose,
+          vision::getEstimationStdDev,
+          elevator::getElevatorPosition);
+
+  Autos autos = new Autos(drive, elevator, coralScorer, vision);
   AutoChooser chooser;
 
   public RobotContainer() {
     chooser = new AutoChooser();
-
-    subsystems.put("drive", drive);
-    subsystems.put("CoralScorer", coralScorer);
-    subsystems.put("climber", climber);
-    subsystems.put("elevator", elevator);
 
     configureBindings();
     configureAutonomous();
@@ -63,17 +68,27 @@ public class RobotContainer {
     operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
     operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
-    operator.leftBumper().whileTrue(elevator.offsetElevator());
+    operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY));
+    operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator());
+
+    // operator.leftBumper().whileTrue(elevator.offsetElevator());
+    operator.leftStick().whileTrue(coralScorer.manualIntakeCMD());
 
     driver.start().whileTrue(elevator.zeroElevator());
     driver.povRight().onTrue(drive.resetGyro());
 
     driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
     driver.a().whileTrue(coralScorer.reverseCommand());
-    driver.rightBumper().whileTrue(coralScorer.manualIntakeCMD());
 
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
+
+    driver
+        .leftBumper()
+        .whileTrue(new AlignWithReefCMD(drive, vision, () -> false, this::vibrateDriverController));
+    driver
+        .rightBumper()
+        .whileTrue(new AlignWithReefCMD(drive, vision, () -> true, this::vibrateDriverController));
 
     operator
         .povDown()
@@ -88,29 +103,49 @@ public class RobotContainer {
         .whileTrue(climber.createClimbInCommand());
     operator.povRight().onTrue(climber.holdClimbPosition());
 
-    operator.start().toggleOnTrue(drive.pointWheelsForward());
-    operator.back().whileTrue(drive.pidTuningJogAngle());
-    operator.rightBumper().whileTrue(coralScorer.depositCMD());
+    // operator.start().toggleOnTrue(drive.pointWheelsForward());
+    // operator.back().whileTrue(drive.pidTuningJogAngle());
+    operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
+    // operator.rightBumper().whileTrue(coralScorer.depositCMD());
+
+    operator
+        .start()
+        .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
+
+    operator
+        .rightStick()
+        .whileTrue(
+            elevator
+                .trimCMD(operator::getRightY)
+                .andThen(elevator.setPosition(ElevatorState.CURRENT)));
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
   }
 
   private void configureAutonomous() {
-    chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
-    chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
-    chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
-    chooser.addRoutine("ID13StationTOL1ID18", autos::ID13StationTOL1ID18);
-    chooser.addRoutine("L1ID22-ID12Station", autos::L1ID22TOID12Station);
-    chooser.addCmd("SYSID", drive::sysId);
-    chooser.addCmd("FORWARD", () -> drive.pidTuningJogDrive());
-    chooser.addCmd("Bad 1 piece", autos::simple1Piece);
+    chooser.addRoutine("Left 2 Piece", autos::LeftTwoPiece);
+    chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
+    chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
+    chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
+    chooser.addRoutine("Center 1 & Left", autos::CenterOnePieceAndLeftStation);
+    chooser.addRoutine("Center 1 & Right", autos::CenterOnePieceAndRightStation);
+
+    if (Constants.devMode) {
+      chooser.addCmd("SYSID", drive::sysId);
+      chooser.addCmd(
+          "FORWARD",
+          () ->
+              Commands.sequence(
+                  drive.enableSlowMode(),
+                  drive.driveCMD(() -> 1, () -> 0, () -> 0).withTimeout(1),
+                  drive.disableSlowMode()));
+      chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
+      chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
+      chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
+    }
 
     SmartDashboard.putData("AutoChooser", chooser);
-  }
-
-  public Command findClimberZero() {
-    return climber.findZeroPosition();
   }
 
   public Command getAutonomousCommand() {
@@ -120,16 +155,6 @@ public class RobotContainer {
   private void cameraSetUp() {
 
     Thread m_visionThread;
-
-    m_visionThread =
-        new Thread(
-            () -> {
-              // Get the UsbCamera from CameraServer
-              UsbCamera camera = CameraServer.startAutomaticCapture();
-              // Set the resolution
-              camera.setResolution(320, 240);
-              camera.setPixelFormat(PixelFormat.kMJPEG);
-            });
 
     m_visionThread =
         new Thread(
@@ -168,5 +193,13 @@ public class RobotContainer {
 
     m_visionThread.setDaemon(true);
     m_visionThread.start();
+  }
+
+  public void vibrateDriverController(double length) {
+    Commands.startEnd(
+            () -> driver.setRumble(RumbleType.kBothRumble, 1),
+            () -> driver.setRumble(RumbleType.kBothRumble, 0))
+        .withTimeout(length)
+        .schedule();
   }
 }
