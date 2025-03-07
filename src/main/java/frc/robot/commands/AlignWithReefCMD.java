@@ -1,5 +1,6 @@
 package frc.robot.commands;
 
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -46,7 +47,7 @@ public class AlignWithReefCMD extends Command {
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 1.0;
 
-    static final double translateP = 3; // 2.25;
+    static final double translateP = 3.3; // 3;
     static final double translateI = 0.01; // 0.05;
     static final double translateD = 0;
 
@@ -70,8 +71,12 @@ public class AlignWithReefCMD extends Command {
   private final PIDController rotController =
       new PIDController(AlignConstants.rotateP, AlignConstants.rotateI, AlignConstants.rotateD);
 
+  @Logged(name = "TargetAlignPose")
   private Pose2d targetPose;
+
+  @Logged(name = "ClosestReefTag")
   private Pose2d closestReefTagPose;
+
   private boolean targetRightCoral; // Set during initialize
   private boolean hasTargetTagOnInit = true;
 
@@ -212,6 +217,7 @@ public class AlignWithReefCMD extends Command {
 
   @Override
   public boolean isFinished() {
+    // TODO: make this finish faster and more accuratly
     Pose2d currentPose = swerve.getPose();
     double distanceToTarget = currentPose.getTranslation().getDistance(targetPose.getTranslation());
     double rotationError =
