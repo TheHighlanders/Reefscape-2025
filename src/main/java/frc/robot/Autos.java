@@ -117,8 +117,10 @@ public class Autos {
     leftStationToleftClose
         .done()
         .onTrue(
-            elevator.elevatorAuto(ElevatorState.L4_POSITION)
-            /* .andThen(coral.depositCMD().withTimeout(.5)) */ ); // move elevator then score coral
+          new AlignWithReefCMD(drive, vision, () -> false, this::emptyConsumer).withTimeout(5)
+          .andThen(
+            elevator.elevatorAuto(ElevatorState.L4_POSITION)));
+            /* .andThen(coral.depositCMD().withTimeout(.5)) */  // move elevator then score coral
 
     return routine;
   }
