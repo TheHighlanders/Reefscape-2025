@@ -47,7 +47,7 @@ public class RobotContainer {
           vision::getEstimationStdDev,
           elevator::getElevatorPosition);
 
-  Autos autos = new Autos(drive, elevator, coralScorer);
+  Autos autos = new Autos(drive, elevator, coralScorer, vision);
   AutoChooser chooser;
 
   public RobotContainer() {
@@ -69,6 +69,7 @@ public class RobotContainer {
     operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
     operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY));
+    operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator());
 
     // operator.leftBumper().whileTrue(elevator.offsetElevator());
     operator.leftStick().whileTrue(coralScorer.manualIntakeCMD());
@@ -111,7 +112,12 @@ public class RobotContainer {
         .start()
         .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
 
-    operator.rightStick().onTrue(elevator.trimCMD(operator::getRightY));
+    operator
+        .rightStick()
+        .whileTrue(
+            elevator
+                .trimCMD(operator::getRightY)
+                .andThen(elevator.setPosition(ElevatorState.CURRENT)));
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
@@ -122,6 +128,8 @@ public class RobotContainer {
     chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
     chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
     chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
+    chooser.addRoutine("Center 1 & Left", autos::CenterOnePieceAndLeftStation);
+    chooser.addRoutine("Center 1 & Right", autos::CenterOnePieceAndRightStation);
 
     if (Constants.devMode) {
       chooser.addCmd("SYSID", drive::sysId);
