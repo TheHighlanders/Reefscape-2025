@@ -47,7 +47,7 @@ public class RobotContainer {
           vision::getEstimationStdDev,
           elevator::getElevatorPosition);
 
-  Autos autos = new Autos(drive, elevator, coralScorer);
+  Autos autos = new Autos(drive, elevator, coralScorer, vision);
   AutoChooser chooser;
 
   public RobotContainer() {
