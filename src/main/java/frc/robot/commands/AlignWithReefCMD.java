@@ -44,7 +44,7 @@ public class AlignWithReefCMD extends Command {
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 1.0;
 
-    static final double translateP = 2.25; // ;1.5;
+    static final double translateP = 2.475; // 2.25;
     static final double translateI = 0.01; // 0.05;
     static final double translateD = 0;
 
