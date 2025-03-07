@@ -124,6 +124,5 @@
     {"t":3.09387, "x":5.34683, "y":3.05739, "heading":2.10039, "vx":0.0, "vy":0.0, "omega":0.0, "ax":0.0, "ay":0.0, "alpha":0.0, "fx":[0.0,0.0,0.0,0.0], "fy":[0.0,0.0,0.0,0.0]}],
   "splits":[0]
  },
- "events":[
-   {"name":"WAIT", "from":{"target":1, "targetTimestamp":1.82898, "offset":{"exp":"0 s", "val":0.0}}, "event":{"type":"wait", "data":{"waitTime":{"exp":"5 s", "val":5.0}}}}]
+ "events":[]
 }
