@@ -128,8 +128,8 @@ public class RobotContainer {
     chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
     chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
     chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
-    chooser.addRoutine("Left 2 Piece and scadatle", autos::CenterOnePieceAndLeftStation);
-    chooser.addRoutine("Right 2 Piece and scadatle", autos::CenterOnePieceAndRightStation);
+    chooser.addRoutine("Center 1 & Left", autos::CenterOnePieceAndLeftStation);
+    chooser.addRoutine("Center 1 & Right", autos::CenterOnePieceAndRightStation);
 
 
     if (Constants.devMode) {

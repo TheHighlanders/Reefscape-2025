@@ -34,7 +34,7 @@ public class AlignWithReefCMD extends Command {
     static final double coralLeftOffset = -0.165; // Left coral Y offset (negative = left)
     static final double coralRightOffset = 0.165; // Right coral Y offset (positive = right)
 
-    static final double ejectOffset = 0.25;
+    static final double ejectOffset = 0.30;
 
     // Position tolerance (meters)
     static final double positionTolerance = 0.005;
