@@ -304,10 +304,11 @@ public class Autos {
                 .andThen(Commands.waitSeconds(0.5))
                 .andThen(coral.slowDepositCMD().withTimeout(3)));
     CD2.done()
-        .onTrue(elevator.elevatorAuto(ElevatorState.ALGAEHIGH).andThen(Commands.waitSeconds(0.5)));
+        .onTrue(elevator.elevatorAuto(ElevatorState.ALGAELOW).andThen(Commands.waitSeconds(0.5)));
     CD3.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(Commands.waitSeconds(0.5)));
     return routine;
   }
+
 
   public AutoRoutine ThreePieceLeft() { // the one piece is real :>
     AutoRoutine routine = autoFactory.newRoutine("ThreePieceLeft");
