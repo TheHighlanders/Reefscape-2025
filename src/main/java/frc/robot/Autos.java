@@ -313,24 +313,29 @@ public class Autos {
     AutoRoutine routine = autoFactory.newRoutine("ThreePieceLeft");
 
     AutoTrajectory centerStartTocenterFar = routine.trajectory("centerStart-centerFar");
-    AutoTrajectory CD2 = routine.trajectory("Center-dingus-two");
-    AutoTrajectory CD3 = routine.trajectory("Center-dingus-three");
+    AutoTrajectory centerStarttoLeftStation = routine.trajectory("centerStart-centerFar-Left-station");
+    AutoTrajectory LeftStationleftFar = routine.trajectory("leftStation-leftFar");
+    AutoTrajectory leftFarToLeftStation = routine.trajectory("leftFar-leftStation");
+    AutoTrajectory LeftStationToLeftClose = routine.trajectory("leftStation-leftClose");
 
     routine
         .active()
         .onTrue(
             Commands.sequence(
-                CD1.resetOdometry(),
+              centerStartTocenterFar.resetOdometry(),
                 // drive.presetWheelsToTraj((SwerveSample)
                 // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
-                CD1.cmd()));
+                centerStartTocenterFar.cmd()));
 
-    CD1.done()
+
+    centerStartTocenterFar
+        .done()
         .onTrue(
             elevator
                 .elevatorAuto(ElevatorState.L4_POSITION)
                 .andThen(Commands.waitSeconds(0.5))
-                .andThen(coral.slowDepositCMD().withTimeout(3)));
+                .andThen(coral.slowDepositCMD().withTimeout(3)
+                .andThen(elevatorAuto(ElevatorState.HOME))));
     CD2.done()
         .onTrue(elevator.elevatorAuto(ElevatorState.ALGAEHIGH).andThen(Commands.waitSeconds(0.5)));
     CD3.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(Commands.waitSeconds(0.5)));
