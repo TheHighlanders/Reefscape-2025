@@ -281,6 +281,34 @@ public class Autos {
     return routine;
   }
 
+  public AutoRoutine CenterOnePieceAndDislodge() { // the one piece is real :>
+    AutoRoutine routine = autoFactory.newRoutine("Center-dingus");
+
+    AutoTrajectory CD1 = routine.trajectory("Center-dingus-one");
+    AutoTrajectory CD2 = routine.trajectory("Center-dingus-two");
+    AutoTrajectory CD3 = routine.trajectory("Center-dingus-three");
+
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                CD1.resetOdometry(),
+                // drive.presetWheelsToTraj((SwerveSample)
+                // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+                CD1.cmd()));
+
+    CD1.done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(coral.slowDepositCMD().withTimeout(3)));
+    CD2.done()
+        .onTrue(elevator.elevatorAuto(ElevatorState.ALGAEHIGH).andThen(Commands.waitSeconds(0.5)));
+    CD3.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(Commands.waitSeconds(0.5)));
+    return routine;
+  }
+
   // public AutoRoutine practicepath() {
   //   AutoRoutine routine = autoFactory.newRoutine("LeftTwoPiece");
 
