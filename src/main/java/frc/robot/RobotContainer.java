@@ -132,7 +132,7 @@ public class RobotContainer {
     chooser.addRoutine("Center 1 & Right", autos::CenterOnePieceAndRightStation);
     chooser.addRoutine("Center 1 & dingus", autos::CenterOnePieceAndDislodge);
     chooser.addRoutine("Three piece left", autos::ThreePieceLeft);
-
+    chooser.addRoutine("Three piece right", autos::ThreePieceRight);
     if (Constants.devMode) {
       chooser.addCmd("SYSID", drive::sysId);
       chooser.addCmd(
