@@ -49,6 +49,5 @@
   "splits":[0]
  },
  "events":[
-   {"name":"ELEVATORUPANDPLACE", "from":{"target":1, "targetTimestamp":1.80032, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
-   {"name":"DINGUS", "from":{"target":null, "targetTimestamp":null, "offset":{"exp":"0 s", "val":0.0}}, "event":null}]
+   {"name":"ELEVATORUPANDPLACE", "from":{"target":1, "targetTimestamp":1.80032, "offset":{"exp":"0 s", "val":0.0}}, "event":null}]
 }
