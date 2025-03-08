@@ -302,10 +302,11 @@ public class Autos {
             elevator
                 .elevatorAuto(ElevatorState.L4_POSITION)
                 .andThen(Commands.waitSeconds(0.5))
-                .andThen(coral.slowDepositCMD().withTimeout(3)));
+                .andThen(coral.slowDepositCMD().withTimeout(3))
+                .andThen(CD2.cmd()));
     CD2.done()
-        .onTrue(elevator.elevatorAuto(ElevatorState.ALGAELOW).andThen(Commands.waitSeconds(0.5)));
-    CD3.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(Commands.waitSeconds(0.5)));
+        .onTrue(elevator.elevatorAuto(ElevatorState.ALGAELOW).andThen(Commands.waitSeconds(2).andThen(CD3.cmd())));
+    CD3.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(Commands.waitSeconds(1)));
     return routine;
   }
 
