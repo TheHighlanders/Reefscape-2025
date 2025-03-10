@@ -147,6 +147,7 @@ public class Swerve extends SubsystemBase {
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
+      needZeroing.add(modules[i]);
     }
 
     // Using +X as forward, and +Y as left, as per
