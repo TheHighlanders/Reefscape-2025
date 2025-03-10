@@ -133,11 +133,15 @@ public class Swerve extends SubsystemBase {
   Supplier<Optional<EstimatedRobotPose>> estPoseSup;
   Supplier<Matrix<N3, N1>> stdDevSup;
 
+  private DoubleSupplier visionProcessDelay;
+
   /** Creates a new Swerve. */
   public Swerve(
       Supplier<Optional<EstimatedRobotPose>> estPoseSup,
       Supplier<Matrix<N3, N1>> stdDevSup,
-      DoubleSupplier elevatorHeight) {
+      DoubleSupplier elevatorHeight,
+      DoubleSupplier visionProcessDelay) {
+    this.visionProcessDelay = visionProcessDelay;
     this.estPoseSup = estPoseSup;
     this.stdDevSup = stdDevSup;
 
@@ -252,6 +256,9 @@ public class Swerve extends SubsystemBase {
     if (estPose.isPresent()) {
       poseEst.addVisionMeasurement(
           estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
+
+      SmartDashboard.putNumber(
+          "Odometry/Vision Processing Delay", visionProcessDelay.getAsDouble());
     }
 
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);

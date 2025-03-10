@@ -64,14 +64,14 @@ public class Vision extends SubsystemBase {
   };
 
   // Internal camera management
-  private PhotonCamera[] cameras;
-  private PhotonPoseEstimator[] poseEstimators;
-  private Pose3d[] cameraPoses;
-  private String[] cameraNames;
+  private final PhotonCamera[] cameras;
+  private final PhotonPoseEstimator[] poseEstimators;
+  private final Pose3d[] cameraPoses;
+  private final String[] cameraNames;
 
-  private AprilTagFieldLayout aprilTagFieldLayout;
-  private Matrix<N3, N1> stdDev = new Matrix<N3, N1>(Nat.N3(), Nat.N1());
-  private List<Pose2d> reefTagPoses = new ArrayList<>();
+  private final AprilTagFieldLayout aprilTagFieldLayout;
+  private Matrix<N3, N1> stdDev = new Matrix<>(Nat.N3(), Nat.N1());
+  private final List<Pose2d> reefTagPoses = new ArrayList<>();
   private boolean hasTarget = false;
   private int frameCounter = 0;
 
@@ -80,6 +80,11 @@ public class Vision extends SubsystemBase {
       NetworkTableInstance.getDefault()
           .getStructTopic("/Vision/Vision Estimated Pose", Pose2d.struct)
           .publish();
+
+  // This is for timing the difference between when the vision is processed and
+  // when it is published
+  private double lastProcessedTimestamp = 0;
+  private Timer visionTimingTimer = new Timer();
 
   /** Creates a new Vision. */
   public Vision() {
@@ -135,6 +140,7 @@ public class Vision extends SubsystemBase {
         if (result.isEmpty()) {
           continue;
         }
+
         Matrix<N3, N1> camStdDev = VisionHelper.processPipelineResult(result, camEstimate);
 
         // Calculate overall confidence metric (lower is better)
@@ -165,6 +171,9 @@ public class Vision extends SubsystemBase {
 
       // Log debug information
       SmartDashboard.putNumber("Vision/Target Count", bestEstimate.get().targetsUsed.size());
+
+      lastProcessedTimestamp = Timer.getFPGATimestamp();
+      SmartDashboard.putNumber("Vision/Last Processing Time", lastProcessedTimestamp);
 
       if (!bestEstimate.get().targetsUsed.isEmpty()) {
         SmartDashboard.putNumber(
@@ -267,6 +276,10 @@ public class Vision extends SubsystemBase {
     }
 
     return totalDistance / targets.size();
+  }
+
+  public double getVisionProcessingDelay() {
+    return Timer.getFPGATimestamp() - lastProcessedTimestamp;
   }
 
   /**

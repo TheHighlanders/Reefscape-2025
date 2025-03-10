@@ -46,7 +46,8 @@ public class RobotContainer {
       new Swerve(
           vision::getEstimatedRobotPose,
           vision::getEstimationStdDev,
-          elevator::getElevatorPosition);
+          elevator::getElevatorPosition,
+          vision::getVisionProcessingDelay);
 
   Autos autos =
       new Autos(drive, elevator, coralScorer, this::alignToLeftCoral, this::alignToRightCoral);
