@@ -301,7 +301,6 @@ public class Swerve extends SubsystemBase {
   }
 
   public boolean attemptZeroingAbsolute() {
-
     if (!needZeroing.isEmpty()) {
       DriverStation.reportWarning(
           "ZEROING SOME CANCODERS FAILED, " + needZeroing.size() + " ARE BEING REZEROED", false);

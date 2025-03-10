@@ -58,9 +58,13 @@ public class Robot extends TimedRobot {
           config.minimumImportance = Logged.Importance.DEBUG;
         });
     DriverStation.startDataLog(DataLogManager.getLog());
-    Epilogue.bind(this);
 
     SmartDashboard.putData(CommandScheduler.getInstance());
+  }
+
+  @Override
+  public void robotInit() {
+    Epilogue.bind(this);
   }
 
   @Override
