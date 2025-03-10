@@ -133,7 +133,7 @@ public class Swerve extends SubsystemBase {
   Supplier<Optional<EstimatedRobotPose>> estPoseSup;
   Supplier<Matrix<N3, N1>> stdDevSup;
 
-  private DoubleSupplier visionProcessDelay;
+  private final DoubleSupplier visionProcessDelay;
 
   /** Creates a new Swerve. */
   public Swerve(
