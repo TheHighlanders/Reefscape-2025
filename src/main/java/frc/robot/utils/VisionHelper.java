@@ -1,6 +1,5 @@
 package frc.robot.utils;
 
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -22,7 +21,6 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 
 /** Utility class for vision processing and pose estimation */
 public class VisionHelper {
-  private final AprilTagFieldLayout fieldLayout = FieldTagUtils.getFieldTagLayout();
   // Standard deviations based on tag count
   public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(0.5, 0.5, 0.9);
   public static final Matrix<N3, N1> DOUBLE_TAG_STD_DEVS = VecBuilder.fill(0.3, 0.3, 0.6);

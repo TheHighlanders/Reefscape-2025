@@ -103,16 +103,15 @@ spotless {
     }
 }
 
-// Preve
-repositories {
-    mavenCentral()
-    maven {
-        url 'https://frcmaven.wpi.edu/artifactory/release/'
-    }
-    maven {
-        url 'https://frcmaven.wpi.edu/artifactory/littletonrobotics-mvn-release/'
-    }
-}
+// repositories {
+//     mavenCentral()
+//     maven {
+//         url 'https://frcmaven.wpi.edu/artifactory/release/'
+//     }
+//     maven {
+//         url 'https://frcmaven.wpi.edu/artifactory/littletonrobotics-mvn-release/'
+//     }
+// }
 
 def deployArtifact = deploy.targets.roborio.artifacts.frcJava
 
@@ -146,7 +145,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    implementation group: 'edu.wpi.first.epilogue', name: 'epilogue-processor-java', version: '2025.0.0-alpha-2'
+    // implementation group: 'edu.wpi.first.epilogue', name: 'epilogue-processor-java', version: '2025.0.0-alpha-2'
 }
 
 test {
