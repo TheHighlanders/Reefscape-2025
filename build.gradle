@@ -28,6 +28,23 @@ deploy {
                 // getTargetTypeClass is a shortcut to get the class type using a string
 
                 frcJava(getArtifactTypeClass('FRCJavaArtifact')) {
+                    // jvmArgs.add("-XX:+UnlockExperimentalVMOptions")
+                    // jvmArgs.add("-XX:GCTimeRatio=5")
+                    // jvmArgs.add("-XX:+UseSerialGC")
+                    // jvmArgs.add("-XX:MaxGCPauseMillis=50")
+
+                    // final MAX_JAVA_HEAP_SIZE_MB = 100;
+                    // jvmArgs.add("-Xmx" + MAX_JAVA_HEAP_SIZE_MB + "M")
+                    // jvmArgs.add("-Xms" + MAX_JAVA_HEAP_SIZE_MB + "M")
+                    // jvmArgs.add("-XX:+AlwaysPreTouch")
+
+                    // Enable VisualVM connection
+                    // jvmArgs.add("-Dcom.sun.management.jmxremote=true")
+                    // jvmArgs.add("-Dcom.sun.management.jmxremote.port=1198")
+                    // jvmArgs.add("-Dcom.sun.management.jmxremote.local.only=false")
+                    // jvmArgs.add("-Dcom.sun.management.jmxremote.ssl=false")
+                    // jvmArgs.add("-Dcom.sun.management.jmxremote.authenticate=false")
+                    // jvmArgs.add("-Djava.rmi.server.hostname=10.62.1.2")
                 }
 
                 // Static files artifact
@@ -86,6 +103,17 @@ spotless {
     }
 }
 
+// Preve
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://frcmaven.wpi.edu/artifactory/release/'
+    }
+    maven {
+        url 'https://frcmaven.wpi.edu/artifactory/littletonrobotics-mvn-release/'
+    }
+}
+
 def deployArtifact = deploy.targets.roborio.artifacts.frcJava
 
 // Set to true to use debug for JNI.
@@ -117,6 +145,8 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation group: 'edu.wpi.first.epilogue', name: 'epilogue-processor-java', version: '2025.0.0-alpha-2'
 }
 
 test {
