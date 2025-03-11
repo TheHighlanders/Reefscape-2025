@@ -144,6 +144,10 @@ public class Swerve extends SubsystemBase {
     this.lastEstimatedPoses = new EstimatedRobotPose[cameras.length];
     this.cameraPoses = new Pose3d[cameras.length];
 
+    for (int i = 0; i < modules.length; i++) {
+      modules[i] = new Module(i);
+    }
+
     for (int i = 0; i < cameras.length; i++) {
       cameraPoses[i] = new Pose3d();
     }
