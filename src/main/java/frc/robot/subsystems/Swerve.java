@@ -22,6 +22,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -36,6 +37,7 @@ import edu.wpi.first.units.VoltageUnit;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -130,24 +132,20 @@ public class Swerve extends SubsystemBase {
 
   SwerveState current = SwerveState.NORMAL;
 
-  Supplier<Optional<EstimatedRobotPose>> estPoseSup;
-  Supplier<Matrix<N3, N1>> stdDevSup;
-
-  private final DoubleSupplier visionProcessDelay;
+  private final Vision[] cameras;
+  private EstimatedRobotPose[] lastEstimatedPoses;
+  private final Pose3d[] cameraPoses;
+  private double lastEstTimestamp = 0.0;
 
   /** Creates a new Swerve. */
-  public Swerve(
-      Supplier<Optional<EstimatedRobotPose>> estPoseSup,
-      Supplier<Matrix<N3, N1>> stdDevSup,
-      DoubleSupplier elevatorHeight,
-      DoubleSupplier visionProcessDelay) {
-    this.visionProcessDelay = visionProcessDelay;
-    this.estPoseSup = estPoseSup;
-    this.stdDevSup = stdDevSup;
+  public Swerve(Vision[] cameras, DoubleSupplier elevatorHeight) {
+    this.cameras = cameras;
+    this.elevatorHeight = elevatorHeight;
+    this.lastEstimatedPoses = new EstimatedRobotPose[cameras.length];
+    this.cameraPoses = new Pose3d[cameras.length];
 
-    for (int i = 0; i < modules.length; i++) {
-      modules[i] = new Module(i);
-      needZeroing.add(modules[i]);
+    for (int i = 0; i < cameras.length; i++) {
+      cameraPoses[i] = new Pose3d();
     }
 
     // Using +X as forward, and +Y as left, as per
@@ -174,8 +172,8 @@ public class Swerve extends SubsystemBase {
             startPose.getRotation(),
             getModulePostions(),
             startPose,
-            VecBuilder.fill(0.5, 0.5, 0.5),
-            stdDevSup.get());
+            VecBuilder.fill(0.5, 0.5, 0.5), // State standard deviations
+            VecBuilder.fill(0.9, 0.9, 0.4)); // Default vision standard deviations
 
     SmartDashboard.putData("Swerve/Field", field);
 
@@ -245,26 +243,104 @@ public class Swerve extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    // Update odometry with latest module positions and gyro data
     poseEst.updateWithTime(
         RobotController.getFPGATime() * MICROS_SECONDS_CONVERSION,
         getGyroAngle(),
         getModulePostions());
+
+    // Update visualization
     field.setRobotPose(getPose());
 
-    var estPose = estPoseSup.get();
-    var stdDev = stdDevSup.get();
+    // Process vision data from all cameras
+    updateVision();
 
-    if (estPose.isPresent()) {
-      poseEst.addVisionMeasurement(
-          estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
-
-      SmartDashboard.putNumber(
-          "Odometry/Vision Processing Delay", visionProcessDelay.getAsDouble());
-    }
-
+    // Display alignment mode status
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
 
+    // Send diagnostic information
     sendDiagnostics();
+  }
+
+  /** Process vision data from all cameras and update pose estimation */
+  private void updateVision() {
+    for (int i = 0; i < cameras.length; i++) {
+      // Get the latest result from this camera
+      Optional<EstimatedRobotPose> estPose = cameras[i].getEstimatedRobotPose();
+
+      if (estPose.isPresent()) {
+        // Store the camera pose for debugging
+        cameraPoses[i] = estPose.get().estimatedPose;
+        lastEstimatedPoses[i] = estPose.get();
+
+        // Get standard deviations from the camera
+        Matrix<N3, N1> stdDev = cameras[i].getEstimationStdDev();
+
+        // Apply additional scaling based on game state
+        if (DriverStation.isAutonomous()) {
+          // Increase uncertainty during auto
+          stdDev = stdDev.times(2.0);
+        }
+
+        // Apply camera-specific scaling if needed
+        if (cameras[i].getName().contains("Back")) {
+          stdDev = stdDev.times(1.5);
+        }
+
+        // Add measurement to pose estimator
+        poseEst.addVisionMeasurement(
+            estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
+
+        lastEstTimestamp = estPose.get().timestampSeconds;
+
+        // Log vision data
+        SmartDashboard.putNumber(
+            "Vision/" + cameras[i].getName() + "/Processing Delay",
+            Timer.getFPGATimestamp() - lastEstTimestamp);
+
+        SmartDashboard.putNumber(
+            "Vision/" + cameras[i].getName() + "/Target Count", estPose.get().targetsUsed.size());
+
+        // Log tag positions if in dev mode
+        if (Constants.devMode && !estPose.get().targetsUsed.isEmpty()) {
+          SmartDashboard.putNumber(
+              "Vision/" + cameras[i].getName() + "/First Tag ID",
+              estPose.get().targetsUsed.get(0).getFiducialId());
+        }
+      }
+
+      // Log whether this camera has a valid result
+      SmartDashboard.putBoolean(
+          "Vision/" + cameras[i].getName() + "/Has Target", estPose.isPresent());
+    }
+
+    // Log camera poses for debugging
+    if (Constants.devMode) {
+      SmartDashboard.putData("Vision/Camera Poses", new Field2d());
+      // Add code to visualize camera poses on field
+    }
+  }
+
+  /**
+   * Get the array of camera poses for visualization
+   *
+   * @return Array of camera poses in field coordinates
+   */
+  public Pose3d[] getCameraPoses() {
+    return cameraPoses;
+  }
+
+  /**
+   * Get a specific camera's pose
+   *
+   * @param index The camera index
+   * @return The camera's pose in field coordinates
+   */
+  public Pose3d getCameraPose(int index) {
+    if (index >= 0 && index < cameraPoses.length) {
+      return cameraPoses[index];
+    }
+    return new Pose3d();
   }
 
   @Logged(name = "Estimated Pose", importance = Importance.INFO)

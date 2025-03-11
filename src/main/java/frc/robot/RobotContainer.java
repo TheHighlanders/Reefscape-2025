@@ -11,7 +11,6 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -23,7 +22,6 @@ import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
-import frc.robot.utils.AutoAlign;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -34,20 +32,16 @@ public class RobotContainer {
   CommandXboxController driver = new CommandXboxController(0);
   CommandXboxController operator = new CommandXboxController(1);
 
-  Vision vision = new Vision();
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
 
   @Logged(name = "Elevator")
   Elevator elevator = new Elevator();
 
+  Vision[] cameras = {new Vision()};
+
   @Logged(name = "Swerve")
-  Swerve drive =
-      new Swerve(
-          vision::getEstimatedRobotPose,
-          vision::getEstimationStdDev,
-          elevator::getElevatorPosition,
-          vision::getVisionProcessingDelay);
+  Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
 
   Autos autos =
       new Autos(drive, elevator, coralScorer, this::alignToLeftCoral, this::alignToRightCoral);
@@ -154,23 +148,26 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    return AutoAlign.alignWithReef(
-        drive,
-        vision,
-        () -> true,
-        (v) -> {
-          driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, v);
-        });
+    // return AutoAlign.alignWithReef(
+    // drive,
+    // vision,
+    // () -> true,
+    // (v) -> {
+    // driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, v);
+    // });
+    return Commands.print("Not implemented");
   }
 
   public Command alignToLeftCoral() {
-    return AutoAlign.alignWithReef(
-        drive,
-        vision,
-        () -> false,
-        (v) -> {
-          driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, v);
-        });
+    // return AutoAlign.alignWithReef(
+    // drive,
+    // vision,
+    // () -> false,
+    // (v) -> {
+    // driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, v);
+    // });
+
+    return Commands.print("Not implemented");
   }
 
   private void cameraSetUp() {

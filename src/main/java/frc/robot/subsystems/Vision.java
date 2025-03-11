@@ -1,11 +1,6 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -15,13 +10,16 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.numbers.N8;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 import frc.robot.utils.VisionHelper;
+import frc.robot.utils.VisionHelper.VisionMeasurement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,14 +51,36 @@ final class VisionConstants {
 
   // Maximum acceptable ambiguity for pose estimation
   static final double MAX_POSE_AMBIGUITY = 0.2;
+
+  // Camera intrinsics and distortion
+  static final Matrix<N3, N3> CAMERA_INTRINSICS = new Matrix<>(Nat.N3(), Nat.N3());
+  static final Matrix<N8, N1> CAMERA_DISTORTION = new Matrix<>(Nat.N8(), Nat.N1());
+
+  // Initialize camera intrinsics and distortion with typical values
+  static {
+    // These are example values and should be replaced with actual camera
+    // calibration
+    double[][] intrinsics = {
+      {700.0, 0.0, 320.0},
+      {0.0, 700.0, 240.0},
+      {0.0, 0.0, 1.0}
+    };
+
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 3; j++) {
+        CAMERA_INTRINSICS.set(i, j, intrinsics[i][j]);
+      }
+    }
+
+    // Fill distortion coefficients with zeros
+    CAMERA_DISTORTION.fill(0.0);
+  }
 }
 
 public class Vision extends SubsystemBase {
 
   private static final CameraConfig[] CAMERA_CONFIGS = {
     new CameraConfig("ReefCamera", VisionConstants.frontFacingCam)
-    // Add more cameras as needed
-    // Example: new CameraConfig("BackCamera", new Transform3d(...))
   };
 
   // Internal camera management
@@ -70,7 +90,7 @@ public class Vision extends SubsystemBase {
   private final String[] cameraNames;
 
   private final AprilTagFieldLayout aprilTagFieldLayout;
-  private Matrix<N3, N1> stdDev = new Matrix<>(Nat.N3(), Nat.N1());
+  private Matrix<N3, N1> stdDev = VisionHelper.INFINITE_STD_DEVS;
   private final List<Pose2d> reefTagPoses = new ArrayList<>();
   private boolean hasTarget = false;
   private int frameCounter = 0;
@@ -84,12 +104,11 @@ public class Vision extends SubsystemBase {
   // This is for timing the difference between when the vision is processed and
   // when it is published
   private double lastProcessedTimestamp = 0;
-  private Timer visionTimingTimer = new Timer();
 
   /** Creates a new Vision. */
   public Vision() {
     // Load the AprilTag field layout
-    this.aprilTagFieldLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeAndyMark);
+    this.aprilTagFieldLayout = Constants.getFieldTagLayout();
 
     // Initialize camera arrays
     int cameraCount = CAMERA_CONFIGS.length;
@@ -108,7 +127,7 @@ public class Vision extends SubsystemBase {
               aprilTagFieldLayout, VisionConstants.poseStrategy, CAMERA_CONFIGS[i].transform);
       poseEstimators[i].setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
-      cameraPoses[i] = Pose3d.kZero;
+      cameraPoses[i] = new Pose3d();
     }
 
     // Store reef tag poses for quick lookup
@@ -130,17 +149,35 @@ public class Vision extends SubsystemBase {
     double bestConfidence = Double.POSITIVE_INFINITY;
 
     for (int i = 0; i < cameras.length; i++) {
+      // Get all unread results from this camera
+      List<PhotonPipelineResult> results = cameras[i].getAllUnreadResults();
+
+      // Skip processing if there are no results
+      if (results.isEmpty()) {
+        continue;
+      }
+
+      // Get the most recent result (last in the list)
+      PhotonPipelineResult result = results.get(results.size() - 1);
+
+      // Skip processing if there are no targets
+      if (!result.hasTargets()) {
+        continue;
+      }
+
       // Get vision data from this camera
-      Optional<EstimatedRobotPose> camEstimate = getEstimatedRobotPose(i);
+      Optional<EstimatedRobotPose> camEstimate =
+          VisionHelper.update(
+              result,
+              VisionConstants.CAMERA_INTRINSICS,
+              VisionConstants.CAMERA_DISTORTION,
+              VisionConstants.poseStrategy,
+              CAMERA_CONFIGS[i].transform,
+              new Transform3d()); // Use the transform from the coprocessor if available
 
       // If we got a valid estimate, check if it's better than our current best
       if (camEstimate.isPresent()) {
         // Process the pipeline result to calculate confidence
-        List<PhotonPipelineResult> result = cameras[i].getAllUnreadResults();
-        if (result.isEmpty()) {
-          continue;
-        }
-
         Matrix<N3, N1> camStdDev = VisionHelper.processPipelineResult(result, camEstimate);
 
         // Calculate overall confidence metric (lower is better)
@@ -218,8 +255,8 @@ public class Vision extends SubsystemBase {
       return Optional.empty();
     }
 
-    // Check if this camera has a valid pose
-    if (cameraPoses[cameraIndex] != Pose3d.kZero) {
+    // If this camera has a valid pose stored
+    if (!cameraPoses[cameraIndex].equals(new Pose3d())) {
       return Optional.of(
           new EstimatedRobotPose(
               cameraPoses[cameraIndex],
@@ -245,7 +282,7 @@ public class Vision extends SubsystemBase {
 
     // Find the camera with a valid pose
     for (Pose3d cameraPose : cameraPoses) {
-      if (cameraPose != Pose3d.kZero) {
+      if (!cameraPose.equals(new Pose3d())) {
         // Construct an estimated pose with this camera's data
         return Optional.of(
             new EstimatedRobotPose(
@@ -256,6 +293,19 @@ public class Vision extends SubsystemBase {
       }
     }
 
+    return Optional.empty();
+  }
+
+  /**
+   * Get a VisionMeasurement object that includes both the pose estimate and confidence
+   *
+   * @return VisionMeasurement with pose and confidence, or empty if no valid measurement
+   */
+  public Optional<VisionHelper.VisionMeasurement> getVisionMeasurement() {
+    Optional<EstimatedRobotPose> poseEst = getEstimatedRobotPose();
+    if (poseEst.isPresent() && hasTarget) {
+      return Optional.of(new VisionMeasurement(poseEst.get(), stdDev));
+    }
     return Optional.empty();
   }
 
@@ -317,6 +367,24 @@ public class Vision extends SubsystemBase {
    */
   public List<Pose2d> getReefTagPoses() {
     return new ArrayList<>(reefTagPoses);
+  }
+
+  /**
+   * Filter the camera results to remove low-quality targets
+   *
+   * @param result The raw camera result
+   * @return A new result with only high-quality targets
+   */
+  private PhotonPipelineResult filterCameraResult(PhotonPipelineResult result) {
+    // Use VisionHelper to filter targets by distance and ambiguity
+    List<PhotonTrackedTarget> filteredTargets =
+        VisionHelper.filterTargets(
+            result.getTargets(),
+            VisionConstants.MAX_TAG_DISTANCE,
+            VisionConstants.MAX_POSE_AMBIGUITY);
+
+    // Create a new pipeline result with filtered targets
+    return new PhotonPipelineResult(result.metadata, filteredTargets, result.getMultiTagResult());
   }
 
   // Helper class for camera configuration
