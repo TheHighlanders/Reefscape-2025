@@ -12,8 +12,10 @@ import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.subsystems.LEDs;
@@ -27,7 +29,7 @@ public class Robot extends TimedRobot {
 
   private final RobotContainer m_robotContainer;
 
-
+  private final LEDs leds;
 
   private double loops = 0;
 
@@ -128,7 +130,10 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+   // leds.runPattern((LEDPattern.solid(Color.kBlack)));
+    leds.runPattern(LEDPattern.rainbow(255, 128));
+  }
 
   @Override
   public void teleopExit() {}
