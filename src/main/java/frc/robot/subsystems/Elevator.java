@@ -38,9 +38,9 @@ class ElevatorConstants {
   static final double homeTarget = 5; // Position before autolanding
   static final double l2Target = 11.5;
   static final double l3Target = 28;
-  static final double l4Target = 52.125;
-  static final double algaeLow = 7;
-  static final double algaeHigh = 25;
+  static final double l4Target = 51.625;
+  static final double algaeLow = 4.5;
+  static final double algaeHigh = 24.5;
 
   static final double coralBetweenReefOffset = 2;
 
@@ -56,6 +56,8 @@ class ElevatorConstants {
   static final double maxVelocity = 80 * 60.0d;
   static final double maxAccel = 3600;
   static final double maxClosedLoopError = 5;
+
+  public static int currentLimit = 80;
 }
 
 public class Elevator extends SubsystemBase {
@@ -100,6 +102,8 @@ public class Elevator extends SubsystemBase {
         .velocityConversionFactor(ElevatorConstants.elevPCF);
 
     elevatorMotorConfig.idleMode(IdleMode.kBrake).inverted(true);
+
+    elevatorMotorConfig.smartCurrentLimit(ElevatorConstants.currentLimit);
 
     elevatorMotorConfig
         .limitSwitch

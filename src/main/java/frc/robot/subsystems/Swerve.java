@@ -128,6 +128,8 @@ public class Swerve extends SubsystemBase {
 
   Field2d field = new Field2d();
 
+  public boolean teleop = false;
+
   SwerveState current = SwerveState.NORMAL;
 
   Supplier<Optional<EstimatedRobotPose>> estPoseSup;
@@ -249,9 +251,11 @@ public class Swerve extends SubsystemBase {
     var estPose = estPoseSup.get();
     var stdDev = stdDevSup.get();
 
-    if (estPose.isPresent()) {
-      poseEst.addVisionMeasurement(
-          estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
+    if (teleop) {
+      if (estPose.isPresent()) {
+        poseEst.addVisionMeasurement(
+            estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
+      }
     }
 
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
@@ -266,6 +270,10 @@ public class Swerve extends SubsystemBase {
 
   public SwerveModulePosition[] getModulePostions() {
     return Stream.of(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
+  }
+
+  public Command enableVision(){
+    return Commands.runOnce(()->teleop=true);
   }
 
   @Logged(name = "Swerve Module States", importance = Importance.INFO)
@@ -287,6 +295,15 @@ public class Swerve extends SubsystemBase {
     }
 
     return outputs;
+  }
+
+  public Command resetAllModulesAbsoluteCMD() {
+    return Commands.runOnce(
+        () -> {
+          for (Module m : modules) {
+            m.resetAbsolute();
+          }
+        });
   }
 
   @Logged(name = "Angle Applied Outputs", importance = Importance.INFO)
@@ -646,7 +663,7 @@ public class Swerve extends SubsystemBase {
 
   public double getCurrentSlowModeCoefficient(double elevatorHeight) {
     /* 0 to 1 value representing elevator position (0 is bottom, 1 is top) */
-    double elevatorHeightPercent = elevatorHeight / ElevatorConstants.forwardSoftLimit;
+    double elevatorHeightPercent = elevatorHeight / 55.0d;
 
     /* Don't limit at all if below some threshold */
     if (elevatorHeightPercent >= MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED) {

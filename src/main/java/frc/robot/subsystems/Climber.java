@@ -11,6 +11,8 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.ClosedLoopConfig.FeedbackSensor;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -65,6 +67,8 @@ public class Climber extends SubsystemBase {
 
     climberConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
+    climberConfig.softLimit.forwardSoftLimit(65).forwardSoftLimitEnabled(true);
+
     climberConfig.smartCurrentLimit(ClimberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
     // climberConfig
     // .softLimit
@@ -90,6 +94,18 @@ public class Climber extends SubsystemBase {
               "Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);
       SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
     }
+    SmartDashboard.putNumber("Climber/Climber Position", getClimberPosition());
+    SmartDashboard.putNumber("Climber/Climber Current", getClimberCurrent());
+  }
+
+  @Logged(name = "Climber Current", importance = Importance.INFO)
+  public double getClimberCurrent() {
+    return climbMotor.getOutputCurrent();
+  }
+
+  @Logged(name = "Climber Position", importance = Importance.INFO)
+  public double getClimberPosition() {
+    return climbMotor.getEncoder().getPosition();
   }
 
   public void findClimberZeroTick() {

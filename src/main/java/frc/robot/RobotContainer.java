@@ -10,7 +10,6 @@ import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -35,6 +34,8 @@ public class RobotContainer {
 
   Vision vision = new Vision();
   CoralScorer coralScorer = new CoralScorer();
+
+  @Logged(name = "Climber")
   Climber climber = new Climber();
 
   @Logged(name = "Elevator")
@@ -108,9 +109,11 @@ public class RobotContainer {
     operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
     // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
-    operator
-        .start()
-        .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
+    // operator
+    //     .start()
+    //     .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
+
+    operator.back().onTrue(drive.resetAllModulesAbsoluteCMD());
 
     operator
         .rightStick()
@@ -165,6 +168,7 @@ public class RobotContainer {
 
               // Set the resolution
               camera.setResolution(320, 240);
+              camera.setFPS(15);
 
               // Get a CvSink. This will capture Mats from the camera
               CvSink cvSink = CameraServer.getVideo();

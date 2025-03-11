@@ -27,7 +27,7 @@ public class AlignWithReefCMD extends Command {
     // Update with actual reef tag IDs
 
     // Distance from robot center to front bumper (meters)
-    static final double robotCenterToFrontDistance = -0.38;
+    static final double robotCenterToFrontDistance = -0.32;
 
     // Lateral offset from tag to coral (meters)
     static final double coralLeftOffset = -0.165; // Left coral Y offset (negative = left)

@@ -109,6 +109,8 @@ public class Robot extends TimedRobot {
     }
 
     WebServer.stop(5800);
+
+    m_robotContainer.drive.resetAllModulesAbsoluteCMD().schedule();
   }
 
   @Override
@@ -122,6 +124,7 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+    m_robotContainer.drive.resetAllModulesAbsoluteCMD().schedule();
   }
 
   @Override
@@ -133,6 +136,7 @@ public class Robot extends TimedRobot {
   @Override
   public void testInit() {
     CommandScheduler.getInstance().cancelAll();
+    m_robotContainer.drive.teleop = true;
   }
 
   @Override

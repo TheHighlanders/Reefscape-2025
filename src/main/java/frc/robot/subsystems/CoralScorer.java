@@ -33,6 +33,8 @@ public class CoralScorer extends SubsystemBase {
 
     SparkMaxConfig effectorConfig = effectorConfig();
 
+    effectorConfig.smartCurrentLimit(CoralScorerConstants.currentLimit);
+
     effector.configure(
         effectorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
