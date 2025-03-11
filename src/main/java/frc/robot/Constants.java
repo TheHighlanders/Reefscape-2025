@@ -11,6 +11,7 @@ import java.io.File;
 
 public class Constants {
   // Change to static
+  private static final AprilTagFields currentField = AprilTagFields.k2025ReefscapeAndyMark;
   protected static AprilTagFieldLayout fieldTags;
 
   // FL, FR, BL, BR
@@ -31,18 +32,20 @@ public class Constants {
   // Static initialization block - runs when the class is loaded
   static {
     // Initialize fieldTags
+    // JSON files here:
+    // https://github.com/wpilibsuite/allwpilib/blob/71b6e8ec583ab23c5de014ff899ec956f04096fd/apriltag/src/main/native/resources/edu/wpi/first/apriltag/2025-reefscape-andymark.json#L4
     try {
       fieldTags =
           new AprilTagFieldLayout(
               Filesystem.getDeployDirectory()
                   .toPath()
-                  .resolve("vision" + File.separator + "2025-reefscape.json"));
+                  .resolve("vision" + File.separator + currentField.m_resourceFile));
       System.out.println("Successfully loaded tag map");
     } catch (Exception e) {
       System.err.println("Failed to load custom tag map: " + e.getMessage());
       tagLoadFailureAlert.set(true);
       // Fall back to default field layout
-      fieldTags = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+      fieldTags = AprilTagFieldLayout.loadField(currentField);
     }
   }
 
