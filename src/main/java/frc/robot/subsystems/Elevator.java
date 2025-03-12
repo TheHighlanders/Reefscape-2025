@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import java.util.function.DoubleSupplier;
 
 class ElevatorConstants {
 
@@ -40,6 +41,7 @@ class ElevatorConstants {
   static final double l3Target = 28;
   static final double l4Target = 52.125;
   static final double algaeLow = 7;
+  static final double algaeHigh = 25;
 
   static final double coralBetweenReefOffset = 2;
 
@@ -63,7 +65,9 @@ public class Elevator extends SubsystemBase {
     L2_POSITION,
     L3_POSITION,
     L4_POSITION,
-    ALGAELOW
+    ALGAELOW,
+    ALGAEHIGH,
+    CURRENT
   }
 
   private SparkMax elevatorMotor;
@@ -72,6 +76,8 @@ public class Elevator extends SubsystemBase {
 
   double targetPosition;
   double positionOffset;
+
+  @Logged double trim;
 
   double arbFF;
   double antiSlamVoltageOffset;
@@ -132,6 +138,8 @@ public class Elevator extends SubsystemBase {
     elevatorEncoder = elevatorMotor.getEncoder();
 
     elevatorEncoder.setPosition(0);
+
+    trim = 0;
   }
 
   @Override
@@ -157,6 +165,7 @@ public class Elevator extends SubsystemBase {
     }
 
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
+    SmartDashboard.putNumber("Tuning/Elevator/Trim", trim);
 
     if (Constants.devMode) {
       SmartDashboard.putNumber("Tuning/Elevator/VoltagekF", arbFF);
@@ -180,25 +189,34 @@ public class Elevator extends SubsystemBase {
   public Command setPosition(ElevatorState position) {
     return Commands.runOnce(
         () -> {
-          uppydowny = position;
+          if (position != ElevatorState.CURRENT) {
+            uppydowny = position;
+          }
           switch (uppydowny) {
             case HOME:
               targetPosition = ElevatorConstants.homeTarget;
               break;
             case L2_POSITION:
-              targetPosition = ElevatorConstants.l2Target;
+              targetPosition = ElevatorConstants.l2Target + trim + positionOffset;
               break;
             case L3_POSITION:
-              targetPosition = ElevatorConstants.l3Target;
+              targetPosition = ElevatorConstants.l3Target + trim + positionOffset;
               break;
             case L4_POSITION:
-              targetPosition = ElevatorConstants.l4Target;
+              targetPosition = ElevatorConstants.l4Target + trim + positionOffset;
               break;
             case ALGAELOW:
-              targetPosition = ElevatorConstants.algaeLow;
+              targetPosition = ElevatorConstants.algaeLow + trim;
+              break;
+            case ALGAEHIGH:
+              targetPosition = ElevatorConstants.algaeHigh + trim;
+              break;
+            default:
+              targetPosition = ElevatorConstants.homeTarget;
+              break;
           }
           elevatorController.setReference(
-              targetPosition + positionOffset, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
+              targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
         });
   }
 
@@ -275,6 +293,14 @@ public class Elevator extends SubsystemBase {
     }
   }
 
+  public void trim(double trimAmount) {
+    trim = -trimAmount * 2;
+  }
+
+  public Command trimCMD(DoubleSupplier trimSup) {
+    return Commands.run(() -> trim(trimSup.getAsDouble()));
+  }
+
   public Command offsetElevator() {
     return Commands.startEnd(
         () -> {
@@ -295,6 +321,20 @@ public class Elevator extends SubsystemBase {
   @Logged(name = "Elevator at Home", importance = Importance.INFO)
   public boolean loggingElevatorHome() {
     return isAtHome(0.5);
+  }
+
+  public Command algaeCMD(DoubleSupplier algae) {
+    return runOnce(
+        () -> {
+          if (algae.getAsDouble() <= -0.5) {
+            setPosition(ElevatorState.ALGAEHIGH).schedule();
+            ;
+          } else if (algae.getAsDouble() >= 0.5) {
+            setPosition(ElevatorState.ALGAELOW).schedule();
+            ;
+          }
+          System.out.print(algae.getAsDouble());
+        });
   }
 
   @Logged(name = "Elevator at Setpoint", importance = Importance.INFO)

@@ -14,12 +14,14 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.commands.Align;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Vision;
+import frc.robot.utils.CommandXboxControllerSubsystem;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -27,8 +29,8 @@ import org.opencv.imgproc.Imgproc;
 
 public class RobotContainer {
 
-  CommandXboxController driver = new CommandXboxController(0);
-  CommandXboxController operator = new CommandXboxController(1);
+  public final CommandXboxControllerSubsystem driver = new CommandXboxControllerSubsystem(0);
+  public final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
@@ -36,11 +38,13 @@ public class RobotContainer {
   @Logged(name = "Elevator")
   Elevator elevator = new Elevator();
 
+  Vision[] cameras = {new Vision()};
+
   @Logged(name = "Swerve")
-  Swerve drive = new Swerve(elevator::getElevatorPosition);
+  Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
 
-  Autos autos = new Autos(drive, elevator, coralScorer);
-
+  Autos autos =
+      new Autos(drive, elevator, coralScorer, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
   public RobotContainer() {
@@ -61,19 +65,25 @@ public class RobotContainer {
     operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
     operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+    operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY));
+    operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator());
 
-    operator.leftBumper().onTrue(elevator.setPosition(ElevatorState.ALGAELOW));
-    operator.leftBumper().whileTrue(elevator.offsetElevator());
+    // operator.leftBumper().whileTrue(elevator.offsetElevator());
+    operator.leftStick().whileTrue(coralScorer.manualIntakeCMD());
 
     driver.start().whileTrue(elevator.zeroElevator());
     driver.povRight().onTrue(drive.resetGyro());
 
     driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
     driver.a().whileTrue(coralScorer.reverseCommand());
-    driver.rightBumper().whileTrue(coralScorer.manualIntakeCMD());
+
+    driver.x().onTrue(drive.pointWheelsInXPattern());
 
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
+
+    driver.leftBumper().whileTrue(alignToLeftCoral());
+    driver.rightBumper().whileTrue(alignToRightCoral());
 
     operator
         .povDown()
@@ -87,16 +97,22 @@ public class RobotContainer {
         .or(operator.povUpRight())
         .whileTrue(climber.createClimbInCommand());
     operator.povRight().onTrue(climber.holdClimbPosition());
-    operator.povLeft().whileTrue(climber.createClimbInSlowCommand());
 
-    operator.start().toggleOnTrue(drive.pointWheelsForward());
-    operator.back().whileTrue(drive.pidTuningJogAngle());
+    // operator.start().toggleOnTrue(drive.pointWheelsForward());
+    // operator.back().whileTrue(drive.pidTuningJogAngle());
     operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
     // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
     operator
-        .rightStick()
+        .start()
         .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
+
+    operator
+        .rightStick()
+        .whileTrue(
+            elevator
+                .trimCMD(operator::getRightY)
+                .andThen(elevator.setPosition(ElevatorState.CURRENT)));
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
@@ -107,7 +123,11 @@ public class RobotContainer {
     chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
     chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
     chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
-
+    chooser.addRoutine("Center 1 & Left", autos::CenterOnePieceAndLeftStation);
+    chooser.addRoutine("Center 1 & Right", autos::CenterOnePieceAndRightStation);
+    chooser.addRoutine("Center 1 & dingus", autos::CenterOnePieceAndDislodge);
+    chooser.addRoutine("Three piece left", autos::ThreePieceLeft);
+    chooser.addRoutine("Three piece right", autos::ThreePieceRight);
     if (Constants.devMode) {
       chooser.addCmd("SYSID", drive::sysId);
       chooser.addCmd(
@@ -129,6 +149,14 @@ public class RobotContainer {
     return chooser.selectedCommand();
   }
 
+  public Command alignToRightCoral() {
+    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+  }
+
+  public Command alignToLeftCoral() {
+    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+  }
+
   private void cameraSetUp() {
 
     Thread m_visionThread;
@@ -136,7 +164,6 @@ public class RobotContainer {
     m_visionThread =
         new Thread(
             () -> {
-
               // Get the UsbCamera from CameraServer
               UsbCamera camera = CameraServer.startAutomaticCapture();
 
@@ -153,12 +180,9 @@ public class RobotContainer {
               Mat mat = new Mat();
               while (!Thread.interrupted()) {
                 if (cvSink.grabFrame(mat) == 0) {
-                  // Send the output the error.
                   outputStream.notifyError(cvSink.getError());
-                  // skip the rest of the current iteration
                   continue;
                 }
-
                 // Put a rectangle on the image
                 Imgproc.rectangle(
                     mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);

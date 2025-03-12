@@ -18,9 +18,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.subsystems.LEDs;
+import org.littletonrobotics.urcl.URCL;
 
 @Logged
 public class Robot extends TimedRobot {
+  private boolean zeroedCANCoders = false;
 
   private Command m_autonomousCommand;
 
@@ -36,7 +38,7 @@ public class Robot extends TimedRobot {
     m_robotContainer = new RobotContainer();
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
     DataLogManager.start();
-
+    URCL.start(DataLogManager.getLog());
     /*
      * https://docs.wpilib.org/en/stable/docs/software/telemetry/robot-telemetry-
      * with-annotations.html
@@ -62,9 +64,13 @@ public class Robot extends TimedRobot {
           config.minimumImportance = Logged.Importance.DEBUG;
         });
     DriverStation.startDataLog(DataLogManager.getLog());
-    Epilogue.bind(this);
 
     SmartDashboard.putData(CommandScheduler.getInstance());
+  }
+
+  @Override
+  public void robotInit() {
+    Epilogue.bind(this);
   }
 
   @Override
@@ -86,7 +92,9 @@ public class Robot extends TimedRobot {
     if (loops % 50 == 0) {
       loops = 0;
     } else if (loops % 25 == 0) {
-      m_robotContainer.drive.attemptZeroingAbsolute();
+      if (!zeroedCANCoders) {
+        zeroedCANCoders = m_robotContainer.drive.attemptZeroingAbsolute();
+      }
     }
     if (loops % 50 == 37) {
       if (Constants.devMode) {

@@ -83,10 +83,8 @@ public class Climber extends SubsystemBase {
   }
 
   public void periodic() {
-
-    SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
-
     if (Constants.devMode) {
+      SmartDashboard.putNumber("Climber/ClimberPosition", climbMotor.getEncoder().getPosition());
       climberHoldVoltage =
           SmartDashboard.getNumber(
               "Climber/ClimberHoldVoltage", ClimberConstants.climberHoldVoltage);

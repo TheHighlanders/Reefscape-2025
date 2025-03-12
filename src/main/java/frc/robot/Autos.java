@@ -13,6 +13,7 @@ import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
+import java.util.function.Supplier;
 
 /** Add your docs here. */
 public class Autos {
@@ -20,8 +21,15 @@ public class Autos {
   Swerve drive;
   Elevator elevator;
   CoralScorer coral;
+  Supplier<Command> alignToLeftCoral;
+  Supplier<Command> alignToRightCoral;
 
-  public Autos(Swerve drive, Elevator elevator, CoralScorer coral) {
+  public Autos(
+      Swerve drive,
+      Elevator elevator,
+      CoralScorer coral,
+      Supplier<Command> alignToLeftCoral,
+      Supplier<Command> alignToRightCoral) {
     autoFactory =
         new AutoFactory(
             drive::getPose, // A function that returns the current robot pose
@@ -35,6 +43,8 @@ public class Autos {
     this.drive = drive;
     this.elevator = elevator;
     this.coral = coral;
+    this.alignToLeftCoral = alignToLeftCoral;
+    this.alignToRightCoral = alignToRightCoral;
   }
 
   public Command testTraj() {
@@ -85,24 +95,47 @@ public class Autos {
         .active()
         .onTrue(Commands.sequence(leftStartToleftFar.resetOdometry(), leftStartToleftFar.cmd()));
 
+    // leftStartToleftFar
+    // .atTime("WAIT")
+    // .onTrue(Commands.waitSeconds(5));
     leftStartToleftFar
         .done()
         .onTrue(
-            elevator
-                .elevatorAuto(ElevatorState.L4_POSITION)
-                .andThen(coral.depositCMD().withTimeout(.5))
-                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
-                .andThen(leftFarToleftStation.cmd())); // move elevator then score coral
+            Commands.waitSeconds(.5)
+                .andThen(
+                    alignToLeftCoral
+                        .get()
+                        .withTimeout(1)
+                        .andThen(
+                            elevator
+                                .elevatorAuto(ElevatorState.L4_POSITION)
+                                .andThen(coral.depositCMD().withTimeout(.5))
+                                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+                                .andThen(leftFarToleftStation.cmd())))); // move
+    // elevator
+    // then
+    // score
+    // coral
 
     leftFarToleftStation
         .done()
         .onTrue(Commands.waitSeconds(2).andThen(leftStationToleftClose.cmd()));
 
+    // leftStationToleftClose
+    // .atTime("WAIT")
+    // .onTrue(elevator.elevatorAuto(ElevatorState.HOME).withTimeout(1));
+
     leftStationToleftClose
         .done()
         .onTrue(
-            elevator.elevatorAuto(ElevatorState.L4_POSITION)
-            /* .andThen(coral.depositCMD().withTimeout(.5)) */ ); // move elevator then score coral
+            Commands.waitSeconds(.5)
+                .andThen(
+                    alignToLeftCoral
+                        .get()
+                        .withTimeout(1)
+                        .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))));
+    /* .andThen(coral.depositCMD().withTimeout(.5)) */
+    // move elevator then score coral
 
     return routine;
   }
@@ -118,13 +151,27 @@ public class Autos {
         .active()
         .onTrue(Commands.sequence(rightStart_rightFar.resetOdometry(), rightStart_rightFar.cmd()));
 
+    // rightStart_rightFar
+    // .atTime("WAIT")
+    // .onTrue(Commands.waitSeconds(5));
+
     rightStart_rightFar
         .done()
         .onTrue(
-            elevator
-                .elevatorAuto(ElevatorState.L4_POSITION)
-                .andThen(coral.depositCMD().withTimeout(.5))
-                .andThen(rightFar_rightStation.cmd())); // move elevator then score coral
+            Commands.waitSeconds(.5)
+                .andThen(
+                    alignToRightCoral
+                        .get()
+                        .withTimeout(1)
+                        .andThen(
+                            elevator
+                                .elevatorAuto(ElevatorState.L4_POSITION)
+                                .andThen(coral.depositCMD().withTimeout(.5))
+                                .andThen(rightFar_rightStation.cmd())))); // move
+    // elevator
+    // then
+    // score
+    // coral
 
     rightFar_rightStation
         .done()
@@ -134,12 +181,23 @@ public class Autos {
                 .andThen(coral.intakeCMD().withTimeout(1))
                 .andThen(rightStation_rightClose.cmd()));
 
+    // rightStation_rightClose
+    // .atTime("WAIT")
+    // .onTrue(Commands.waitSeconds(5));
+
     rightStation_rightClose
         .done()
         .onTrue(
-            elevator.elevatorAuto(ElevatorState.L4_POSITION)
-            // .andThen(coral.depositCMD().withTimeout(.5))
-            ); // move elevator then score coral
+            Commands.waitSeconds(.5)
+                .andThen(
+                    alignToRightCoral
+                        .get()
+                        .withTimeout(1)
+                        .andThen(
+                            elevator.elevatorAuto(ElevatorState.L4_POSITION)
+                            // .andThen(coral.depositCMD().withTimeout(.5))
+                            ))); // move elevator
+    // then score coral
 
     return routine;
   }
@@ -165,39 +223,259 @@ public class Autos {
                 .elevatorAuto(ElevatorState.L4_POSITION)
                 .andThen(Commands.waitSeconds(0.5))
                 .andThen(coral.slowDepositCMD().withTimeout(3))
-                .andThen(
-                    elevator.elevatorAuto(ElevatorState.HOME))); // move elevator then score coral
+                .andThen(elevator.elevatorAuto(ElevatorState.HOME)));
 
     return routine;
   }
 
-  // public AutoRoutine CenterOnePieceToStation() { // the one piece is real :>
-  //   AutoRoutine routine = autoFactory.newRoutine("CenterOnePieceToStation");
+  public AutoRoutine CenterOnePieceAndLeftStation() { // the one piece is real :>
+    AutoRoutine routine = autoFactory.newRoutine("CenterOnePieceAndLeftStation");
 
-  //   AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");
-  //   AutoTrajectory centerStart_centerFar_left =
-  // routine.trajectory("centerStart-centerFar-Left-station");
-  //   routine
-  //       .active()
-  //       .onTrue(
-  //           Commands.sequence(
-  //               centerStart_centerFar.resetOdometry(),
-  //               // drive.presetWheelsToTraj((SwerveSample)
-  //               // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
-  //               centerStart_centerFar.cmd()));
+    AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");
+    AutoTrajectory centerStart_centerFar_Left_station =
+        routine.trajectory("centerStart-centerFar-Left-station");
 
-  //   centerStart_centerFar
-  //       .done()
-  //       .onTrue(
-  //           elevator
-  //               .elevatorAuto(ElevatorState.L4_POSITION)
-  //               .andThen(Commands.waitSeconds(0.5))
-  //               .andThen(coral.slowDepositCMD().withTimeout(3))
-  //               .andThen(
-  //                   elevator.elevatorAuto(ElevatorState.HOME)
-  //                       .andThen(centerStart_centerFar_left.cmd())));
-  //   return routine;
-  // }
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                centerStart_centerFar.resetOdometry(),
+                // drive.presetWheelsToTraj((SwerveSample)
+                // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+
+                centerStart_centerFar.cmd()));
+
+    centerStart_centerFar
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(coral.slowDepositCMD().withTimeout(3))
+                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+                .andThen(centerStart_centerFar_Left_station.cmd())); // move
+    // elevator
+    // then score
+    // coral
+    return routine;
+  }
+
+  public AutoRoutine CenterOnePieceAndRightStation() { // the one piece is real :>
+    AutoRoutine routine = autoFactory.newRoutine("CenterOnePieceAndRightStation");
+
+    AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");
+    AutoTrajectory centerStart_centerFar_right_station =
+        routine.trajectory("centerStart-centerFar-right-station");
+
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                centerStart_centerFar.resetOdometry(),
+                // drive.presetWheelsToTraj((SwerveSample)
+                // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+
+                centerStart_centerFar.cmd()));
+
+    centerStart_centerFar
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(coral.slowDepositCMD().withTimeout(3))
+                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+                .andThen(centerStart_centerFar_right_station.cmd())); // move
+    // elevator
+    // then score
+    // coral
+
+    return routine;
+  }
+
+  public AutoRoutine CenterOnePieceAndDislodge() { // the one piece is real :>
+    AutoRoutine routine = autoFactory.newRoutine("Center-dingus");
+
+    AutoTrajectory CD1 = routine.trajectory("Center-dingus-one");
+    AutoTrajectory CD2 = routine.trajectory("Center-dingus-two");
+    AutoTrajectory CD3 = routine.trajectory("Center-dingus-three");
+
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                CD1.resetOdometry(),
+                // drive.presetWheelsToTraj((SwerveSample)
+                // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+                CD1.cmd()));
+
+    CD1.done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(coral.slowDepositCMD().withTimeout(3))
+                .andThen(CD2.cmd()));
+    CD2.done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.ALGAELOW)
+                .andThen(Commands.waitSeconds(2).andThen(CD3.cmd())));
+    CD3.done().onTrue(elevator.elevatorAuto(ElevatorState.HOME).andThen(Commands.waitSeconds(1)));
+    return routine;
+  }
+
+  public AutoRoutine ThreePieceLeft() { // the one piece is real :>
+    AutoRoutine routine = autoFactory.newRoutine("ThreePieceLeft");
+
+    AutoTrajectory centerStartTocenterFar = routine.trajectory("centerStart-centerFar");
+    AutoTrajectory centerStarttoLeftStation =
+        routine.trajectory("centerStart-centerFar-Left-station");
+    AutoTrajectory LeftStationleftFar = routine.trajectory("leftStation-leftFar");
+    AutoTrajectory leftFarToLeftStation = routine.trajectory("leftFar-leftStation");
+    AutoTrajectory LeftStationToLeftClose = routine.trajectory("leftStation-leftClose");
+
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                centerStartTocenterFar.resetOdometry(),
+                // drive.presetWheelsToTraj((SwerveSample)
+                // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+                centerStartTocenterFar.cmd()));
+
+    centerStartTocenterFar
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(
+                    coral
+                        .slowDepositCMD()
+                        .withTimeout(2.5)
+                        .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+                        .andThen(centerStarttoLeftStation.cmd())));
+
+    centerStarttoLeftStation
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.HOME)
+                .andThen(coral.intakeCMD().withTimeout(1))
+                .andThen(LeftStationleftFar.cmd()));
+
+    LeftStationleftFar.done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(
+                    coral
+                        .slowDepositCMD()
+                        .withTimeout(2.5)
+                        .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+                        .andThen(leftFarToLeftStation.cmd())));
+
+    leftFarToLeftStation
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.HOME)
+                .andThen(coral.intakeCMD().withTimeout(1))
+                .andThen(LeftStationleftFar.cmd()));
+
+    LeftStationToLeftClose.done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(
+                    coral
+                        .slowDepositCMD()
+                        .withTimeout(2.5)
+                        .andThen(elevator.elevatorAuto(ElevatorState.HOME))));
+
+    return routine;
+  }
+
+  public AutoRoutine ThreePieceRight() { // the one piece is real :>
+    AutoRoutine routine = autoFactory.newRoutine("ThreePieceLeft");
+
+    AutoTrajectory centerStartTocenterFar = routine.trajectory("centerStart-centerFar");
+    AutoTrajectory centerFarToRightStation =
+        routine.trajectory("centerStart-centerFar-Right-station");
+    AutoTrajectory rightStationToRightFar = routine.trajectory("rightStation-rightFar");
+    AutoTrajectory rightFarToRightStation = routine.trajectory("rightFar-rightStation");
+    AutoTrajectory rightStationToRightClose = routine.trajectory("rightStation-rightClose");
+
+    routine
+        .active()
+        .onTrue(
+            Commands.sequence(
+                centerStartTocenterFar.resetOdometry(),
+                // drive.presetWheelsToTraj((SwerveSample)
+                // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
+                centerStartTocenterFar.cmd()));
+
+    centerStartTocenterFar
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(
+                    coral
+                        .slowDepositCMD()
+                        .withTimeout(2.5)
+                        .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+                        .andThen(centerFarToRightStation.cmd())));
+
+    centerFarToRightStation
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.HOME)
+                .andThen(coral.intakeCMD().withTimeout(1))
+                .andThen(rightStationToRightFar.cmd()));
+
+    rightStationToRightFar
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(
+                    coral
+                        .slowDepositCMD()
+                        .withTimeout(2.5)
+                        .andThen(
+                            elevator
+                                .elevatorAuto(ElevatorState.HOME)
+                                .andThen(rightFarToRightStation.cmd()))));
+
+    rightFarToRightStation
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.HOME)
+                .andThen(coral.intakeCMD().withTimeout(1))
+                .andThen(rightStationToRightClose.cmd()));
+
+    rightStationToRightClose
+        .done()
+        .onTrue(
+            elevator
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .andThen(Commands.waitSeconds(0.5))
+                .andThen(
+                    coral
+                        .slowDepositCMD()
+                        .withTimeout(2.5)
+                        .andThen(elevator.elevatorAuto(ElevatorState.HOME))));
+
+    return routine;
+  }
 
   public Command updateTrajectoryPIDCMD() {
     return Commands.runOnce(drive::updateTrajectoryPID);
@@ -217,4 +495,6 @@ public class Autos {
   public Command testSequenceCommand() {
     return Commands.sequence(drive.driveForwardTimed(1.5, 1.5));
   }
+
+  private void emptyConsumer(double x) {}
 }
