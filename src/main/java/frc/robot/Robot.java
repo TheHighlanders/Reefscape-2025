@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.FileBackend;
@@ -98,7 +100,7 @@ public class Robot extends TimedRobot {
       }
     }
     loops++;
-
+    leds.runPattern(LEDPattern.rainbow(255, 128));
     
   }
 

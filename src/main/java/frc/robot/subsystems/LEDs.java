@@ -34,12 +34,14 @@ public class LEDs extends SubsystemBase {
     // the last command to run will continue to be displayed.
     // Note: Other default patterns could be used instead!
     setDefaultCommand(runPattern(LEDPattern.solid(Color.kBlack)).withName("Off"));
+    
   }
 
   @Override
   public void periodic() {
     // Periodically send the latest LED color data to the LED strip for it to display
     m_led.setData(m_buffer);
+
   }
 
   /**
