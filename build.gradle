@@ -10,6 +10,8 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
+version = '1.0.0'
+
 def ROBOT_MAIN_CLASS = "frc.robot.Main"
 
 // Define my targets (RoboRIO) and artifacts (deployable files)
