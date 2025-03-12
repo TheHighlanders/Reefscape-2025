@@ -6,16 +6,14 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import java.util.function.BooleanSupplier;
-import java.util.function.DoubleConsumer;
 
 class AutoAlignConstants {
-  // IDs of AprilTags on the reef are defined in Vision.java
-
   // Distance from robot center to front bumper (meters)
   public static final double ROBOT_CENTER_TO_FRONT_DISTANCE = -0.38;
 
@@ -59,7 +57,6 @@ public class AutoAlign {
    */
   public static Pose2d calculateReefTargetPose(
       Pose2d tagPose, boolean targetRightCoral, double ejectorOffset) {
-
     // Use default ejector offset if not specified
     if (ejectorOffset == 0) {
       ejectorOffset = AutoAlignConstants.DEFAULT_EJECTOR_OFFSET;
@@ -120,21 +117,12 @@ public class AutoAlign {
    * @param vision The vision subsystem
    * @param targetRightCoralSupplier Supplies whether to target right coral (true) or left coral
    *     (false)
-   * @param vibrate Optional controller vibration function
    * @return Command to align with reef coral
    */
   public static Command alignWithReef(
-      Swerve swerve,
-      Vision vision,
-      BooleanSupplier targetRightCoralSupplier,
-      DoubleConsumer vibrate) {
-
+      Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier) {
     return alignWithReef(
-        swerve,
-        vision,
-        targetRightCoralSupplier,
-        vibrate,
-        AutoAlignConstants.DEFAULT_EJECTOR_OFFSET);
+        swerve, vision, targetRightCoralSupplier, AutoAlignConstants.DEFAULT_EJECTOR_OFFSET);
   }
 
   /**
@@ -144,7 +132,6 @@ public class AutoAlign {
    * @param vision The vision subsystem
    * @param targetRightCoralSupplier Supplies whether to target right coral (true) or left coral
    *     (false)
-   * @param vibrate Optional controller vibration function
    * @param customEjectorOffset Custom ejector offset to use
    * @return Command to align with reef coral
    */
@@ -152,9 +139,7 @@ public class AutoAlign {
       Swerve swerve,
       Vision vision,
       BooleanSupplier targetRightCoralSupplier,
-      DoubleConsumer vibrate,
       double customEjectorOffset) {
-
     // Create PID controllers for motion
     PIDController xController =
         new PIDController(
@@ -178,42 +163,80 @@ public class AutoAlign {
     final boolean[] targetRightCoral = new boolean[1];
     final Pose2d[] closestReefTagPose = new Pose2d[1];
     final Pose2d[] targetPose = new Pose2d[1];
-    final boolean[] hasTargetTagOnInit = new boolean[1];
+    final boolean[] hasTargetTag = new boolean[1];
 
     return Commands.sequence(
-        // Initialize
+        // Initialize alignment
         Commands.runOnce(
             () -> {
-              if (vibrate != null) {
-                vibrate.accept(0.5);
-              }
+              // Determine if we have a valid tag
+              hasTargetTag[0] = vision.hasTarget();
 
-              hasTargetTagOnInit[0] = vision.hasTarget();
+              SmartDashboard.putBoolean("Alignment/Has Vision Target", hasTargetTag[0]);
 
-              // Reset odometry using vision if available
-              if (hasTargetTagOnInit[0]) {
-                var estRobotPose = vision.getEstimatedRobotPose();
-                if (estRobotPose.isPresent()) {
-                  swerve.resetOdometry(estRobotPose.get().estimatedPose.toPose2d());
-                }
-              }
-
-              // Determine target side and find closest reef tag
+              // Determine target side
               targetRightCoral[0] = targetRightCoralSupplier.getAsBoolean();
-              closestReefTagPose[0] = vision.findClosestReefTag(swerve.getPose());
 
-              // Calculate target pose
-              targetPose[0] =
-                  calculateReefTargetPose(
-                      closestReefTagPose[0], targetRightCoral[0], customEjectorOffset);
+              // Find closest reef tag if we have vision
+              if (hasTargetTag[0]) {
+                closestReefTagPose[0] = vision.findClosestReefTag(swerve.getPose());
+
+                // Calculate target pose
+                targetPose[0] =
+                    calculateReefTargetPose(
+                        closestReefTagPose[0], targetRightCoral[0], customEjectorOffset);
+
+                SmartDashboard.putNumber("Alignment/Target X", targetPose[0].getX());
+                SmartDashboard.putNumber("Alignment/Target Y", targetPose[0].getY());
+                SmartDashboard.putNumber(
+                    "Alignment/Target Rot", targetPose[0].getRotation().getDegrees());
+              } else {
+                // If no vision target, use current pose and assume facing tag
+                Pose2d currentPose = swerve.getPose();
+                targetPose[0] = currentPose;
+
+                SmartDashboard.putString("Alignment/Status", "No vision target found");
+              }
             }),
 
-        // Execute alignment
+        // Wait until we have a valid target
+        Commands.waitUntil(() -> hasTargetTag[0] && targetPose[0] != null),
+
+        // Drive to target pose
         Commands.run(
                 () -> {
+                  // Get current pose
                   Pose2d currentPose = swerve.getPose();
 
-                  // Calculate control outputs
+                  // Try to update target pose if tag changes
+                  if (vision.hasTarget()) {
+                    Pose2d newClosestTag = vision.findClosestReefTag(currentPose);
+                    if (closestReefTagPose[0] == null
+                        || newClosestTag
+                                .getTranslation()
+                                .getDistance(closestReefTagPose[0].getTranslation())
+                            > 0.1) {
+                      closestReefTagPose[0] = newClosestTag;
+                      targetPose[0] =
+                          calculateReefTargetPose(
+                              closestReefTagPose[0], targetRightCoral[0], customEjectorOffset);
+                    }
+                  }
+
+                  // Calculate error
+                  double xError = targetPose[0].getX() - currentPose.getX();
+                  double yError = targetPose[0].getY() - currentPose.getY();
+                  double rotError =
+                      currentPose.getRotation().minus(targetPose[0].getRotation()).getRadians();
+
+                  // Log alignment data
+                  SmartDashboard.putNumber("Alignment/X Error", xError);
+                  SmartDashboard.putNumber("Alignment/Y Error", yError);
+                  SmartDashboard.putNumber("Alignment/Rotation Error", rotError);
+                  SmartDashboard.putBoolean(
+                      "Alignment/At Target", isAtTargetPose(currentPose, targetPose[0]));
+
+                  // Calculate robot-relative speeds
                   double xSpeed = xController.calculate(currentPose.getX(), targetPose[0].getX());
                   double ySpeed = yController.calculate(currentPose.getY(), targetPose[0].getY());
                   double rotSpeed =
@@ -221,57 +244,49 @@ public class AutoAlign {
                           currentPose.getRotation().getRadians(),
                           targetPose[0].getRotation().getRadians());
 
-                  // Clamp speeds to limits
+                  // Apply speed limits
                   xSpeed =
                       MathUtil.clamp(
                           xSpeed,
                           -AutoAlignConstants.MAX_APPROACH_SPEED,
                           AutoAlignConstants.MAX_APPROACH_SPEED);
-
                   ySpeed =
                       MathUtil.clamp(
                           ySpeed,
                           -AutoAlignConstants.MAX_APPROACH_SPEED,
                           AutoAlignConstants.MAX_APPROACH_SPEED);
-
                   rotSpeed =
                       MathUtil.clamp(
                           rotSpeed,
                           -AutoAlignConstants.MAX_ROTATION_SPEED,
                           AutoAlignConstants.MAX_ROTATION_SPEED);
 
-                  // Drive robot with calculated speeds
-                  swerve.driveChassisSpeedsRobotRelative(
+                  // Drive the robot with field-relative speeds
+                  ChassisSpeeds speeds =
                       ChassisSpeeds.fromFieldRelativeSpeeds(
-                          -xSpeed, -ySpeed, -rotSpeed, swerve.getPose().getRotation()));
-                })
-            .until(
-                () -> {
-                  // Check if we're at the target or if we had no vision target at start and moved
-                  // too far
-                  Pose2d currentPose = swerve.getPose();
-                  double distanceToTarget =
-                      currentPose.getTranslation().getDistance(targetPose[0].getTranslation());
+                          xSpeed, ySpeed, rotSpeed, currentPose.getRotation());
 
-                  // Abort if too far or no initial vision target
-                  if (distanceToTarget > 1.5 || !hasTargetTagOnInit[0]) {
-                    return true;
-                  }
+                  swerve.driveChassisSpeedsRobotRelative(speeds);
+                },
+                swerve)
+            // This will run until interrupted when the condition below is met
+            .finallyDo(
+                interrupted -> {
+                  // Stop swerve drive
+                  swerve.driveChassisSpeedsRobotRelative(new ChassisSpeeds());
 
-                  // Check if at target position and rotation
-                  return isAtTargetPose(currentPose, targetPose[0]);
+                  // Prevent resource leaks
+                  xController.close();
+                  yController.close();
+                  rotController.close();
                 }),
 
-        // End - stop driving
-        Commands.runOnce(
+        // End the command when at target pose
+        Commands.waitUntil(
             () -> {
-              xController.close();
-              yController.close();
-              rotController.close();
-              swerve.stopDrive();
-              if (vibrate != null) {
-                vibrate.accept(0.1);
-              }
+              Pose2d currentPose = swerve.getPose();
+
+              return isAtTargetPose(currentPose, targetPose[0]);
             }));
   }
 }

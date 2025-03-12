@@ -4,11 +4,9 @@
 
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volt;
-import static edu.wpi.first.units.Units.Volts;
+// spotless:off
+import static frc.robot.subsystems.ElevatorConstants.forwardSoftLimit;
+// spotless:on
 
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
@@ -756,7 +754,7 @@ public class Swerve extends SubsystemBase {
 
   public double getCurrentSlowModeCoefficient(double elevatorHeight) {
     /* 0 to 1 value representing elevator position (0 is bottom, 1 is top) */
-    double elevatorHeightPercent = elevatorHeight / ElevatorConstants.forwardSoftLimit;
+    double elevatorHeightPercent = elevatorHeight / forwardSoftLimit;
 
     /* Don't limit at all if below some threshold */
     if (elevatorHeightPercent >= MIN_HEIGHT_PERCENTAGE_TO_LIMIT_SPEED) {

@@ -11,17 +11,17 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
+import frc.robot.utils.AutoAlign;
+import frc.robot.utils.CommandXboxControllerSubsystem;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -29,8 +29,8 @@ import org.opencv.imgproc.Imgproc;
 
 public class RobotContainer {
 
-  CommandXboxController driver = new CommandXboxController(0);
-  CommandXboxController operator = new CommandXboxController(1);
+  public final CommandXboxControllerSubsystem driver = new CommandXboxControllerSubsystem(0);
+  public final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
 
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
@@ -150,26 +150,13 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    // return AutoAlign.alignWithReef(
-    // drive,
-    // vision,
-    // () -> true,
-    // (v) -> {
-    // driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, v);
-    // });
-    return Commands.print("Not implemented");
+    Command alignCommand = AutoAlign.alignWithReef(drive, cameras[0], () -> true);
+    return alignCommand.finallyDo(interrupted -> driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
   }
 
   public Command alignToLeftCoral() {
-    // return AutoAlign.alignWithReef(
-    // drive,
-    // vision,
-    // () -> false,
-    // (v) -> {
-    // driver.getHID().setRumble(GenericHID.RumbleType.kBothRumble, v);
-    // });
-
-    return Commands.print("Not implemented");
+    Command alignCommand = AutoAlign.alignWithReef(drive, cameras[0], () -> false);
+    return alignCommand.finallyDo(interrupted -> driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
   }
 
   private void cameraSetUp() {
@@ -179,7 +166,6 @@ public class RobotContainer {
     m_visionThread =
         new Thread(
             () -> {
-
               // Get the UsbCamera from CameraServer
               UsbCamera camera = CameraServer.startAutomaticCapture();
 
@@ -196,12 +182,9 @@ public class RobotContainer {
               Mat mat = new Mat();
               while (!Thread.interrupted()) {
                 if (cvSink.grabFrame(mat) == 0) {
-                  // Send the output the error.
                   outputStream.notifyError(cvSink.getError());
-                  // skip the rest of the current iteration
                   continue;
                 }
-
                 // Put a rectangle on the image
                 Imgproc.rectangle(
                     mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
@@ -213,13 +196,5 @@ public class RobotContainer {
 
     m_visionThread.setDaemon(true);
     m_visionThread.start();
-  }
-
-  public void vibrateDriverController(double length) {
-    Commands.startEnd(
-            () -> driver.setRumble(RumbleType.kBothRumble, 1),
-            () -> driver.setRumble(RumbleType.kBothRumble, 0))
-        .withTimeout(length)
-        .schedule();
   }
 }
