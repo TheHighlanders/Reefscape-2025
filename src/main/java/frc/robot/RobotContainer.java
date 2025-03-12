@@ -11,9 +11,7 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -26,7 +24,6 @@ import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
-import frc.robot.subsystems.LEDs;
 
 
 
@@ -37,7 +34,7 @@ public class RobotContainer {
 
 
 
-  LEDs leds = new LEDs();
+
 
   
 
@@ -74,7 +71,6 @@ public class RobotContainer {
     operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
     operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
 
-    operator.b().onTrue((leds.runPattern(LEDPattern.rainbow(255, 128))));
 
 
     operator.leftBumper().onTrue(elevator.setPosition(ElevatorState.ALGAELOW));

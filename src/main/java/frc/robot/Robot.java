@@ -4,7 +4,7 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
+
 
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
@@ -17,7 +17,6 @@ import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.subsystems.LEDs;
@@ -36,6 +35,8 @@ public class Robot extends TimedRobot {
   private double loops = 0;
 
   public Robot() {
+
+    leds = new LEDs();
     m_robotContainer = new RobotContainer();
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
     DataLogManager.start();

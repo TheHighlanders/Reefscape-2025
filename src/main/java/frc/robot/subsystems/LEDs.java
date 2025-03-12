@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems;
 
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.LEDPattern;
@@ -16,7 +15,7 @@ public class LEDs extends SubsystemBase {
   /** Creates a new LEDs. */
 
 
-  private static final int kPort = 9;
+  private static final int kPort = 10;
   private static final int kLength = 120;
 
   private final AddressableLED m_led;
