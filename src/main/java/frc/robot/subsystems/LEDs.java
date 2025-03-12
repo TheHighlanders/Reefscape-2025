@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.AddressableLED;
+import edu.wpi.first.wpilibj.AddressableLED.ColorOrder;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.util.Color;
@@ -13,9 +14,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class LEDs extends SubsystemBase {
   /** Creates a new LEDs. */
+  private static final int kPort = 9;
 
-
-  private static final int kPort = 10;
   private static final int kLength = 120;
 
   private final AddressableLED m_led;
@@ -27,20 +27,19 @@ public class LEDs extends SubsystemBase {
     m_buffer = new AddressableLEDBuffer(kLength);
     m_led.setLength(kLength);
     m_led.start();
-    
+    m_led.setColorOrder(ColorOrder.kRGB);
 
     // Set the default command to turn the strip off, otherwise the last colors written by
     // the last command to run will continue to be displayed.
     // Note: Other default patterns could be used instead!
-    setDefaultCommand(runPattern(LEDPattern.solid(Color.kBlack)).withName("Off"));
-    
+    setDefaultCommand(
+        runPattern(LEDPattern.solid(Color.kRed)).withName("Red").ignoringDisable(true));
   }
 
   @Override
   public void periodic() {
     // Periodically send the latest LED color data to the LED strip for it to display
     m_led.setData(m_buffer);
-
   }
 
   /**

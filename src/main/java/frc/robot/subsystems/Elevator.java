@@ -27,11 +27,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
-
-
 class ElevatorConstants {
-
-
 
   static final int elevMotorID = 41;
 

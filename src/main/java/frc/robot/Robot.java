@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-
-
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.logging.FileBackend;
@@ -21,11 +19,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.subsystems.LEDs;
 
-
 @Logged
 public class Robot extends TimedRobot {
 
-  
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
@@ -102,7 +98,6 @@ public class Robot extends TimedRobot {
     }
     loops++;
     leds.runPattern(LEDPattern.rainbow(255, 128));
-    
   }
 
   @Override
@@ -134,8 +129,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-   // leds.runPattern((LEDPattern.solid(Color.kBlack)));
-    leds.runPattern(LEDPattern.rainbow(255, 128));
+    // leds.runPattern((LEDPattern.solid(Color.kBlack)));
+    // leds.runPattern(LEDPattern.rainbow(255, 128));
   }
 
   @Override
