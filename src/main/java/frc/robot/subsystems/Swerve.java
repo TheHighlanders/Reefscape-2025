@@ -20,7 +20,6 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -47,6 +46,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Constants;
+import frc.robot.utils.DirectionalSlewRateLimiter2D;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
@@ -67,7 +67,15 @@ final class SwerveConstants {
   static final double maxSpeed = Constants.maxSpeed;
   // Implict /sec
 
+  // spotless:off
   static final double accelLim = 3;
+  static final double[] accelLims = new double[] {
+      accelLim, // forward rate limit (normal)
+      accelLim, // backward rate limit (normal)
+      accelLim * 0.6, // left rate limit (reduced to 60%)
+      accelLim // right rate limit (normal)
+  };
+  // spotless:on
 
   static final double headingCorrectionDeadband = 0.05;
 
@@ -113,9 +121,9 @@ public class Swerve extends SubsystemBase {
   SwerveDrivePoseEstimator poseEst;
   SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
-  double accelLim = SwerveConstants.accelLim;
-  SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
-  SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
+
+  DirectionalSlewRateLimiter2D speedLimiter =
+      new DirectionalSlewRateLimiter2D(SwerveConstants.accelLims);
 
   private final PIDController xController =
       new PIDController(
@@ -646,7 +654,9 @@ public class Swerve extends SubsystemBase {
     y *= slowModeYCoefficient;
     x *= slowModeXCoefficient;
 
-    // TODO: Reenable if wheelieing
+    double[] limitedSpeeds = speedLimiter.calculateArray(x, y);
+    x = limitedSpeeds[0];
+    y = limitedSpeeds[1];
 
     // Comment to disable heading correction
     // omega = headingCorrection(x, y, omega);
@@ -658,14 +668,6 @@ public class Swerve extends SubsystemBase {
       chassisSpeeds = fromAllianceRelativeSpeeds(x, y, omega);
     } else {
       // Takes in Robot Relative, returns Robot Relative
-
-      // Only allow driving on axes
-      // if (Math.abs(x) >= Math.abs(y)) {
-      // y = 0;
-      // } else {
-      // x = 0;
-      // }
-
       chassisSpeeds = new ChassisSpeeds(y, x, omega);
     }
 
