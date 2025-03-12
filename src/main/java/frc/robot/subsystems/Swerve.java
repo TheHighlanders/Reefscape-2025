@@ -496,6 +496,29 @@ public class Swerve extends SubsystemBase {
         this);
   }
 
+  /**
+   * Points the wheels in an X pattern to lock the robot in place
+   *
+   * @return Command to set modules in X pattern
+   */
+  public Command pointWheelsInXPattern() {
+    return new RunCommand(
+        () -> {
+          SwerveModuleState[] states = new SwerveModuleState[4];
+
+          // FL at 45°, FR at 135°, BL at 315° (-45°), BR at 225° (-135°)
+          states[0] = new SwerveModuleState(0, Rotation2d.fromDegrees(45)); // Front Left
+          states[1] = new SwerveModuleState(0, Rotation2d.fromDegrees(135)); // Front Right
+          states[2] = new SwerveModuleState(0, Rotation2d.fromDegrees(315)); // Back Left
+          states[3] = new SwerveModuleState(0, Rotation2d.fromDegrees(225)); // Back Right
+
+          for (int i = 0; i < modules.length; i++) {
+            modules[i].setModuleState(states[i], false);
+          }
+        },
+        this);
+  }
+
   public Command driveForwardTimed(double velocity, double timeSec) {
     return new RunCommand(
             () -> {

@@ -77,6 +77,8 @@ public class RobotContainer {
     driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
     driver.a().whileTrue(coralScorer.reverseCommand());
 
+    driver.x().onTrue(drive.pointWheelsInXPattern());
+
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
 
