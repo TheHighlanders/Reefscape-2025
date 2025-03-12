@@ -4,9 +4,12 @@
 
 package frc.robot.subsystems;
 
-// spotless:off
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volt;
+import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.ElevatorConstants.forwardSoftLimit;
-// spotless:on
 
 import choreo.trajectory.SwerveSample;
 import com.studica.frc.AHRS;
@@ -643,8 +646,6 @@ public class Swerve extends SubsystemBase {
 
     y *= slowModeYCoefficient;
     x *= slowModeXCoefficient;
-
-    // TODO: Reenable if wheelieing
 
     // Comment to disable heading correction
     // omega = headingCorrection(x, y, omega);
