@@ -14,13 +14,13 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.commands.Align;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
-import frc.robot.utils.AutoAlign;
 import frc.robot.utils.CommandXboxControllerSubsystem;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -150,13 +150,11 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    Command alignCommand = AutoAlign.alignWithReef(drive, cameras[0], () -> true);
-    return alignCommand.finallyDo(interrupted -> driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
   }
 
   public Command alignToLeftCoral() {
-    Command alignCommand = AutoAlign.alignWithReef(drive, cameras[0], () -> false);
-    return alignCommand.finallyDo(interrupted -> driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
   }
 
   private void cameraSetUp() {
