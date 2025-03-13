@@ -18,6 +18,9 @@ import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
@@ -113,7 +116,7 @@ public class Align extends Command {
   @Override
   public void initialize() {
     // vibrate.accept(0.5);
-    leds.runPattern(LEDPattern.rainbow(255, 128)).schedule();
+    leds.runPattern(LEDPattern.rainbow(255, 128).scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d/120d))).schedule();
     
 
     
@@ -168,6 +171,7 @@ public class Align extends Command {
 
   @Override
   public void execute() {
+
     Pose2d currentPose = swerve.getPose();
 
     double xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());

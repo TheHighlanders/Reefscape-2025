@@ -23,6 +23,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.commands.Align;
 
 public class LEDs extends SubsystemBase {
+  Vision vision;
+  Swerve swerve;
+
   /** Creates a new LEDs. */
   private static final int kPort = 9;
 
@@ -31,7 +34,9 @@ public class LEDs extends SubsystemBase {
   private final AddressableLED m_led;
   private final AddressableLEDBuffer m_buffer;
 
-  public LEDs() {
+  public LEDs(Swerve swerve, Vision vision) {
+    this.swerve = swerve;
+    this.vision = vision;
 
     m_led = new AddressableLED(kPort);
     m_buffer = new AddressableLEDBuffer(kLength);
@@ -46,13 +51,13 @@ public class LEDs extends SubsystemBase {
 
         if(DriverStation.getAlliance().isPresent()){
           if(DriverStation.getAlliance().get() == Alliance.Red){
-            setDefaultCommand(runPattern(LEDPattern.solid(Color.kRed)).withName("Red").ignoringDisable(true));
+            runPattern(LEDPattern.solid(Color.kRed)).withName("Red").ignoringDisable(true).schedule();
           }
           if(DriverStation.getAlliance().get() == Alliance.Blue){
-            setDefaultCommand(runPattern(LEDPattern.solid(Color.kBlue)).withName("Blue").ignoringDisable(true));
+            runPattern(LEDPattern.solid(Color.kBlue)).withName("Blue").ignoringDisable(true).schedule();
           }
         }else{
-          setDefaultCommand(runPattern(LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue)).withName("GradientRedBlue").ignoringDisable(true));
+          runPattern(LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue)).withName("GradientRedBlue").ignoringDisable(true).schedule();
         }
     }
   
@@ -64,7 +69,7 @@ public class LEDs extends SubsystemBase {
     m_led.setData(m_buffer);
     
     
-    if (Align.canAlign(null, null)){
+    if (Align.canAlign(swerve, vision)){
       // LEDPattern gradient = LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue);
       // runPattern(gradient);
       LEDPattern blink = LEDPattern.solid(Color.kWhite);

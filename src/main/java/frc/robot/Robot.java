@@ -28,13 +28,9 @@ public class Robot extends TimedRobot {
 
   private final RobotContainer m_robotContainer;
 
-  private final LEDs leds;
-
   private double loops = 0;
 
   public Robot() {
-
-    leds = new LEDs();
     m_robotContainer = new RobotContainer();
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
     DataLogManager.start();
@@ -104,9 +100,7 @@ public class Robot extends TimedRobot {
         m_robotContainer.elevator.updateTuningConstants();
       }
     }
-    loops++;
-    leds.runPattern(LEDPattern.rainbow(255, 128)).schedule();
-    
+    loops++;    
   }
 
   @Override
