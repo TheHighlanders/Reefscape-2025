@@ -19,6 +19,7 @@ import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
+import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.CommandXboxControllerSubsystem;
@@ -31,6 +32,8 @@ public class RobotContainer {
 
   public final CommandXboxControllerSubsystem driver = new CommandXboxControllerSubsystem(0);
   public final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
+
+  LEDs leds = new LEDs();
 
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
@@ -48,6 +51,8 @@ public class RobotContainer {
   AutoChooser chooser;
 
   public RobotContainer() {
+
+
     chooser = new AutoChooser();
 
     configureBindings();
@@ -84,7 +89,7 @@ public class RobotContainer {
 
     driver.leftBumper().whileTrue(alignToLeftCoral());
     driver.rightBumper().whileTrue(alignToRightCoral());
-
+    driver.leftBumper().whileTrue(getAutonomousCommand());
     operator
         .povDown()
         .or(operator.povDownLeft())
@@ -150,11 +155,11 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
   }
 
   public Command alignToLeftCoral() {
-    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
   }
 
   private void cameraSetUp() {

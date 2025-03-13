@@ -4,13 +4,23 @@
 
 package frc.robot.subsystems;
 
+
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Seconds;
+
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.Unit;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLED.ColorOrder;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.commands.Align;
 
 public class LEDs extends SubsystemBase {
   /** Creates a new LEDs. */
@@ -28,18 +38,39 @@ public class LEDs extends SubsystemBase {
     m_led.setLength(kLength);
     m_led.start();
     m_led.setColorOrder(ColorOrder.kRGB);
-
+    
     // Set the default command to turn the strip off, otherwise the last colors written by
     // the last command to run will continue to be displayed.
     // Note: Other default patterns could be used instead!
-    setDefaultCommand(
-        runPattern(LEDPattern.solid(Color.kRed)).withName("Red").ignoringDisable(true));
-  }
+    
 
+        if(DriverStation.getAlliance().isPresent()){
+          if(DriverStation.getAlliance().get() == Alliance.Red){
+            setDefaultCommand(runPattern(LEDPattern.solid(Color.kRed)).withName("Red").ignoringDisable(true));
+          }
+          if(DriverStation.getAlliance().get() == Alliance.Blue){
+            setDefaultCommand(runPattern(LEDPattern.solid(Color.kBlue)).withName("Blue").ignoringDisable(true));
+          }
+        }else{
+          setDefaultCommand(runPattern(LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue)).withName("GradientRedBlue").ignoringDisable(true));
+        }
+    }
+  
+
+  
   @Override
   public void periodic() {
     // Periodically send the latest LED color data to the LED strip for it to display
     m_led.setData(m_buffer);
+    
+    
+    if (Align.canAlign(null, null)){
+      // LEDPattern gradient = LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue);
+      // runPattern(gradient);
+      LEDPattern blink = LEDPattern.solid(Color.kWhite);
+      LEDPattern pattern = blink.blink(Seconds.of(.5));
+      runPattern(pattern);
+    }
   }
 
   /**
