@@ -13,7 +13,6 @@ import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
-import java.util.function.Supplier;
 
 /** Add your docs here. */
 public class Autos {
@@ -21,15 +20,8 @@ public class Autos {
   Swerve drive;
   Elevator elevator;
   CoralScorer coral;
-  Supplier<Command> alignToLeftCoral;
-  Supplier<Command> alignToRightCoral;
 
-  public Autos(
-      Swerve drive,
-      Elevator elevator,
-      CoralScorer coral,
-      Supplier<Command> alignToLeftCoral,
-      Supplier<Command> alignToRightCoral) {
+  public Autos(Swerve drive, Elevator elevator, CoralScorer coral) {
     autoFactory =
         new AutoFactory(
             drive::getPose, // A function that returns the current robot pose
@@ -43,8 +35,6 @@ public class Autos {
     this.drive = drive;
     this.elevator = elevator;
     this.coral = coral;
-    this.alignToLeftCoral = alignToLeftCoral;
-    this.alignToRightCoral = alignToRightCoral;
   }
 
   public Command testTraj() {
@@ -98,20 +88,20 @@ public class Autos {
     // leftStartToleftFar
     // .atTime("WAIT")
     // .onTrue(Commands.waitSeconds(5));
-    leftStartToleftFar
-        .done()
-        .onTrue(
-            Commands.waitSeconds(.5)
-                .andThen(
-                    alignToLeftCoral
-                        .get()
-                        .withTimeout(1)
-                        .andThen(
-                            elevator
-                                .elevatorAuto(ElevatorState.L4_POSITION)
-                                .andThen(coral.depositCMD().withTimeout(.5))
-                                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
-                                .andThen(leftFarToleftStation.cmd())))); // move
+    // leftStartToleftFar
+    //     .done()
+    //     .onTrue(
+    //         Commands.waitSeconds(.5)
+    //             .andThen(
+    //                 alignToLeftCoral
+    //                     .get()
+    //                     .withTimeout(1)
+    //                     .andThen(
+    //                         elevator
+    //                             .elevatorAuto(ElevatorState.L4_POSITION)
+    //                             .andThen(coral.depositCMD().withTimeout(.5))
+    //                             .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+    //                             .andThen(leftFarToleftStation.cmd())))); // move
     // elevator
     // then
     // score
@@ -125,15 +115,15 @@ public class Autos {
     // .atTime("WAIT")
     // .onTrue(elevator.elevatorAuto(ElevatorState.HOME).withTimeout(1));
 
-    leftStationToleftClose
-        .done()
-        .onTrue(
-            Commands.waitSeconds(.5)
-                .andThen(
-                    alignToLeftCoral
-                        .get()
-                        .withTimeout(1)
-                        .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))));
+    // leftStationToleftClose
+    //     .done()
+    //     .onTrue(
+    //         Commands.waitSeconds(.5)
+    //             .andThen(
+    //                 alignToLeftCoral
+    //                     .get()
+    //                     .withTimeout(1)
+    //                     .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))));
     /* .andThen(coral.depositCMD().withTimeout(.5)) */
     // move elevator then score coral
 
@@ -155,19 +145,19 @@ public class Autos {
     // .atTime("WAIT")
     // .onTrue(Commands.waitSeconds(5));
 
-    rightStart_rightFar
-        .done()
-        .onTrue(
-            Commands.waitSeconds(.5)
-                .andThen(
-                    alignToRightCoral
-                        .get()
-                        .withTimeout(1)
-                        .andThen(
-                            elevator
-                                .elevatorAuto(ElevatorState.L4_POSITION)
-                                .andThen(coral.depositCMD().withTimeout(.5))
-                                .andThen(rightFar_rightStation.cmd())))); // move
+    // rightStart_rightFar
+    //     .done()
+    //     .onTrue(
+    //         Commands.waitSeconds(.5)
+    //             .andThen(
+    //                 alignToRightCoral
+    //                     .get()
+    //                     .withTimeout(1)
+    //                     .andThen(
+    //                         elevator
+    //                             .elevatorAuto(ElevatorState.L4_POSITION)
+    //                             .andThen(coral.depositCMD().withTimeout(.5))
+    //                             .andThen(rightFar_rightStation.cmd())))); // move
     // elevator
     // then
     // score
@@ -185,18 +175,18 @@ public class Autos {
     // .atTime("WAIT")
     // .onTrue(Commands.waitSeconds(5));
 
-    rightStation_rightClose
-        .done()
-        .onTrue(
-            Commands.waitSeconds(.5)
-                .andThen(
-                    alignToRightCoral
-                        .get()
-                        .withTimeout(1)
-                        .andThen(
-                            elevator.elevatorAuto(ElevatorState.L4_POSITION)
-                            // .andThen(coral.depositCMD().withTimeout(.5))
-                            ))); // move elevator
+    // rightStation_rightClose
+    //     .done()
+    //     .onTrue(
+    //         Commands.waitSeconds(.5)
+    //             .andThen(
+    //                 alignToRightCoral
+    //                     .get()
+    //                     .withTimeout(1)
+    //                     .andThen(
+    //                         elevator.elevatorAuto(ElevatorState.L4_POSITION)
+    //                         // .andThen(coral.depositCMD().withTimeout(.5))
+    //                         ))); // move elevator
     // then score coral
 
     return routine;

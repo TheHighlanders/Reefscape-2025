@@ -276,6 +276,10 @@ public class Elevator extends SubsystemBase {
   }
 
   public boolean isAtSetpoint(double tolerance) {
+    if (uppydowny == ElevatorState.HOME) {
+      return isAtHome(tolerance);
+    }
+
     return MathUtil.isNear(targetPosition, elevatorEncoder.getPosition(), tolerance);
   }
 
@@ -284,12 +288,7 @@ public class Elevator extends SubsystemBase {
   }
 
   public Command elevatorAuto(ElevatorState targetState) {
-    switch (targetState) {
-      case HOME:
-        return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtHome(0.5)));
-      default:
-        return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtSetpoint(0.5)));
-    }
+    return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtSetpoint(0.5)));
   }
 
   public void trim(double trimAmount) {

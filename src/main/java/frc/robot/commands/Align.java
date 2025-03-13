@@ -12,10 +12,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
-import frc.robot.subsystems.Vision;
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import org.photonvision.EstimatedRobotPose;
 
 public class Align extends Command {
 
@@ -55,7 +52,6 @@ public class Align extends Command {
   }
 
   private final Swerve swerve;
-  private final Vision vision;
   private final BooleanSupplier targetRightCoralSupplier; // true = right
 
   private final PIDController xController =
@@ -84,39 +80,25 @@ public class Align extends Command {
    * Creates a command to align with coral of a reef tag.
    *
    * @param swerve The swerve drive subsystem
-   * @param vision The vision subsystem
    * @param targetRightCoralSupplier Supplies whether to target right coral (true) or left coral
    *     (false)
    */
-  public Align(
-      Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, Command vibrate) {
+  public Align(Swerve swerve, BooleanSupplier targetRightCoralSupplier, Command vibrate) {
     this.swerve = swerve;
-    this.vision = vision;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
 
     this.vibrate = vibrate;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
 
-    addRequirements(swerve, vision);
+    addRequirements(swerve);
   }
 
   @Override
   public void initialize() {
     // vibrate.accept(0.5);
 
-    hasTargetTagOnInit = vision.hasTarget();
-
-    Optional<EstimatedRobotPose> estRobotPose = vision.getEstimatedRobotPose();
-
-    if (hasTargetTagOnInit) {
-      if (estRobotPose.isPresent()) {
-        swerve.resetOdometry(estRobotPose.get().estimatedPose.toPose2d());
-      }
-    }
-
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
-    closestReefTagPose = vision.findClosestReefTag(swerve.getPose());
     if (Constants.devMode) {
       SmartDashboard.putNumber("ReefAlign/TagX", closestReefTagPose.getX());
       SmartDashboard.putNumber("ReefAlign/TagY", closestReefTagPose.getY());

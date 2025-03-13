@@ -25,6 +25,8 @@ public class Constants {
 
   public static final boolean devMode = false;
 
+  public static final double stickDeadband = 0.05;
+
   // Add alerts for tag loading status
   private static final Alert tagLoadFailureAlert =
       new Alert("Failed to load custom tag map", AlertType.kWarning);

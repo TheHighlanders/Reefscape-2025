@@ -52,6 +52,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -72,6 +73,10 @@ final class SwerveConstants {
 
   static final double headingCorrectionDeadband = 0.05;
 
+  static final double slowModeTranslationXMultiplier = 0.15;
+  static final double slowModeTranslationYMultiplier = 0.3;
+  static final double slowModeRotationMultiplier = 0.5;
+
   static double headingCorrectionP = 0.5;
   static double headingCorrectionI = 0.05;
   static double headingCorrectionD = 0;
@@ -88,12 +93,6 @@ final class SwerveConstants {
 }
 
 public class Swerve extends SubsystemBase {
-
-  enum SwerveState {
-    NORMAL,
-    LINEUP
-  }
-
   private static final double MAX_SLOW_MODE = 0.3;
   private static final double MICROS_SECONDS_CONVERSION = Math.pow(10, -6);
 
@@ -130,8 +129,6 @@ public class Swerve extends SubsystemBase {
   private final SysIdRoutine sysId;
 
   Field2d field = new Field2d();
-
-  SwerveState current = SwerveState.NORMAL;
 
   private final Vision[] cameras;
   private EstimatedRobotPose[] lastEstimatedPoses;
@@ -260,14 +257,12 @@ public class Swerve extends SubsystemBase {
     // Process vision data from all cameras
     updateVision();
 
-    // Display alignment mode status
-    SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
-
     // Send diagnostic information
     sendDiagnostics();
   }
 
   /** Process vision data from all cameras and update pose estimation */
+  @SuppressWarnings("unused")
   private void updateVision() {
     for (int i = 0; i < cameras.length; i++) {
       // Get the latest result from this camera
@@ -469,13 +464,30 @@ public class Swerve extends SubsystemBase {
    * @param y Supplier for desired Alliance Relative Y translation
    * @return Drive Command
    */
-  public Command driveCMD(DoubleSupplier x, DoubleSupplier y, DoubleSupplier omega) {
+  public Command driveCMD(
+      DoubleSupplier x, DoubleSupplier y, DoubleSupplier omega, BooleanSupplier fieldRelative) {
     return Commands.run(
-            () ->
-                drive(
-                    squaredCurve(x.getAsDouble()),
-                    squaredCurve(y.getAsDouble()),
-                    omega.getAsDouble()),
+            () -> {
+              // Apply deadband first
+              double xValue = MathUtil.applyDeadband(x.getAsDouble(), Constants.stickDeadband);
+              double yValue = MathUtil.applyDeadband(y.getAsDouble(), Constants.stickDeadband);
+              double omegaValue =
+                  MathUtil.applyDeadband(omega.getAsDouble(), Constants.stickDeadband);
+
+              // Then apply squared curve (preserving the sign)
+              xValue = Math.copySign(xValue * xValue, xValue);
+              yValue = Math.copySign(yValue * yValue, yValue);
+
+              // Apply slow mode if enabled
+              if (fieldRelative.getAsBoolean()) {
+                xValue *= SwerveConstants.slowModeTranslationXMultiplier;
+                yValue *= SwerveConstants.slowModeTranslationYMultiplier;
+                omegaValue *= SwerveConstants.slowModeRotationMultiplier;
+              }
+
+              // Drive with the processed values and field-relative flag
+              drive(xValue, yValue, omegaValue, fieldRelative.getAsBoolean());
+            },
             this)
         .withName("Swerve Drive Command");
   }
@@ -628,43 +640,27 @@ public class Swerve extends SubsystemBase {
    *
    * @param x Alliance Relative X Speed, as defined above (m/s)
    * @param y Alliance Relative Y Speed, as defined above (m/s)
+   * @param fieldRelative True if the robot should drive based on the field, false if
    * @param omega Rotational Speed (rad/s)
    */
-  public void drive(double x, double y, double omega) {
+  public void drive(double x, double y, double omega, boolean fieldRelative) {
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
-    double slowModeYCoefficient;
-    double slowModeXCoefficient;
 
-    if (current == SwerveState.NORMAL) {
-      slowModeYCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
-      slowModeXCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
-
-    } else {
-      slowModeYCoefficient = 0.3;
-      slowModeXCoefficient = 0.15;
+    if (!fieldRelative) {
+      y *= getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
+      x *= getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
     }
-
-    y *= slowModeYCoefficient;
-    x *= slowModeXCoefficient;
 
     // Comment to disable heading correction
     // omega = headingCorrection(x, y, omega);
 
     ChassisSpeeds chassisSpeeds;
 
-    if (current == SwerveState.NORMAL) {
+    if (!fieldRelative) {
       // Takes in Alliance Relative, returns Field Relative
       chassisSpeeds = fromAllianceRelativeSpeeds(x, y, omega);
     } else {
-      // Takes in Robot Relative, returns Robot Relative
-
-      // Only allow driving on axes
-      // if (Math.abs(x) >= Math.abs(y)) {
-      // y = 0;
-      // } else {
-      // x = 0;
-      // }
-
+      // In field-relative mode (robot centric)
       chassisSpeeds = new ChassisSpeeds(y, x, omega);
     }
 
@@ -781,14 +777,6 @@ public class Swerve extends SubsystemBase {
     }
 
     return 1;
-  }
-
-  public Command enableSlowMode() {
-    return Commands.runOnce(() -> current = SwerveState.LINEUP);
-  }
-
-  public Command disableSlowMode() {
-    return Commands.runOnce(() -> current = SwerveState.NORMAL);
   }
 
   public void driveVoltage(Measure<VoltageUnit> voltage) {

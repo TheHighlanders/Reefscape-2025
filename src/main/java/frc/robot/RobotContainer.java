@@ -14,11 +14,11 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.commands.Align;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
+import frc.robot.subsystems.Superstructure;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.CommandXboxControllerSubsystem;
@@ -43,17 +43,38 @@ public class RobotContainer {
   @Logged(name = "Swerve")
   Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
 
-  Autos autos =
-      new Autos(drive, elevator, coralScorer, this::alignToLeftCoral, this::alignToRightCoral);
+  @Logged(name = "Superstructure")
+  Superstructure superstructure;
+
+  Autos autos = new Autos(drive, elevator, coralScorer);
   AutoChooser chooser;
 
   public RobotContainer() {
+
+    superstructure =
+        new Superstructure(
+            drive, // Swerve
+            elevator,
+            coralScorer, // Elevator
+            driver.leftBumper(), // AutoAlignReq
+            driver.rightBumper(), // AutoAlignReq
+            driver.rightTrigger(0.5), // scoreReq - using right trigger
+            operator.povUp(), // levelUpReq
+            operator.povDown(), // levelDownReq
+            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5) // vibrationCommand
+            );
+
     chooser = new AutoChooser();
 
     configureBindings();
     configureAutonomous();
 
-    drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
+    drive.setDefaultCommand(
+        drive.driveCMD(
+            driver::getLeftX,
+            driver::getLeftY,
+            driver::getRightX,
+            () -> !superstructure.isRobotRelative()));
 
     cameraSetUp();
   }
@@ -74,16 +95,13 @@ public class RobotContainer {
     driver.start().whileTrue(elevator.zeroElevator());
     driver.povRight().onTrue(drive.resetGyro());
 
-    driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
+    // driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
     driver.a().whileTrue(coralScorer.reverseCommand());
 
     driver.x().onTrue(drive.pointWheelsInXPattern());
 
-    driver.leftTrigger().onTrue(drive.enableSlowMode());
-    driver.leftTrigger().onFalse(drive.disableSlowMode());
-
-    driver.leftBumper().whileTrue(alignToLeftCoral());
-    driver.rightBumper().whileTrue(alignToRightCoral());
+    // driver.leftTrigger().onTrue(drive.enableSlowMode());
+    // driver.leftTrigger().onFalse(drive.disableSlowMode());
 
     operator
         .povDown()
@@ -131,12 +149,7 @@ public class RobotContainer {
     if (Constants.devMode) {
       chooser.addCmd("SYSID", drive::sysId);
       chooser.addCmd(
-          "FORWARD",
-          () ->
-              Commands.sequence(
-                  drive.enableSlowMode(),
-                  drive.driveCMD(() -> 1, () -> 0, () -> 0).withTimeout(1),
-                  drive.disableSlowMode()));
+          "FORWARD", () -> drive.driveCMD(() -> 1, () -> 0, () -> 0, () -> false).withTimeout(1));
       chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
       chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
       chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
@@ -147,14 +160,6 @@ public class RobotContainer {
 
   public Command getAutonomousCommand() {
     return chooser.selectedCommand();
-  }
-
-  public Command alignToRightCoral() {
-    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
-  }
-
-  public Command alignToLeftCoral() {
-    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
   }
 
   private void cameraSetUp() {
