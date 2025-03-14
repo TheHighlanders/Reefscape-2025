@@ -46,7 +46,7 @@ public class RobotContainer {
   @Logged(name = "Superstructure")
   Superstructure superstructure;
 
-  Autos autos = new Autos(drive, elevator, coralScorer);
+  Autos autos = new Autos(drive, superstructure);
   AutoChooser chooser;
 
   public RobotContainer() {

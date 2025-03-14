@@ -159,15 +159,6 @@ public class Superstructure extends SubsystemBase {
                   }
                 }));
 
-    // Handle scoring request
-    scoreReq
-        .and(() -> isPreScoreState())
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  forceState(SuperState.SCORE_CORAL);
-                }));
-
     // Handle coral level changes from operator
     levelUpReq.onTrue(Commands.runOnce(this::incrementCoralLevel));
 
@@ -205,7 +196,14 @@ public class Superstructure extends SubsystemBase {
                 }));
 
     // SCORE_CORAL state behavior
-    stateTriggers.get(SuperState.SCORE_CORAL).whileTrue(coralScorer.slowDepositCMD());
+    stateTriggers
+        .get(SuperState.SCORE_CORAL)
+        .whileTrue(
+            Commands.sequence(
+                coralScorer.slowDepositCMD().withTimeout(0.5),
+                elevator.setPosition(ElevatorState.HOME), // Return elevator to home
+                Commands.runOnce(() -> forceState(SuperState.IDLE)) // Return to IDLE state
+                ));
   }
 
   private SuperState getCorrespondingPreState() {
@@ -236,7 +234,17 @@ public class Superstructure extends SubsystemBase {
     }
   }
 
-  private Command forceState(SuperState nextState) {
+  /** Set the target coral level directly. */
+  public void setTargetCoralLevel(CoralLevel level) {
+    this.targetCoralLevel = level;
+  }
+
+  /** Get the current state. Useful for checking state in autonomous routines. */
+  public SuperState getState() {
+    return state;
+  }
+
+  public Command forceState(SuperState nextState) {
     return Commands.runOnce(
             () -> {
               System.out.println("Changing state to " + nextState);
