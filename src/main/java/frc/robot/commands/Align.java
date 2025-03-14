@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Vision;
 import java.util.function.BooleanSupplier;
 
 public class Align extends Command {
@@ -115,6 +116,10 @@ public class Align extends Command {
 
   @Override
   public void initialize() {
+    Pose2d currentPose = swerve.getPose();
+
+    closestReefTagPose = Vision.findClosestReefTag(currentPose);
+
     // Set tolerances for velocity-based completion
     xController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
     yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
@@ -135,7 +140,6 @@ public class Align extends Command {
     targetPosePublisher.set(targetPose);
 
     // Get current robot pose
-    Pose2d currentPose = swerve.getPose();
 
     // Reset PID controllers with current values
     double xError = targetPose.getX() - currentPose.getX();
@@ -146,10 +150,6 @@ public class Align extends Command {
     xController.reset(xError, 0);
     yController.reset(yError, 0);
     rotController.reset(rotationError, 0);
-
-    yController.setTolerance(0.01, 0.01);
-    xController.setTolerance(0.01, 0.01);
-    rotController.setTolerance(0.01);
   }
 
   private void calculateTargetPose() {

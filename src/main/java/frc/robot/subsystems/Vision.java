@@ -91,7 +91,7 @@ public class Vision extends SubsystemBase {
 
   private final AprilTagFieldLayout aprilTagFieldLayout;
   private Matrix<N3, N1> stdDev = VisionHelper.INFINITE_STD_DEVS;
-  private final List<Pose2d> reefTagPoses = new ArrayList<>();
+  private static final List<Pose2d> reefTagPoses = new ArrayList<>();
   private boolean hasTarget = false;
   private int frameCounter = 0;
 
@@ -338,7 +338,7 @@ public class Vision extends SubsystemBase {
    * @param robotPose The current estimated robot pose
    * @return The pose of the closest reef tag
    */
-  public Pose2d findClosestReefTag(Pose2d robotPose) {
+  public static Pose2d findClosestReefTag(Pose2d robotPose) {
     return robotPose.nearest(reefTagPoses);
   }
 
