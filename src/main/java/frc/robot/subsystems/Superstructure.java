@@ -39,7 +39,6 @@ public class Superstructure extends SubsystemBase {
   private static final double ELEVATOR_SETPOINT_TOLERANCE = 0.5;
   private static final double CORAL_DEPOSIT_TIMEOUT = 0.5;
 
-  private final Swerve swerve;
   private final Elevator elevator;
   private final CoralScorer coralScorer;
 
@@ -69,8 +68,6 @@ public class Superstructure extends SubsystemBase {
   private final Command autoAlignCommandRight;
   private final Command autoAlignCommandLeft;
 
-  private final Command vibrationCommand;
-
   private final EnumMap<SuperState, Trigger> stateTriggers = new EnumMap<>(SuperState.class);
   private final Timer stateTimer = new Timer();
 
@@ -96,7 +93,9 @@ public class Superstructure extends SubsystemBase {
     this.autoAlignReqLeft = autoAlignReqLeft;
     this.scoreReq = scoreReq;
     this.levelUpReq = levelUpReq;
-    this.levelDownReq = stateTimer.start();
+    this.levelDownReq = levelDownReq;
+
+    stateTimer.start();
 
     // Initialize triggers for each state
     for (var superState : SuperState.values()) {
