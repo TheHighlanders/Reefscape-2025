@@ -29,6 +29,7 @@ public class Robot extends TimedRobot {
   private double loops = 0;
 
   public Robot() {
+    super(0.02);
     m_robotContainer = new RobotContainer();
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
     DataLogManager.start();
