@@ -82,8 +82,6 @@ public class Superstructure extends SubsystemBase {
       Trigger levelDownReq,
       Command vibrationCommand) {
 
-    this.swerve = swerve;
-
     this.autoAlignCommandRight = new Align(swerve, () -> true, vibrationCommand);
     this.autoAlignCommandLeft = new Align(swerve, () -> false, vibrationCommand);
 
