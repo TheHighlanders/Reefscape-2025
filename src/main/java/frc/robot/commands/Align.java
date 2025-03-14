@@ -22,19 +22,19 @@ public class Align extends Command {
     // Update with actual reef tag IDs
 
     // Distance from robot center to front bumper (meters)
-    static final double robotCenterToFrontDistance = -0.38;
+    static final double robotCenterToFrontDistance = -0.39;
 
     // Lateral offset from tag to coral (meters)
     static final double coralLeftOffset = -0.165; // Left coral Y offset (negative = left)
     static final double coralRightOffset = 0.165; // Right coral Y offset (positive = right)
 
-    static final double ejectOffset = 0.30;
+    static final double ejectOffset = 0.27;
 
     // Position tolerance (meters)
-    static final double positionTolerance = 0.005;
+    static final double velocityTolerance = 0.0;
 
     // Rotation tolerance (radians)
-    static final double rotationTolerance = 0.05;
+    static final double rotationVelocityTolerance = 0.01;
 
     // Maximum approach speed (m/s)
     static final double maxApproachSpeed = 1.5;
@@ -98,6 +98,12 @@ public class Align extends Command {
   public void initialize() {
     // vibrate.accept(0.5);
 
+    yController.setTolerance(0.01, 0.01);
+    xController.setTolerance(0.01, 0.01);
+    rotController.setTolerance(0.01);
+
+    hasTargetTagOnInit = true;
+
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
     if (Constants.devMode) {
       SmartDashboard.putNumber("ReefAlign/TagX", closestReefTagPose.getX());
@@ -142,6 +148,7 @@ public class Align extends Command {
 
     double xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());
     double ySpeed = yController.calculate(currentPose.getY(), targetPose.getY());
+
     double rotSpeed =
         rotController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
@@ -172,25 +179,10 @@ public class Align extends Command {
 
   @Override
   public boolean isFinished() {
-    Pose2d currentPose = swerve.getPose();
-    double distanceToTarget = currentPose.getTranslation().getDistance(targetPose.getTranslation());
-    double rotationError =
-        Math.abs(currentPose.getRotation().minus(targetPose.getRotation()).getRadians());
-
-    if (Constants.devMode) {
-      SmartDashboard.putNumber("ReefAlign/DistToTarget", distanceToTarget);
-      SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
-    }
-
-    if (distanceToTarget > 2 || !hasTargetTagOnInit) {
+    if (!hasTargetTagOnInit) {
       return true;
     }
 
-    boolean atTarget =
-        distanceToTarget < AlignConstants.positionTolerance
-            && rotationError < AlignConstants.rotationTolerance;
-    SmartDashboard.putBoolean("ReefAlign/AtTarget", atTarget);
-
-    return atTarget;
+    return yController.atSetpoint() && xController.atSetpoint() && rotController.atSetpoint();
   }
 }
