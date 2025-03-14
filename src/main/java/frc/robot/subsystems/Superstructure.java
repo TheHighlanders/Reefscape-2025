@@ -36,6 +36,9 @@ public class Superstructure extends SubsystemBase {
     L4
   }
 
+  private static final double ELEVATOR_SETPOINT_TOLERANCE = 0.5;
+  private static final double CORAL_DEPOSIT_TIMEOUT = 0.5;
+
   private final Swerve swerve;
   private final Elevator elevator;
   private final CoralScorer coralScorer;
@@ -83,20 +86,17 @@ public class Superstructure extends SubsystemBase {
       Command vibrationCommand) {
 
     this.swerve = swerve;
+
+    this.autoAlignCommandRight = new Align(swerve, () -> true, vibrationCommand);
+    this.autoAlignCommandLeft = new Align(swerve, () -> false, vibrationCommand);
+
     this.elevator = elevator;
     this.coralScorer = coralScorer;
     this.autoAlignReqRight = autoAlignReqRight;
     this.autoAlignReqLeft = autoAlignReqLeft;
     this.scoreReq = scoreReq;
     this.levelUpReq = levelUpReq;
-    this.levelDownReq = levelDownReq;
-    this.vibrationCommand = vibrationCommand;
-
-    stateTimer.start();
-
-    // Create auto align command
-    autoAlignCommandRight = new Align(swerve, () -> true, vibrationCommand);
-    autoAlignCommandLeft = new Align(swerve, () -> false, vibrationCommand);
+    this.levelDownReq = stateTimer.start();
 
     // Initialize triggers for each state
     for (var superState : SuperState.values()) {
@@ -104,7 +104,7 @@ public class Superstructure extends SubsystemBase {
           superState, new Trigger(() -> this.state == superState && DriverStation.isEnabled()));
     }
 
-    elevatorReady = new Trigger(() -> elevator.isAtSetpoint(0.5));
+    elevatorReady = new Trigger(() -> elevator.isAtSetpoint(ELEVATOR_SETPOINT_TOLERANCE));
 
     configureStateTransitionCommands();
   }
@@ -138,14 +138,14 @@ public class Superstructure extends SubsystemBase {
         Commands.runOnce(
             () -> {
               isRobotRelative = true;
-              forceState(SuperState.ALIGNINGRIGHT);
+              transitionToState(SuperState.ALIGNINGRIGHT);
             }));
 
     autoAlignReqLeft.onTrue(
         Commands.runOnce(
             () -> {
               isRobotRelative = true;
-              forceState(SuperState.ALIGNINGLEFT);
+              transitionToState(SuperState.ALIGNINGLEFT);
             }));
 
     autoAlignReqRight
@@ -155,7 +155,7 @@ public class Superstructure extends SubsystemBase {
                 () -> {
                   isRobotRelative = false;
                   if (state == SuperState.ALIGNINGLEFT || state == SuperState.ALIGNINGRIGHT) {
-                    forceState(getCorrespondingPreState());
+                    transitionToState(getCorrespondingPreState());
                   }
                 }));
 
@@ -192,7 +192,7 @@ public class Superstructure extends SubsystemBase {
         .onTrue(
             Commands.runOnce(
                 () -> {
-                  forceState(SuperState.SCORE_CORAL);
+                  transitionToState(SuperState.SCORE_CORAL);
                 }));
 
     // SCORE_CORAL state behavior
@@ -200,9 +200,9 @@ public class Superstructure extends SubsystemBase {
         .get(SuperState.SCORE_CORAL)
         .whileTrue(
             Commands.sequence(
-                coralScorer.slowDepositCMD().withTimeout(0.5),
+                coralScorer.slowDepositCMD().withTimeout(CORAL_DEPOSIT_TIMEOUT),
                 elevator.setPosition(ElevatorState.HOME), // Return elevator to home
-                Commands.runOnce(() -> forceState(SuperState.IDLE)) // Return to IDLE state
+                Commands.runOnce(() -> transitionToState(SuperState.IDLE)) // Return to IDLE state
                 ));
   }
 
@@ -244,15 +244,15 @@ public class Superstructure extends SubsystemBase {
     return state;
   }
 
+  private void transitionToState(SuperState nextState) {
+    DriverStation.reportWarning("Changing state to " + nextState + " from " + this.state, false);
+    stateTimer.reset();
+    stateTimer.start();
+    this.prevState = this.state;
+    this.state = nextState;
+  }
+
   public Command forceState(SuperState nextState) {
-    return Commands.runOnce(
-            () -> {
-              System.out.println("Changing state to " + nextState);
-              stateTimer.reset();
-              stateTimer.start();
-              this.prevState = this.state;
-              this.state = nextState;
-            })
-        .ignoringDisable(true);
+    return Commands.runOnce(() -> transitionToState(nextState)).ignoringDisable(true);
   }
 }
