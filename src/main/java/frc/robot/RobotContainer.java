@@ -122,12 +122,12 @@ public class RobotContainer {
     chooser.addRoutine("Left 2 Piece", autos::LeftTwoPiece);
     chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
     chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
-    chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
-    chooser.addRoutine("Center 1 & Left", autos::CenterOnePieceAndLeftStation);
-    chooser.addRoutine("Center 1 & Right", autos::CenterOnePieceAndRightStation);
-    chooser.addRoutine("Center 1 & dingus", autos::CenterOnePieceAndDislodge);
-    chooser.addRoutine("Three piece left", autos::ThreePieceLeft);
-    chooser.addRoutine("Three piece right", autos::ThreePieceRight);
+    // chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
+    // chooser.addRoutine("Center 1 & Left", autos::CenterOnePieceAndLeftStation);
+    // chooser.addRoutine("Center 1 & Right", autos::CenterOnePieceAndRightStation);
+    // chooser.addRoutine("Center 1 & dingus", autos::CenterOnePieceAndDislodge);
+    // chooser.addRoutine("Three piece left", autos::ThreePieceLeft);
+    // chooser.addRoutine("Three piece right", autos::ThreePieceRight);
     if (Constants.devMode) {
       chooser.addCmd("SYSID", drive::sysId);
       chooser.addCmd(
