@@ -112,7 +112,7 @@ public class Swerve extends SubsystemBase {
   Module[] modules = new Module[4];
   AHRS gyro;
   SwerveDrivePoseEstimator poseEst;
-  SwerveDriveKinematics kinematics;
+  public SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
   double accelLim = SwerveConstants.accelLim;
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);

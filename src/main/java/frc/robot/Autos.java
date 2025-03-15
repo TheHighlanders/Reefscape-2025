@@ -98,7 +98,7 @@ public class Autos {
     leftStartToleftFar
         .done()
         .onTrue(
-            alignToRightCoral.get().withTimeout(1.5).withName("Align1")
+            alignToRightCoral.get().withTimeout(1.5).alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION)).withName("Align1")
                 .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION)).withName("Elevator Up")
                 .andThen(coral.slowDepositCMD().withTimeout(1)).withName("Deposit")
                 .andThen(elevator.elevatorAuto(ElevatorState.HOME)).withName("Elevator Down")
@@ -106,12 +106,12 @@ public class Autos {
 
     leftFarToleftStation
         .done()
-        .onTrue(Commands.waitSeconds(1).andThen(leftStationToleftClose.cmd()));
+        .onTrue(Commands.waitSeconds(0.25).andThen(leftStationToleftClose.cmd()));
 
     leftStationToleftClose
         .done()
         .onTrue(
-            alignToLeftCoral.get().withTimeout(1.5).withName("Align2")
+            alignToLeftCoral.get().withTimeout(1.5).alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION)).withName("Align2")
                 .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION)).withName("Elevator Up")
                 .andThen(coral.slowDepositCMD().withTimeout(1)).withName("Deposit")
                 .andThen(elevator.elevatorAuto(ElevatorState.HOME)).withName("Elevator Down"));
@@ -133,7 +133,7 @@ public class Autos {
     rightStart_rightFar
         .done()
         .onTrue(
-                alignToRightCoral.get().withTimeout(1.25)
+                alignToRightCoral.get().withTimeout(1.25).alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
                 .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
                 .andThen(coral.slowDepositCMD().withTimeout(1))
                 .andThen(elevator.elevatorAuto(ElevatorState.HOME))
@@ -146,7 +146,7 @@ public class Autos {
     rightStation_rightClose
         .done()
         .onTrue(
-                alignToRightCoral.get().withTimeout(1.25)
+                alignToRightCoral.get().withTimeout(1.25).alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
                 .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
                 .andThen(coral.slowDepositCMD().withTimeout(1))
                 .andThen(elevator.elevatorAuto(ElevatorState.HOME)));
