@@ -133,10 +133,9 @@ public class Autos {
     rightStart_rightFar
         .done()
         .onTrue(
-            Commands.waitSeconds(.5)
-                .andThen(alignToRightCoral.get())
+                alignToRightCoral.get().withTimeout(1.25)
                 .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
-                .andThen(coral.depositCMD().withTimeout(.5))
+                .andThen(coral.slowDepositCMD().withTimeout(1))
                 .andThen(elevator.elevatorAuto(ElevatorState.HOME))
                 .andThen(rightFar_rightStation.cmd())); // move
 
@@ -147,16 +146,15 @@ public class Autos {
     rightStation_rightClose
         .done()
         .onTrue(
-            Commands.waitSeconds(.5)
-                .andThen(alignToRightCoral.get())
+                alignToRightCoral.get().withTimeout(1.25)
                 .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
-                .andThen(coral.depositCMD().withTimeout(0.5))
+                .andThen(coral.slowDepositCMD().withTimeout(1))
                 .andThen(elevator.elevatorAuto(ElevatorState.HOME)));
 
     return routine;
-  }
+}
 
-  public AutoRoutine CenterOnePiece() { // the one piece is real :>
+public AutoRoutine CenterOnePiece() { // the one piece is real :>
     AutoRoutine routine = autoFactory.newRoutine("CenterOnePiece");
 
     AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");
