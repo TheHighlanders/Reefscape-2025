@@ -37,7 +37,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   private static final double ELEVATOR_SETPOINT_TOLERANCE = 0.5;
-  private static final double CORAL_DEPOSIT_TIMEOUT = 0.5;
+  private static final double CORAL_DEPOSIT_TIMEOUT = 1;
 
   private final Elevator elevator;
   private final CoralScorer coralScorer;
@@ -59,14 +59,16 @@ public class Superstructure extends SubsystemBase {
 
   private final Trigger scoreReq;
 
-  private final Trigger levelUpReq;
-
-  private final Trigger levelDownReq;
+  private final Trigger level2Req;
+  private final Trigger level3Req;
+  private final Trigger level4Req;
 
   private final Trigger elevatorReady;
 
   private final Command autoAlignCommandRight;
   private final Command autoAlignCommandLeft;
+
+  private final Command driverVibrator;
 
   private final EnumMap<SuperState, Trigger> stateTriggers = new EnumMap<>(SuperState.class);
   private final Timer stateTimer = new Timer();
@@ -78,20 +80,24 @@ public class Superstructure extends SubsystemBase {
       Trigger autoAlignReqLeft,
       Trigger autoAlignReqRight,
       Trigger scoreReq,
-      Trigger levelUpReq,
-      Trigger levelDownReq,
-      Command vibrationCommand) {
+      Trigger level2Req,
+      Trigger level3Req,
+      Trigger level4Req,
+      Command driverVibrator) {
 
-    this.autoAlignCommandRight = new Align(swerve, () -> true, vibrationCommand);
-    this.autoAlignCommandLeft = new Align(swerve, () -> false, vibrationCommand);
+    this.autoAlignCommandRight = new Align(swerve, () -> true, driverVibrator);
+    this.autoAlignCommandLeft = new Align(swerve, () -> false, driverVibrator);
 
     this.elevator = elevator;
     this.coralScorer = coralScorer;
     this.autoAlignReqRight = autoAlignReqRight;
     this.autoAlignReqLeft = autoAlignReqLeft;
     this.scoreReq = scoreReq;
-    this.levelUpReq = levelUpReq;
-    this.levelDownReq = levelDownReq;
+    this.level2Req = level2Req;
+    this.level3Req = level3Req;
+    this.level4Req = level4Req;
+
+    this.driverVibrator = driverVibrator;
 
     stateTimer.start();
 
@@ -157,40 +163,36 @@ public class Superstructure extends SubsystemBase {
                 }));
 
     // Handle coral level changes from operator
-    levelUpReq.onTrue(Commands.runOnce(this::incrementCoralLevel));
-
-    levelDownReq.onTrue(Commands.runOnce(this::decrementCoralLevel));
+    level2Req.onTrue(Commands.runOnce(() -> setTargetCoralLevel(CoralLevel.L2)));
+    level3Req.onTrue(Commands.runOnce(() -> setTargetCoralLevel(CoralLevel.L3)));
+    level4Req.onTrue(Commands.runOnce(() -> setTargetCoralLevel(CoralLevel.L4)));
 
     // ALIGNING state behavior
-    stateTriggers
-        .get(SuperState.ALIGNINGRIGHT)
-        .whileTrue(autoAlignCommandRight)
-        .whileTrue(elevator.setPosition(ElevatorState.HOME));
+    stateTriggers.get(SuperState.ALIGNINGRIGHT).whileTrue(autoAlignCommandRight);
 
-    stateTriggers
-        .get(SuperState.ALIGNINGLEFT)
-        .whileTrue(autoAlignCommandLeft)
-        .whileTrue(elevator.setPosition(ElevatorState.HOME));
+    stateTriggers.get(SuperState.ALIGNINGLEFT).whileTrue(autoAlignCommandLeft);
 
     // PRE_L1 state behavior
-    stateTriggers.get(SuperState.PRE_L1).whileTrue(elevator.setPosition(ElevatorState.HOME));
+    stateTriggers.get(SuperState.PRE_L1).onTrue(elevator.setPosition(ElevatorState.HOME));
 
     // PRE_L2 state behavior
-    stateTriggers.get(SuperState.PRE_L2).whileTrue(elevator.setPosition(ElevatorState.L2_POSITION));
+    stateTriggers.get(SuperState.PRE_L2).onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
 
     // PRE_L3 state behavior
-    stateTriggers.get(SuperState.PRE_L3).whileTrue(elevator.setPosition(ElevatorState.L3_POSITION));
+    stateTriggers.get(SuperState.PRE_L3).onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
 
     // PRE_L4 state behavior
-    stateTriggers.get(SuperState.PRE_L4).whileTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+    stateTriggers.get(SuperState.PRE_L4).onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+
+    elevatorReady
+        .and(this::isPreScoreState)
+        .onTrue(
+            Commands.runOnce(() -> transitionToState(SuperState.SCORE_CORAL))
+                .alongWith(driverVibrator));
 
     scoreReq
         .and(elevatorReady)
-        .onTrue(
-            Commands.runOnce(
-                () -> {
-                  transitionToState(SuperState.SCORE_CORAL);
-                }));
+        .onTrue(Commands.runOnce(() -> transitionToState(SuperState.SCORE_CORAL)));
 
     // SCORE_CORAL state behavior
     stateTriggers

@@ -51,16 +51,30 @@ public class RobotContainer {
 
   public RobotContainer() {
 
+    /*
+    * Swerve swerve,
+     Elevator elevator,
+     CoralScorer coralScorer,
+     Trigger autoAlignReqLeft,
+     Trigger autoAlignReqRight,
+     Trigger scoreReq,
+     Trigger level2Req,
+     Trigger level3Req,
+     Trigger level4Req,
+     Command vibrationCommand
+    */
+
     superstructure =
         new Superstructure(
-            drive, // Swerve
+            drive,
             elevator,
             coralScorer, // Elevator
             driver.leftBumper(), // AutoAlignReq
             driver.rightBumper(), // AutoAlignReq
             driver.rightTrigger(0.5), // scoreReq - using right trigger
-            operator.povUp(), // levelUpReq
-            operator.povDown(), // levelDownReq
+            operator.x(), // L1
+            operator.y(), // L2
+            operator.b(), // L3
             driver.rumbleCmd(0.5, 0.5).withTimeout(0.5) // vibrationCommand
             );
 
@@ -83,25 +97,20 @@ public class RobotContainer {
     // Controls Spreadsheet \/
     // https://docs.google.com/spreadsheets/d/1bb3pvQep2hsePMl8YiyaagtdjtIkL8Z2Oqf_t2ND-68/edit?gid=0#gid=0
     operator.a().onTrue(elevator.setPosition(ElevatorState.HOME));
-    operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
-    operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
-    operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
+    // operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
+    // operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
+    // operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
     operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY));
     operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator());
 
-    // operator.leftBumper().whileTrue(elevator.offsetElevator());
     operator.leftStick().whileTrue(coralScorer.manualIntakeCMD());
 
     driver.start().whileTrue(elevator.zeroElevator());
     driver.povRight().onTrue(drive.resetGyro());
 
-    // driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
     driver.a().whileTrue(coralScorer.reverseCommand());
 
     driver.x().onTrue(drive.pointWheelsInXPattern());
-
-    // driver.leftTrigger().onTrue(drive.enableSlowMode());
-    // driver.leftTrigger().onFalse(drive.disableSlowMode());
 
     operator
         .povDown()
@@ -116,10 +125,7 @@ public class RobotContainer {
         .whileTrue(climber.createClimbInCommand());
     operator.povRight().onTrue(climber.holdClimbPosition());
 
-    // operator.start().toggleOnTrue(drive.pointWheelsForward());
-    // operator.back().whileTrue(drive.pidTuningJogAngle());
     operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
-    // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
     operator
         .start()
@@ -131,9 +137,6 @@ public class RobotContainer {
             elevator
                 .trimCMD(operator::getRightY)
                 .andThen(elevator.setPosition(ElevatorState.CURRENT)));
-
-    // operator.povUp().whileTrue(elevator.jogElevator(2));
-    // operator.povDown().whileTrue(elevator.jogElevator(-2));
   }
 
   private void configureAutonomous() {
