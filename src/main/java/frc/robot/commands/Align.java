@@ -1,6 +1,5 @@
 package frc.robot.commands;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -42,18 +41,18 @@ public class Align extends Command {
     static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
-    static final double maxApproachSpeed = 1.5;
-    static final double maxApproachAccel = 2.0;
+    static final double maxApproachSpeed = 5;
+    static final double maxApproachAccel = 5.0;
 
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 1.0;
     static final double maxRotationAccel = 1.5;
 
-    static final double translateP = 3;
+    static final double translateP = 5;
     static final double translateI = 0.01;
     static final double translateD = 0;
 
-    static final double rotateP = 2;
+    static final double rotateP = 3;
     static final double rotateI = 0;
     static final double rotateD = 0;
   }
@@ -189,12 +188,15 @@ public class Align extends Command {
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
     // Limit speeds to max values
-    xSpeed =
-        MathUtil.clamp(xSpeed, -AlignConstants.maxApproachSpeed, AlignConstants.maxApproachSpeed);
-    ySpeed =
-        MathUtil.clamp(ySpeed, -AlignConstants.maxApproachSpeed, AlignConstants.maxApproachSpeed);
-    rotSpeed =
-        MathUtil.clamp(rotSpeed, -AlignConstants.maxRotationSpeed, AlignConstants.maxRotationSpeed);
+    // xSpeed =
+    //     MathUtil.clamp(xSpeed, -AlignConstants.maxApproachSpeed,
+    // AlignConstants.maxApproachSpeed);
+    // ySpeed =
+    //     MathUtil.clamp(ySpeed, -AlignConstants.maxApproachSpeed,
+    // AlignConstants.maxApproachSpeed);
+    // rotSpeed =
+    //     MathUtil.clamp(rotSpeed, -AlignConstants.maxRotationSpeed,
+    // AlignConstants.maxRotationSpeed);
 
     if (Constants.devMode) {
       SmartDashboard.putNumber("ReefAlign/XError", xError);
