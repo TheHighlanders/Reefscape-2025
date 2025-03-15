@@ -67,13 +67,14 @@ public class LEDs extends SubsystemBase {
   public void periodic() {
     // Periodically send the latest LED color data to the LED strip for it to display
     m_led.setData(m_buffer);
+
     
     
     if (Align.canAlign(swerve, vision)){
       // LEDPattern gradient = LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue);
       // runPattern(gradient);
       LEDPattern blink = LEDPattern.solid(Color.kWhite);
-      LEDPattern pattern = blink.blink(Seconds.of(.5));
+      LEDPattern pattern = blink.blink(Seconds.of(.4));
       runPattern(pattern);
     }
   }
