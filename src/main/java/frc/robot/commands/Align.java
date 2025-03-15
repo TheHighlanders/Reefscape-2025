@@ -4,7 +4,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -141,52 +140,30 @@ public class Align extends Command {
 
     // Get current robot pose
 
-    // Reset PID controllers with current values
-    double xError = targetPose.getX() - currentPose.getX();
-    double yError = targetPose.getY() - currentPose.getY();
-    double rotationError = targetPose.getRotation().minus(currentPose.getRotation()).getRadians();
-
     // Reset controllers with the current error and target of 0 (no error)
-    xController.reset(xError, 0);
-    yController.reset(yError, 0);
-    rotController.reset(rotationError, 0);
+    xController.reset(currentPose.getX(), 0);
+    yController.reset(currentPose.getY(), 0);
+    rotController.reset(currentPose.getRotation().getRadians(), 0);
   }
 
   private void calculateTargetPose() {
-
     double lateralOffset =
         targetRightCoral ? AlignConstants.coralRightOffset : AlignConstants.coralLeftOffset;
 
-    Transform2d lateralTransform =
-        new Transform2d(
-            new Translation2d(0, lateralOffset + AlignConstants.ejectOffset), new Rotation2d(0));
+    Translation2d lateralOffsetTranslation =
+        new Translation2d(0, lateralOffset + AlignConstants.ejectOffset);
+    lateralOffsetTranslation = lateralOffsetTranslation.rotateBy(closestReefTagPose.getRotation());
 
-    Transform2d approachTransform =
-        new Transform2d(
-            new Translation2d(AlignConstants.robotCenterToFrontDistance, 0), new Rotation2d(0));
+    // Calculate the position that places the front bumper at the tag face
+    Translation2d approachOffset = new Translation2d(-AlignConstants.robotCenterToFrontDistance, 0);
+    approachOffset = approachOffset.rotateBy(closestReefTagPose.getRotation());
 
-    // Apply transforms to get final target pose
-    // First rotate the transforms to match the tag orientation
-    lateralTransform =
-        new Transform2d(
-            lateralTransform.getTranslation().rotateBy(closestReefTagPose.getRotation()),
-            lateralTransform.getRotation());
-
-    approachTransform =
-        new Transform2d(
-            approachTransform.getTranslation().rotateBy(closestReefTagPose.getRotation()),
-            approachTransform.getRotation());
-
-    // Apply transforms to get target pose
-    Pose2d offsetPose = closestReefTagPose.transformBy(lateralTransform);
-    targetPose = offsetPose.transformBy(approachTransform);
-
-    // Set target rotation (robot facing tag)
+    // Final target pose: tag + lateral offset + approach offset, facing the tag
     targetPose =
         new Pose2d(
-            targetPose.getTranslation(),
-            closestReefTagPose.getRotation().rotateBy(Rotation2d.fromDegrees(180)));
-
+            closestReefTagPose.getX() + lateralOffsetTranslation.getX() + approachOffset.getX(),
+            closestReefTagPose.getY() + lateralOffsetTranslation.getY() + approachOffset.getY(),
+            closestReefTagPose.getRotation().rotateBy(Rotation2d.k180deg));
     if (Constants.devMode) {
       SmartDashboard.putNumber("ReefAlign/TargetX", targetPose.getX());
       SmartDashboard.putNumber("ReefAlign/TargetY", targetPose.getY());
@@ -199,14 +176,17 @@ public class Align extends Command {
     Pose2d currentPose = swerve.getPose();
 
     // Calculate errors
-    double xError = targetPose.getX() - currentPose.getX();
-    double yError = targetPose.getY() - currentPose.getY();
-    double rotationError = targetPose.getRotation().minus(currentPose.getRotation()).getRadians();
+    double xError = Math.abs(targetPose.getX() - currentPose.getX());
+    double yError = Math.abs(targetPose.getY() - currentPose.getY());
+    double rotationError =
+        Math.abs(targetPose.getRotation().minus(currentPose.getRotation()).getRadians());
 
     // Calculate outputs by setting goal to 0 (we want zero error)
-    double xSpeed = xController.calculate(xError, 0);
-    double ySpeed = yController.calculate(yError, 0);
-    double rotSpeed = rotController.calculate(rotationError, 0);
+    double xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());
+    double ySpeed = yController.calculate(currentPose.getY(), targetPose.getY());
+    double rotSpeed =
+        rotController.calculate(
+            currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
     // Limit speeds to max values
     xSpeed =
