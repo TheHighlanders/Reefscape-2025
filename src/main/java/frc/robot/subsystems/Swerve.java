@@ -378,6 +378,17 @@ public class Swerve extends SubsystemBase {
     return outputs;
   }
 
+  @Logged(name = "Drive Angle Errors", importance = Importance.INFO)
+  public double[] getAngleErrors(){
+    double[] out = new double[4];
+
+    for(int i = 0; i < modules.length; i++){
+      out[i] = modules[i].getSetpoint().angle.getDegrees() - modules[i].getState().angle.getDegrees();
+    }
+
+    return out;
+  }
+
   @Logged(name = "Angle Applied Outputs", importance = Importance.INFO)
   public double[] getAngleAppliedOutputs() {
     double[] outputs = new double[4];

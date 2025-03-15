@@ -286,7 +286,7 @@ public class Elevator extends SubsystemBase {
   public Command elevatorAuto(ElevatorState targetState) {
     switch (targetState) {
       case HOME:
-        return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtHome(0.5)));
+        return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtHome(5)));
       default:
         return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtSetpoint(0.5)));
     }

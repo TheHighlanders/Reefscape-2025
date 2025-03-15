@@ -94,6 +94,9 @@ public class Align extends Command {
 
     this.vibrate = vibrate;
 
+    yController.setTolerance(0.05, 0.1);
+    xController.setTolerance(0.05, 0.1);
+    rotController.setTolerance(0.1);
     rotController.enableContinuousInput(-Math.PI, Math.PI);
 
     addRequirements(swerve, vision);
@@ -102,10 +105,6 @@ public class Align extends Command {
   @Override
   public void initialize() {
     // vibrate.accept(0.5);
-
-    yController.setTolerance(0.01, 0.01);
-    xController.setTolerance(0.01, 0.01);
-    rotController.setTolerance(0.01);
 
     hasTargetTagOnInit = vision.hasTarget();
 
@@ -121,6 +120,8 @@ public class Align extends Command {
     calculateTargetPose();
 
     targetPosePublisher.set(targetPose);
+    SmartDashboard.putBoolean("ReefAlign/Completed", false);
+
   }
 
   private void calculateTargetPose() {
@@ -180,7 +181,7 @@ public class Align extends Command {
   public void end(boolean interrupted) {
     swerve.stopDrive();
     vibrate.schedule();
-    SmartDashboard.putBoolean("ReefAlign/Completed", true);
+    SmartDashboard.putBoolean("ReefAlign/Completed", interrupted);
   }
 
   @Override
