@@ -233,7 +233,7 @@ public class Align extends Command {
     Pose2d closestReefTagPose = vision.findClosestReefTag(swerve.getPose());
     Pose2d currentPose = swerve.getPose();
 
-    return (closestReefTagPose.getTranslation().minus(currentPose.getTranslation()).getNorm() > 2 || !vision.hasTarget());
+    return (closestReefTagPose.getTranslation().minus(currentPose.getTranslation()).getNorm() < 2 || vision.hasTarget());
     
   }  
 }
