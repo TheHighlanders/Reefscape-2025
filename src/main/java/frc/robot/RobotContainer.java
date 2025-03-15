@@ -158,11 +158,11 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
+    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds).withName("Align Right");
   }
 
   public Command alignToLeftCoral() {
-    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
+    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds).withName("Align Left");
   }
 
   private void cameraSetUp() {

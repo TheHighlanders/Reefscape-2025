@@ -202,6 +202,7 @@ public class Align extends Command {
     swerve.stopDrive();
     vibrate.schedule();
     SmartDashboard.putBoolean("ReefAlign/Completed", true);
+    
   }
 
 
