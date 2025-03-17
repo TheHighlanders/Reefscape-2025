@@ -38,7 +38,7 @@ public class RobotContainer {
   @Logged(name = "Elevator")
   Elevator elevator = new Elevator();
 
-  Vision[] cameras = {new Vision()};
+  Vision cameras = new Vision();
 
   @Logged(name = "Swerve")
   Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
@@ -150,11 +150,11 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+    return new Align(drive, cameras, () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
   }
 
   public Command alignToLeftCoral() {
-    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+    return new Align(drive, cameras, () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
   }
 
   private void cameraSetUp() {

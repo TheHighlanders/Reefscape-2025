@@ -5,7 +5,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
@@ -104,7 +103,8 @@ public class Align extends Command {
    * @param targetRightCoralSupplier Supplies whether to target right coral (true) or left coral
    *     (false)
    */
-  public Align(Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, Command vibrate) {
+  public Align(
+      Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, Command vibrate) {
     this.swerve = swerve;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
     this.vibrate = vibrate;
@@ -234,6 +234,8 @@ public class Align extends Command {
     }
 
     // Check if velocity is close to zero rather than position at setpoint
-    return xController.atGoal() && yController.atGoal() && rotController.getVelocityError()<AlignConstants.rotationVelocityTolerance;
+    return xController.atGoal()
+        && yController.atGoal()
+        && rotController.getVelocityError() < AlignConstants.rotationVelocityTolerance;
   }
 }

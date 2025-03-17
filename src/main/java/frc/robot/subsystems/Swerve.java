@@ -133,23 +133,23 @@ public class Swerve extends SubsystemBase {
 
   SwerveState current = SwerveState.NORMAL;
 
-  private final Vision[] cameras;
+  private final Vision vision;
   private EstimatedRobotPose[] lastEstimatedPoses;
   private final Pose3d[] cameraPoses;
   private double lastEstTimestamp = 0.0;
 
   /** Creates a new Swerve. */
-  public Swerve(Vision[] cameras, DoubleSupplier elevatorHeight) {
-    this.cameras = cameras;
+  public Swerve(Vision vision, DoubleSupplier elevatorHeight) {
+    this.vision = vision;
     this.elevatorHeight = elevatorHeight;
-    this.lastEstimatedPoses = new EstimatedRobotPose[cameras.length];
-    this.cameraPoses = new Pose3d[cameras.length];
+    this.lastEstimatedPoses = new EstimatedRobotPose[Vision.cameraCount];
+    this.cameraPoses = new Pose3d[Vision.cameraCount];
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
     }
 
-    for (int i = 0; i < cameras.length; i++) {
+    for (int i = 0; i < Vision.cameraCount; i++) {
       cameraPoses[i] = new Pose3d();
     }
 
@@ -269,9 +269,9 @@ public class Swerve extends SubsystemBase {
 
   /** Process vision data from all cameras and update pose estimation */
   private void updateVision() {
-    for (int i = 0; i < cameras.length; i++) {
+    for (int i = 0; i < Vision.cameraCount; i++) {
       // Get the latest result from this camera
-      Optional<EstimatedRobotPose> estPose = cameras[i].getEstimatedRobotPose();
+      Optional<EstimatedRobotPose> estPose = vision.getEstimatedRobotPose();
 
       if (estPose.isPresent()) {
         // Store the camera pose for debugging
@@ -279,7 +279,7 @@ public class Swerve extends SubsystemBase {
         lastEstimatedPoses[i] = estPose.get();
 
         // Get standard deviations from the camera
-        Matrix<N3, N1> stdDev = cameras[i].getEstimationStdDev();
+        Matrix<N3, N1> stdDev = vision.getEstimationStdDev();
 
         // Apply additional scaling based on game state
         if (DriverStation.isAutonomous()) {
@@ -288,7 +288,7 @@ public class Swerve extends SubsystemBase {
         }
 
         // Apply camera-specific scaling if needed
-        if (cameras[i].getName().contains("Back")) {
+        if (vision.getName().contains("Back")) {
           stdDev = stdDev.times(1.5);
         }
 
@@ -300,23 +300,22 @@ public class Swerve extends SubsystemBase {
 
         // Log vision data
         SmartDashboard.putNumber(
-            "Vision/" + cameras[i].getName() + "/Processing Delay",
+            "Vision/" + vision.getName() + "/Processing Delay",
             Timer.getFPGATimestamp() - lastEstTimestamp);
 
         SmartDashboard.putNumber(
-            "Vision/" + cameras[i].getName() + "/Target Count", estPose.get().targetsUsed.size());
+            "Vision/" + vision.getName() + "/Target Count", estPose.get().targetsUsed.size());
 
         // Log tag positions if in dev mode
         if (Constants.devMode && !estPose.get().targetsUsed.isEmpty()) {
           SmartDashboard.putNumber(
-              "Vision/" + cameras[i].getName() + "/First Tag ID",
+              "Vision/" + vision.getName() + "/First Tag ID",
               estPose.get().targetsUsed.get(0).getFiducialId());
         }
       }
 
       // Log whether this camera has a valid result
-      SmartDashboard.putBoolean(
-          "Vision/" + cameras[i].getName() + "/Has Target", estPose.isPresent());
+      SmartDashboard.putBoolean("Vision/" + vision.getName() + "/Has Target", estPose.isPresent());
     }
 
     // Log camera poses for debugging
@@ -379,11 +378,12 @@ public class Swerve extends SubsystemBase {
   }
 
   @Logged(name = "Drive Angle Errors", importance = Importance.INFO)
-  public double[] getAngleErrors(){
+  public double[] getAngleErrors() {
     double[] out = new double[4];
 
-    for(int i = 0; i < modules.length; i++){
-      out[i] = modules[i].getSetpoint().angle.getDegrees() - modules[i].getState().angle.getDegrees();
+    for (int i = 0; i < modules.length; i++) {
+      out[i] =
+          modules[i].getSetpoint().angle.getDegrees() - modules[i].getState().angle.getDegrees();
     }
 
     return out;

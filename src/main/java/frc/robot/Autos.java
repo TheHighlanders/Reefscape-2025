@@ -87,22 +87,36 @@ public class Autos {
   public AutoRoutine LeftTwoPiece() {
     AutoRoutine routine = autoFactory.newRoutine("LeftTwoPiece");
 
-    AutoTrajectory leftStartToleftFar = routine.trajectory("leftStart-leftFar"); //Drives from staging line to lineup start point
-    AutoTrajectory leftFarToleftStation = routine.trajectory("leftFar-leftStation"); //Drives from Far Left Segment Right Branch, to Station
-    AutoTrajectory leftStationToleftClose = routine.trajectory("leftStation-leftClose"); //Drives from station to lineup start point
+    AutoTrajectory leftStartToleftFar =
+        routine.trajectory("leftStart-leftFar"); // Drives from staging line to lineup start point
+    AutoTrajectory leftFarToleftStation =
+        routine.trajectory(
+            "leftFar-leftStation"); // Drives from Far Left Segment Right Branch, to Station
+    AutoTrajectory leftStationToleftClose =
+        routine.trajectory("leftStation-leftClose"); // Drives from station to lineup start point
 
     routine
         .active()
-        .onTrue(Commands.sequence(leftStartToleftFar.resetOdometry(), leftStartToleftFar.cmd())); // Starts driving
+        .onTrue(
+            Commands.sequence(
+                leftStartToleftFar.resetOdometry(), leftStartToleftFar.cmd())); // Starts driving
 
     leftStartToleftFar
         .done()
         .onTrue(
-            alignToRightCoral.get().withTimeout(1.5).alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION)).withName("Align1")
-                .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION)).withName("Elevator Up")
-                .andThen(coral.slowDepositCMD().withTimeout(1)).withName("Deposit")
-                .andThen(elevator.elevatorAuto(ElevatorState.HOME)).withName("Elevator Down")
-                .andThen(leftFarToleftStation.cmd()).withName("Drive to Station"));
+            alignToRightCoral
+                .get()
+                .withTimeout(1.5)
+                .alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
+                .withName("Align1")
+                .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
+                .withName("Elevator Up")
+                .andThen(coral.slowDepositCMD().withTimeout(1))
+                .withName("Deposit")
+                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+                .withName("Elevator Down")
+                .andThen(leftFarToleftStation.cmd())
+                .withName("Drive to Station"));
 
     leftFarToleftStation
         .done()
@@ -111,10 +125,17 @@ public class Autos {
     leftStationToleftClose
         .done()
         .onTrue(
-            alignToLeftCoral.get().withTimeout(1.5).alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION)).withName("Align2")
-                .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION)).withName("Elevator Up")
-                .andThen(coral.slowDepositCMD().withTimeout(1)).withName("Deposit")
-                .andThen(elevator.elevatorAuto(ElevatorState.HOME)).withName("Elevator Down"));
+            alignToLeftCoral
+                .get()
+                .withTimeout(1.5)
+                .alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
+                .withName("Align2")
+                .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
+                .withName("Elevator Up")
+                .andThen(coral.slowDepositCMD().withTimeout(1))
+                .withName("Deposit")
+                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+                .withName("Elevator Down"));
 
     return routine;
   }
@@ -133,7 +154,10 @@ public class Autos {
     rightStart_rightFar
         .done()
         .onTrue(
-                alignToRightCoral.get().withTimeout(1.25).alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
+            alignToRightCoral
+                .get()
+                .withTimeout(1.25)
+                .alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
                 .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
                 .andThen(coral.slowDepositCMD().withTimeout(1))
                 .andThen(elevator.elevatorAuto(ElevatorState.HOME))
@@ -146,15 +170,18 @@ public class Autos {
     rightStation_rightClose
         .done()
         .onTrue(
-                alignToRightCoral.get().withTimeout(1.25).alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
+            alignToRightCoral
+                .get()
+                .withTimeout(1.25)
+                .alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
                 .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
                 .andThen(coral.slowDepositCMD().withTimeout(1))
                 .andThen(elevator.elevatorAuto(ElevatorState.HOME)));
 
     return routine;
-}
+  }
 
-public AutoRoutine CenterOnePiece() { // the one piece is real :>
+  public AutoRoutine CenterOnePiece() { // the one piece is real :>
     AutoRoutine routine = autoFactory.newRoutine("CenterOnePiece");
 
     AutoTrajectory centerStart_centerFar = routine.trajectory("centerStart-centerFar");

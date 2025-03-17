@@ -33,10 +33,19 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 final class VisionConstants {
   static final PoseStrategy poseStrategy = PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
-  static final Transform3d frontFacingCam =
+  static final Transform3d CenterCam =
       new Transform3d(
           new Translation3d(0.205486, -0.122174, 0.4376928),
-          new Rotation3d(0, Units.degreesToRadians(25.5), 0));
+          new Rotation3d(
+              Units.degreesToRadians(0), Units.degreesToRadians(25.5), Units.degreesToRadians(0)));
+
+  static final Transform3d LeftCam =
+      new Transform3d(
+          new Translation3d(0.1708, 0.30731, 0.2307),
+          new Rotation3d(
+              Units.degreesToRadians(0),
+              Units.degreesToRadians(-19.4),
+              Units.degreesToRadians(30)));
 
   static final int[] reefTagIds = {
     6, 7, 8, 9, 10, 11, // RED
@@ -58,21 +67,7 @@ final class VisionConstants {
 
   // Initialize camera intrinsics and distortion with typical values
   static {
-    // These are example values and should be replaced with actual camera
-    // calibration
-    double[][] intrinsics = {
-      {700.0, 0.0, 320.0},
-      {0.0, 700.0, 240.0},
-      {0.0, 0.0, 1.0}
-    };
-
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        CAMERA_INTRINSICS.set(i, j, intrinsics[i][j]);
-      }
-    }
-
-    // Fill distortion coefficients with zeros
+    CAMERA_INTRINSICS.fill(0);
     CAMERA_DISTORTION.fill(0.0);
   }
 }
@@ -80,8 +75,11 @@ final class VisionConstants {
 public class Vision extends SubsystemBase {
 
   private static final CameraConfig[] CAMERA_CONFIGS = {
-    new CameraConfig("ReefCamera", VisionConstants.frontFacingCam)
+    new CameraConfig("ReefCam", VisionConstants.CenterCam),
+    new CameraConfig("LeftCam", VisionConstants.LeftCam)
   };
+
+  public static final int cameraCount = CAMERA_CONFIGS.length;
 
   // Internal camera management
   private final PhotonCamera[] cameras;
@@ -111,7 +109,6 @@ public class Vision extends SubsystemBase {
     this.aprilTagFieldLayout = Constants.getFieldTagLayout();
 
     // Initialize camera arrays
-    int cameraCount = CAMERA_CONFIGS.length;
     cameras = new PhotonCamera[cameraCount];
     poseEstimators = new PhotonPoseEstimator[cameraCount];
     cameraPoses = new Pose3d[cameraCount];
