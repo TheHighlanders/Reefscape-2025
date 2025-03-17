@@ -11,6 +11,7 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -19,6 +20,7 @@ import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
+import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.CommandXboxControllerSubsystem;
@@ -31,6 +33,7 @@ public class RobotContainer {
 
   public final CommandXboxControllerSubsystem driver = new CommandXboxControllerSubsystem(0);
   public final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
+
 
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
@@ -47,14 +50,19 @@ public class RobotContainer {
       new Autos(drive, elevator, coralScorer, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
+  LEDs leds = new LEDs(drive, cameras[0]);
+
+
   public RobotContainer() {
+
+
     chooser = new AutoChooser();
 
     configureBindings();
     configureAutonomous();
 
     drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
-
+    // leds.runPattern(LEDPattern.rainbow(255, 128)).schedule();
     cameraSetUp();
   }
 
@@ -84,7 +92,7 @@ public class RobotContainer {
 
     driver.leftBumper().whileTrue(alignToLeftCoral());
     driver.rightBumper().whileTrue(alignToRightCoral());
-
+    driver.leftBumper().whileTrue(getAutonomousCommand());
     operator
         .povDown()
         .or(operator.povDownLeft())
@@ -150,11 +158,11 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+    return new Align(drive, cameras[0], () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds).withName("Align Right");
   }
 
   public Command alignToLeftCoral() {
-    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+    return new Align(drive, cameras[0], () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds).withName("Align Left");
   }
 
   private void cameraSetUp() {

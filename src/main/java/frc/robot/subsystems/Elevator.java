@@ -29,6 +29,7 @@ import frc.robot.Constants;
 import java.util.function.DoubleSupplier;
 
 class ElevatorConstants {
+
   static final int elevMotorID = 41;
 
   // 2 for carriage movement relative to 1st stage, also includes DP, and gear

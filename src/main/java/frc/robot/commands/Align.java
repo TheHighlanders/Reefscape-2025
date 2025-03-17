@@ -8,14 +8,27 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.LEDPattern;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
+import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
+
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
 public class Align extends Command {
+
+
+  //private final LEDs leds;
 
   /** Constants for the Reef Coral alignment */
   private static final class AlignConstants {
@@ -51,7 +64,7 @@ public class Align extends Command {
     static final double rotateI = 0;
     static final double rotateD = 0; // 0.5;
   }
-
+  private final LEDs leds;
   private final Swerve swerve;
   private final Vision vision;
   private final BooleanSupplier targetRightCoralSupplier; // true = right
@@ -80,16 +93,16 @@ public class Align extends Command {
 
   /**
    * Creates a command to align with coral of a reef tag.
-   *
+   * @param leds
    * @param swerve The swerve drive subsystem
    * @param vision The vision subsystem
    * @param targetRightCoralSupplier Supplies whether to target right coral (true) or left coral
    *     (false)
    */
-  public Align(
-      Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, Command vibrate) {
+  public Align(Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, Command vibrate, LEDs leds) {
     this.swerve = swerve;
     this.vision = vision;
+    this.leds = leds;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
 
     this.vibrate = vibrate;
@@ -102,11 +115,14 @@ public class Align extends Command {
   @Override
   public void initialize() {
     // vibrate.accept(0.5);
+    leds.runPattern(LEDPattern.rainbow(255, 128).scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d/120d))).schedule();
+    
 
     yController.setTolerance(0.01, 0.01);
     xController.setTolerance(0.01, 0.01);
     rotController.setTolerance(0.01);
 
+    
     hasTargetTagOnInit = vision.hasTarget();
 
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
@@ -150,6 +166,7 @@ public class Align extends Command {
 
   @Override
   public void execute() {
+
     Pose2d currentPose = swerve.getPose();
 
     double xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());
@@ -181,14 +198,36 @@ public class Align extends Command {
     swerve.stopDrive();
     vibrate.schedule();
     SmartDashboard.putBoolean("ReefAlign/Completed", true);
+    
   }
+
 
   @Override
   public boolean isFinished() {
     if (!hasTargetTagOnInit) {
       return true;
     }
+    Pose2d currentPose = swerve.getPose();
+    double distanceToTarget = currentPose.getTranslation().getDistance(targetPose.getTranslation());
+    double rotationError =
+        Math.abs(currentPose.getRotation().minus(targetPose.getRotation()).getRadians());
+
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("ReefAlign/DistToTarget", distanceToTarget);
+      SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
+    }
+
+
 
     return yController.atSetpoint() && xController.atSetpoint() && rotController.atSetpoint();
   }
+
+  public static boolean canAlign(Swerve swerve, Vision vision){
+
+    Pose2d closestReefTagPose = vision.findClosestReefTag(swerve.getPose());
+    Pose2d currentPose = swerve.getPose();
+
+    return (closestReefTagPose.getTranslation().minus(currentPose.getTranslation()).getNorm() < 2 || vision.hasTarget());
+    
+  }  
 }
