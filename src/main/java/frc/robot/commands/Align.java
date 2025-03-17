@@ -1,5 +1,8 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.epilogue.Logged;
@@ -12,13 +15,18 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
+import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 
 public class Align extends Command {
+
+
+  //private final LEDs leds;
 
   /** Constants for the Reef Coral alignment */
   private static final class AlignConstants {
@@ -59,7 +67,7 @@ public class Align extends Command {
     static final double rotateI = 0;
     static final double rotateD = 0;
   }
-
+  private final LEDs leds;
   private final Swerve swerve;
   private final BooleanSupplier targetRightCoralSupplier; // true = right
 
@@ -116,14 +124,15 @@ public class Align extends Command {
 
   /**
    * Creates a command to align with coral of a reef tag.
-   *
+   * @param leds
    * @param swerve The swerve drive subsystem
    * @param targetRightCoralSupplier Supplies whether to target right coral (true) or left coral
    *     (false)
    */
-  public Align(
-      Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, Command vibrate) {
+  public Align(Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, Command vibrate, LEDs leds) {
     this.swerve = swerve;
+    this.vision = vision;
+    this.leds = leds;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
     this.vibrate = vibrate;
     this.vision = vision;
@@ -136,6 +145,8 @@ public class Align extends Command {
   @Override
   public void initialize() {
     Pose2d currentPose = swerve.getPose();
+    // vibrate.accept(0.5);
+    leds.runPattern(LEDPattern.rainbow(255, 128).scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d/120d))).schedule();
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
 
@@ -144,6 +155,8 @@ public class Align extends Command {
     yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
     rotController.setTolerance(
         AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
+    
+    hasTargetTagOnInit = vision.hasTarget();
 
     hasTargetTagOnInit = true;
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
@@ -195,6 +208,7 @@ public class Align extends Command {
 
   @Override
   public void execute() {
+
     Pose2d currentPose = swerve.getPose();
 
     // Calculate errors
@@ -244,17 +258,39 @@ public class Align extends Command {
     swerve.stopDrive();
     vibrate.schedule();
     SmartDashboard.putBoolean("ReefAlign/Completed", true);
+    
   }
+
 
   @Override
   public boolean isFinished() {
     if (!hasTargetTagOnInit) {
       return true;
     }
+    Pose2d currentPose = swerve.getPose();
+    double distanceToTarget = currentPose.getTranslation().getDistance(targetPose.getTranslation());
+    double rotationError =
+        Math.abs(currentPose.getRotation().minus(targetPose.getRotation()).getRadians());
+
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("ReefAlign/DistToTarget", distanceToTarget);
+      SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
+    }
+
+
 
     // Check if velocity is close to zero rather than position at setpoint
     return xController.atGoal()
         && yController.atGoal()
         && rotController.getVelocityError() < AlignConstants.rotationVelocityTolerance;
   }
+
+  public static boolean canAlign(Swerve swerve, Vision vision){
+
+    Pose2d closestReefTagPose = vision.findClosestReefTag(swerve.getPose());
+    Pose2d currentPose = swerve.getPose();
+
+    return (closestReefTagPose.getTranslation().minus(currentPose.getTranslation()).getNorm() < 2 || vision.hasTarget());
+    
+  }  
 }

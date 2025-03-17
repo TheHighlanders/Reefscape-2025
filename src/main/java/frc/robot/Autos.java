@@ -4,16 +4,18 @@
 
 package frc.robot;
 
+import java.util.function.Supplier;
+
 import choreo.auto.AutoFactory;
 import choreo.auto.AutoRoutine;
 import choreo.auto.AutoTrajectory;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.subsystems.CoralScorer;
 import frc.robot.subsystems.Elevator;
 import frc.robot.subsystems.Elevator.ElevatorState;
 import frc.robot.subsystems.Swerve;
-import java.util.function.Supplier;
 
 /** Add your docs here. */
 public class Autos {
@@ -21,6 +23,7 @@ public class Autos {
   Swerve drive;
   Elevator elevator;
   CoralScorer coral;
+  Trigger canAlign;
   Supplier<Command> alignToLeftCoral;
   Supplier<Command> alignToRightCoral;
 
@@ -28,6 +31,7 @@ public class Autos {
       Swerve drive,
       Elevator elevator,
       CoralScorer coral,
+      Trigger canAlign,
       Supplier<Command> alignToLeftCoral,
       Supplier<Command> alignToRightCoral) {
     autoFactory =
@@ -43,8 +47,18 @@ public class Autos {
     this.drive = drive;
     this.elevator = elevator;
     this.coral = coral;
+    this.canAlign = canAlign;
     this.alignToLeftCoral = alignToLeftCoral;
     this.alignToRightCoral = alignToRightCoral;
+  }
+
+  public Command score(){
+    return elevator.elevatorAuto(ElevatorState.L4_POSITION)
+    .withName("Elevator Up")
+    .andThen(coral.slowDepositCMD().withTimeout(1))
+    .withName("Deposit")
+    .andThen(elevator.elevatorAuto(ElevatorState.HOME))
+    .withName("Elevator Down");
   }
 
   public Command testTraj() {
@@ -94,48 +108,36 @@ public class Autos {
             "leftFar-leftStation"); // Drives from Far Left Segment Right Branch, to Station
     AutoTrajectory leftStationToleftClose =
         routine.trajectory("leftStation-leftClose"); // Drives from station to lineup start point
-
+    
     routine
         .active()
         .onTrue(
             Commands.sequence(
                 leftStartToleftFar.resetOdometry(), leftStartToleftFar.cmd())); // Starts driving
 
-    leftStartToleftFar
-        .done()
-        .onTrue(
-            alignToRightCoral
-                .get()
-                .withTimeout(1.5)
-                .alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
-                .withName("Align1")
-                .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
-                .withName("Elevator Up")
-                .andThen(coral.slowDepositCMD().withTimeout(1))
-                .withName("Deposit")
-                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
-                .withName("Elevator Down")
-                .andThen(leftFarToleftStation.cmd())
-                .withName("Drive to Station"));
+    
+    canAlign.and(leftStartToleftFar.active()).onTrue(
+        alignToRightCoral.get().withTimeout(1)
+        .alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
+        .withName("Align1")
+
+        .andThen(score())
+        .andThen(leftFarToleftStation.cmd())
+        .withName("Drive to Station"));
+
+                
 
     leftFarToleftStation
         .done()
         .onTrue(Commands.waitSeconds(0.25).andThen(leftStationToleftClose.cmd()));
 
-    leftStationToleftClose
-        .done()
-        .onTrue(
-            alignToLeftCoral
-                .get()
-                .withTimeout(1.5)
-                .alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
-                .withName("Align2")
-                .andThen(elevator.elevatorAuto(ElevatorState.L4_POSITION))
-                .withName("Elevator Up")
-                .andThen(coral.slowDepositCMD().withTimeout(1))
-                .withName("Deposit")
-                .andThen(elevator.elevatorAuto(ElevatorState.HOME))
-                .withName("Elevator Down"));
+    canAlign.and(leftStationToleftClose.active()).onTrue(
+        alignToLeftCoral.get().withTimeout(1).
+        alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
+        .withName("Align2")
+
+        .andThen(score())
+    );
 
     return routine;
   }

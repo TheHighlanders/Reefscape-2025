@@ -75,8 +75,8 @@ final class VisionConstants {
 public class Vision extends SubsystemBase {
 
   private static final CameraConfig[] CAMERA_CONFIGS = {
-    new CameraConfig("ReefCam", VisionConstants.CenterCam),
-    new CameraConfig("LeftCam", VisionConstants.LeftCam)
+    new CameraConfig("ReefRight", VisionConstants.CenterCam),
+    new CameraConfig("ReefLeft", VisionConstants.LeftCam)
   };
 
   public static final int cameraCount = CAMERA_CONFIGS.length;
