@@ -23,6 +23,7 @@ import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 
+@Logged
 public class Align extends Command {
 
 
@@ -95,8 +96,8 @@ public class Align extends Command {
           new TrapezoidProfile.Constraints(
               AlignConstants.maxRotationSpeed, AlignConstants.maxRotationAccel));
 
-  private Pose2d targetPose;
-  private Pose2d closestReefTagPose;
+  private Pose2d targetPose = new Pose2d();
+  private Pose2d closestReefTagPose = new Pose2d();
   private boolean targetRightCoral; // Set during initialize
   private boolean hasTargetTagOnInit = true;
   Vision vision;
@@ -149,7 +150,6 @@ public class Align extends Command {
     leds.runPattern(LEDPattern.rainbow(255, 128).scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d/120d))).schedule();
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
-
     // Set tolerances for velocity-based completion
     xController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
     yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
@@ -174,11 +174,15 @@ public class Align extends Command {
     // Get current robot pose
 
     ChassisSpeeds currentSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(swerve.kinematics.toChassisSpeeds(swerve.getModuleStates()),swerve.getPose().getRotation());
+    SmartDashboard.putNumber("Align/X Init Speed", -currentSpeeds.vxMetersPerSecond);
+    SmartDashboard.putNumber("Align/Y Init Speed", -currentSpeeds.vyMetersPerSecond);
+
+    SmartDashboard.putNumber("Align/ROt Init Speed", -currentSpeeds.omegaRadiansPerSecond);
 
     // Reset controllers with the current error and target of 0 (no error)
-    xController.reset(currentPose.getX(), currentSpeeds.vxMetersPerSecond);
-    yController.reset(currentPose.getY(), currentSpeeds.vyMetersPerSecond);
-    rotController.reset(currentPose.getRotation().getRadians(), currentSpeeds.omegaRadiansPerSecond);
+    xController.reset(currentPose.getX(), -currentSpeeds.vxMetersPerSecond);
+    yController.reset(currentPose.getY(), -currentSpeeds.vyMetersPerSecond);
+    rotController.reset(currentPose.getRotation().getRadians(), -currentSpeeds.omegaRadiansPerSecond);
   }
 
   private void calculateTargetPose() {

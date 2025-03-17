@@ -33,13 +33,13 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 final class VisionConstants {
   static final PoseStrategy poseStrategy = PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
-  static final Transform3d CenterCam =
+  static final Transform3d reefRight =
       new Transform3d(
-          new Translation3d(0.205486, -0.122174, 0.4376928),
+          new Translation3d(0.205511, -0.114292, 0.459399),
           new Rotation3d(
-              Units.degreesToRadians(0), Units.degreesToRadians(25.5), Units.degreesToRadians(0)));
+              Units.degreesToRadians(0), Units.degreesToRadians(27), Units.degreesToRadians(0)));
 
-  static final Transform3d LeftCam =
+  static final Transform3d reefLeft =
       new Transform3d(
           new Translation3d(0.1708, 0.30731, 0.2307),
           new Rotation3d(
@@ -75,8 +75,8 @@ final class VisionConstants {
 public class Vision extends SubsystemBase {
 
   private static final CameraConfig[] CAMERA_CONFIGS = {
-    new CameraConfig("ReefRight", VisionConstants.CenterCam),
-    new CameraConfig("ReefLeft", VisionConstants.LeftCam)
+    new CameraConfig("ReefRight", VisionConstants.reefRight),
+    new CameraConfig("ReefLeft", VisionConstants.reefLeft)
   };
 
   public static final int cameraCount = CAMERA_CONFIGS.length;
@@ -93,11 +93,21 @@ public class Vision extends SubsystemBase {
   private boolean hasTarget = false;
   private int frameCounter = 0;
 
+  private Optional<EstimatedRobotPose> bestEstimate = Optional.empty();
+
   // For publishing best estimate to NetworkTables
   StructPublisher<Pose2d> visionEstPose =
       NetworkTableInstance.getDefault()
-          .getStructTopic("/Vision/Vision Estimated Pose", Pose2d.struct)
+          .getStructTopic("/Vision/Vision Best Estimated Pose", Pose2d.struct)
           .publish();
+
+  StructPublisher[] camPoses = {
+    NetworkTableInstance.getDefault()
+    .getStructTopic("/Vision/Vision 0 Pose", Pose2d.struct)
+    .publish(),
+    NetworkTableInstance.getDefault()
+    .getStructTopic("/Vision/Vision 1 Pose", Pose2d.struct)
+    .publish()};
 
   // This is for timing the difference between when the vision is processed and
   // when it is published
@@ -142,7 +152,7 @@ public class Vision extends SubsystemBase {
   @Override
   public void periodic() {
     // Process all cameras
-    Optional<EstimatedRobotPose> bestEstimate = Optional.empty();
+    bestEstimate = Optional.empty();
     double bestConfidence = Double.POSITIVE_INFINITY;
 
     for (int i = 0; i < cameras.length; i++) {
@@ -179,6 +189,8 @@ public class Vision extends SubsystemBase {
 
         // Calculate overall confidence metric (lower is better)
         double confidence = camStdDev.get(0, 0) + camStdDev.get(1, 0) + camStdDev.get(2, 0);
+
+        camPoses[i].set(camEstimate.get().estimatedPose.toPose2d());
 
         // Update our best estimate if this one is better
         if (confidence < bestConfidence) {
@@ -277,18 +289,10 @@ public class Vision extends SubsystemBase {
       return Optional.empty();
     }
 
-    // Find the camera with a valid pose
-    for (Pose3d cameraPose : cameraPoses) {
-      if (!cameraPose.equals(new Pose3d())) {
+      if (bestEstimate.isPresent()) {
         // Construct an estimated pose with this camera's data
-        return Optional.of(
-            new EstimatedRobotPose(
-                cameraPose,
-                Timer.getFPGATimestamp(),
-                new ArrayList<>(), // Ideally, store the actual targets
-                VisionConstants.poseStrategy));
+        return bestEstimate;
       }
-    }
 
     return Optional.empty();
   }

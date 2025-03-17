@@ -134,24 +134,20 @@ public class Swerve extends SubsystemBase {
   SwerveState current = SwerveState.NORMAL;
 
   private final Vision vision;
-  private EstimatedRobotPose[] lastEstimatedPoses;
-  private final Pose3d[] cameraPoses;
+  private EstimatedRobotPose lastEstimatedPoses;
+  private Pose3d cameraPose;
   private double lastEstTimestamp = 0.0;
 
   /** Creates a new Swerve. */
   public Swerve(Vision vision, DoubleSupplier elevatorHeight) {
     this.vision = vision;
     this.elevatorHeight = elevatorHeight;
-    this.lastEstimatedPoses = new EstimatedRobotPose[Vision.cameraCount];
-    this.cameraPoses = new Pose3d[Vision.cameraCount];
+    this.cameraPose = new Pose3d();
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
     }
 
-    for (int i = 0; i < Vision.cameraCount; i++) {
-      cameraPoses[i] = new Pose3d();
-    }
 
     // Using +X as forward, and +Y as left, as per
     // https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html
@@ -269,14 +265,13 @@ public class Swerve extends SubsystemBase {
 
   /** Process vision data from all cameras and update pose estimation */
   private void updateVision() {
-    for (int i = 0; i < Vision.cameraCount; i++) {
-      // Get the latest result from this camera
+      // Get the best result from vision
       Optional<EstimatedRobotPose> estPose = vision.getEstimatedRobotPose();
 
       if (estPose.isPresent()) {
         // Store the camera pose for debugging
-        cameraPoses[i] = estPose.get().estimatedPose;
-        lastEstimatedPoses[i] = estPose.get();
+        cameraPose = estPose.get().estimatedPose;
+        lastEstimatedPoses = estPose.get();
 
         // Get standard deviations from the camera
         Matrix<N3, N1> stdDev = vision.getEstimationStdDev();
@@ -285,11 +280,6 @@ public class Swerve extends SubsystemBase {
         if (DriverStation.isAutonomous()) {
           // Increase uncertainty during auto
           stdDev = stdDev.times(2.0);
-        }
-
-        // Apply camera-specific scaling if needed
-        if (vision.getName().contains("Back")) {
-          stdDev = stdDev.times(1.5);
         }
 
         // Add measurement to pose estimator
@@ -316,7 +306,7 @@ public class Swerve extends SubsystemBase {
 
       // Log whether this camera has a valid result
       SmartDashboard.putBoolean("Vision/" + vision.getName() + "/Has Target", estPose.isPresent());
-    }
+    
 
     // Log camera poses for debugging
     if (Constants.devMode) {
@@ -325,14 +315,6 @@ public class Swerve extends SubsystemBase {
     }
   }
 
-  /**
-   * Get the array of camera poses for visualization
-   *
-   * @return Array of camera poses in field coordinates
-   */
-  public Pose3d[] getCameraPoses() {
-    return cameraPoses;
-  }
 
   /**
    * Get a specific camera's pose
@@ -340,11 +322,8 @@ public class Swerve extends SubsystemBase {
    * @param index The camera index
    * @return The camera's pose in field coordinates
    */
-  public Pose3d getCameraPose(int index) {
-    if (index >= 0 && index < cameraPoses.length) {
-      return cameraPoses[index];
-    }
-    return new Pose3d();
+  public Pose3d getCameraPose() {
+    return cameraPose;
   }
 
   @Logged(name = "Estimated Pose", importance = Importance.INFO)

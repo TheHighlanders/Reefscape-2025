@@ -48,6 +48,8 @@ public class RobotContainer {
   Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
 
   Trigger canAlign = new Trigger(()->Align.canAlign(drive, cameras));
+  @Logged(name = "Align")
+  Align alignCMD = new Align(drive, cameras, driver.rightBumper(), driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
 
   Autos autos =
       new Autos(drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
@@ -93,9 +95,9 @@ public class RobotContainer {
     driver.leftTrigger().onTrue(drive.enableSlowMode());
     driver.leftTrigger().onFalse(drive.disableSlowMode());
 
-    driver.leftBumper().whileTrue(alignToLeftCoral());
-    driver.rightBumper().whileTrue(alignToRightCoral());
-    driver.leftBumper().whileTrue(getAutonomousCommand());
+    driver.leftBumper().whileTrue(alignCMD);
+    driver.rightBumper().whileTrue(alignCMD);
+
     operator
         .povDown()
         .or(operator.povDownLeft())
