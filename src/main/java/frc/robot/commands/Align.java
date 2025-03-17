@@ -1,5 +1,9 @@
 package frc.robot.commands;
 
+import java.util.function.BooleanSupplier;
+
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -13,7 +17,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
-import java.util.function.BooleanSupplier;
 
 public class Align extends Command {
 
@@ -96,6 +99,21 @@ public class Align extends Command {
           .publish();
   private final Command vibrate;
 
+  @Logged(name = "xError", importance = Importance.INFO)
+  private double xError = -1;
+  @Logged(name = "yError", importance = Importance.INFO)
+  private double yError = -1;
+  @Logged(name = "rotError", importance = Importance.INFO)
+  private double rotError = -1;
+
+@Logged(name = "xSpeed", importance = Importance.INFO)
+  private double xSpeed = -1;
+@Logged(name = "ySpeed", importance = Importance.INFO)
+  private double ySpeed = -1;
+@Logged(name = "rotSpeed", importance = Importance.INFO)
+  private double rotSpeed = -1;  
+
+
   /**
    * Creates a command to align with coral of a reef tag.
    *
@@ -142,10 +160,12 @@ public class Align extends Command {
 
     // Get current robot pose
 
+    ChassisSpeeds currentSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(swerve.kinematics.toChassisSpeeds(swerve.getModuleStates()),swerve.getPose().getRotation());
+
     // Reset controllers with the current error and target of 0 (no error)
-    xController.reset(currentPose.getX(), 0);
-    yController.reset(currentPose.getY(), 0);
-    rotController.reset(currentPose.getRotation().getRadians(), 0);
+    xController.reset(currentPose.getX(), currentSpeeds.vxMetersPerSecond);
+    yController.reset(currentPose.getY(), currentSpeeds.vyMetersPerSecond);
+    rotController.reset(currentPose.getRotation().getRadians(), currentSpeeds.omegaRadiansPerSecond);
   }
 
   private void calculateTargetPose() {
@@ -178,15 +198,15 @@ public class Align extends Command {
     Pose2d currentPose = swerve.getPose();
 
     // Calculate errors
-    double xError = Math.abs(targetPose.getX() - currentPose.getX());
-    double yError = Math.abs(targetPose.getY() - currentPose.getY());
-    double rotationError =
+    xError = Math.abs(targetPose.getX() - currentPose.getX());
+    yError = Math.abs(targetPose.getY() - currentPose.getY());
+    rotError =
         Math.abs(targetPose.getRotation().minus(currentPose.getRotation()).getRadians());
 
     // Calculate outputs by setting goal to 0 (we want zero error)
-    double xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());
-    double ySpeed = yController.calculate(currentPose.getY(), targetPose.getY());
-    double rotSpeed =
+    xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());
+    ySpeed = yController.calculate(currentPose.getY(), targetPose.getY());
+    rotSpeed =
         rotController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
@@ -200,11 +220,10 @@ public class Align extends Command {
     // rotSpeed =
     //     MathUtil.clamp(rotSpeed, -AlignConstants.maxRotationSpeed,
     // AlignConstants.maxRotationSpeed);
-
     if (Constants.devMode) {
       SmartDashboard.putNumber("ReefAlign/XError", xError);
       SmartDashboard.putNumber("ReefAlign/YError", yError);
-      SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
+      SmartDashboard.putNumber("ReefAlign/RotError", rotError);
       SmartDashboard.putNumber("ReefAlign/XSpeed", xSpeed);
       SmartDashboard.putNumber("ReefAlign/YSpeed", ySpeed);
       SmartDashboard.putNumber("ReefAlign/RotSpeed", rotSpeed);
