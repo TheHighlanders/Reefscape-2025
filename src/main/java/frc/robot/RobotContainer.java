@@ -48,14 +48,16 @@ public class RobotContainer {
   Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
 
   Trigger canAlign = new Trigger(()->Align.canAlign(drive, cameras));
+
+  LEDs leds = new LEDs(canAlign);
+
   @Logged(name = "Align")
-  Align alignCMD = new Align(drive, cameras, driver.rightBumper(), driver.rumbleCmd(0.5, 0.5).withTimeout(0.5));
+  Align alignCMD = new Align(drive, cameras, driver.rightBumper(), driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
 
   Autos autos =
       new Autos(drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
-  LEDs leds = new LEDs(canAlign);
 
 
   public RobotContainer() {

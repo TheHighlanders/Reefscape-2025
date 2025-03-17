@@ -26,13 +26,14 @@ public class LEDs extends SubsystemBase {
   private final AddressableLED m_led;
   private final AddressableLEDBuffer m_buffer;
 
-  LEDPattern blink = LEDPattern.solid(Color.kWhite);
+  LEDPattern alignOk = LEDPattern.solid(Color.kGreen);
+  LEDPattern allianceColor;
  // LEDPattern pattern = blink.blink(Seconds.of(.1));
 
   public LEDs(Trigger canAlign) {
     this.canAlign = canAlign;
 
-    canAlign.onTrue(runPattern(blink));
+    canAlign.onTrue(runPattern(alignOk));
 
     m_led = new AddressableLED(kPort);
     m_buffer = new AddressableLEDBuffer(kLength);

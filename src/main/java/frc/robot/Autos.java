@@ -117,7 +117,7 @@ public class Autos {
 
     
     canAlign.and(leftStartToleftFar.active()).onTrue(
-        alignToRightCoral.get().withTimeout(1)
+        alignToRightCoral.get()
         .alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
         .withName("Align1")
 
@@ -132,8 +132,8 @@ public class Autos {
         .onTrue(Commands.waitSeconds(0.25).andThen(leftStationToleftClose.cmd()));
 
     canAlign.and(leftStationToleftClose.active()).onTrue(
-        alignToLeftCoral.get().withTimeout(1).
-        alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
+        alignToLeftCoral.get()
+        .alongWith(elevator.elevatorAuto(ElevatorState.L2_POSITION))
         .withName("Align2")
 
         .andThen(score())

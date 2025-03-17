@@ -53,8 +53,8 @@ public class Align extends Command {
     static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
-    static final double maxApproachSpeed = 5;
-    static final double maxApproachAccel = 5.0;
+    static final double maxApproachSpeed = 1.5;
+    static final double maxApproachAccel = 2;
 
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 5;
@@ -294,7 +294,7 @@ public class Align extends Command {
     Pose2d closestReefTagPose = vision.findClosestReefTag(swerve.getPose());
     Pose2d currentPose = swerve.getPose();
 
-    return (closestReefTagPose.getTranslation().minus(currentPose.getTranslation()).getNorm() < 2 || vision.hasTarget());
+    return (closestReefTagPose.getTranslation().minus(currentPose.getTranslation()).getNorm() < 2 && vision.hasTarget());
     
   }  
 }
