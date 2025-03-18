@@ -136,10 +136,9 @@ public class Autos {
         .and(leftStartToleftFar.active())
         .onTrue(
             alignToRightCoral
-                .get()
-                .alongWith(
-                    elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
-                .withName("Align1")
+                .get().withName("Align1")
+                // .alongWith(
+                //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
                 .andThen(score().withName("Score First Piece"))
                 .andThen(leftFarToleftStation.cmd().withName("Drive to Station"))
                 .withName("Drive to Station"));
@@ -156,10 +155,9 @@ public class Autos {
         .and(leftStationToleftClose.active())
         .onTrue(
             alignToLeftCoral
-                .get()
-                .alongWith(
-                    elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
-                .withName("Align2")
+                .get().withName("Align2")
+                // .alongWith(
+                //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
                 .andThen(score().withName("Score Second Piece"))
                 .withName("Align and Score"));
 

@@ -51,7 +51,7 @@ public class Align extends Command {
     static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
-    static final double maxApproachSpeed = 1.5;
+    static final double maxApproachSpeed = 2.5;
     static final double maxApproachAccel = 2;
 
     // Maximum rotation speed (rad/s)
@@ -59,7 +59,7 @@ public class Align extends Command {
     static final double maxRotationAccel = 1.5;
 
     static final double translateP = 5;
-    static final double translateI = 0.01;
+    static final double translateI = 0.02;
     static final double translateD = 0;
 
     static final double rotateP = 3;
@@ -155,6 +155,11 @@ public class Align extends Command {
   public void initialize() {
     Pose2d currentPose = swerve.getPose();
     // vibrate.accept(0.5);
+
+    if(!Align.canAlign(swerve, vision)){
+      this.cancel();
+    }
+
     leds.runPattern(
             LEDPattern.rainbow(255, 128)
                 .scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d / 120d)))
@@ -170,7 +175,6 @@ public class Align extends Command {
 
     hasTargetTagOnInit = vision.hasTarget();
 
-    hasTargetTagOnInit = true;
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
 
     if (Constants.devMode) {
@@ -275,15 +279,12 @@ public class Align extends Command {
   @Override
   public void end(boolean interrupted) {
     swerve.stopDrive();
-    vibrate.withName("Vibrate Controller").schedule();
-    SmartDashboard.putBoolean("ReefAlign/Completed", true);
+    vibrate.schedule();
+    // SmartDashboard.putBoolean("ReefAlign/Completed", true);
   }
 
   @Override
   public boolean isFinished() {
-    if (!hasTargetTagOnInit) {
-      return true;
-    }
     Pose2d currentPose = swerve.getPose();
     double distanceToTarget = currentPose.getTranslation().getDistance(targetPose.getTranslation());
     double rotationError =

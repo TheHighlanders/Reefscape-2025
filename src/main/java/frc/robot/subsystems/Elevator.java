@@ -94,7 +94,6 @@ public class Elevator extends SubsystemBase {
   public Elevator() { // Creates a new Elevator.
     SparkMaxConfig elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(ElevatorConstants.elevMotorID, MotorType.kBrushless);
-    reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
     elevatorMotorConfig
         .encoder
         .positionConversionFactor(ElevatorConstants.elevPCF)
@@ -136,6 +135,9 @@ public class Elevator extends SubsystemBase {
     elevatorController = elevatorMotor.getClosedLoopController();
 
     elevatorEncoder = elevatorMotor.getEncoder();
+
+    reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
+
 
     elevatorEncoder.setPosition(0);
 

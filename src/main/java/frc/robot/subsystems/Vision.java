@@ -177,9 +177,6 @@ public class Vision extends SubsystemBase {
         continue;
       }
 
-      hasTarget = true;
-      frameCounter = 0;
-
       // Get the most recent result (last in the list)
       PhotonPipelineResult result = results.get(results.size() - 1);
 
@@ -187,6 +184,9 @@ public class Vision extends SubsystemBase {
       if (!result.hasTargets()) {
         continue;
       }
+
+      hasTarget = true;
+      frameCounter = 0;
 
       // Get vision data from this camera
       Optional<EstimatedRobotPose> camEstimate = VisionHelper.update(

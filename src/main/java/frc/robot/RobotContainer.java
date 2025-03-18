@@ -49,31 +49,28 @@ public class RobotContainer {
   @Logged(name = "Swerve")
   Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
 
-  Trigger canAlign = new Trigger(() -> Align.canAlign(drive, cameras));
+  public Trigger canAlign = new Trigger(() -> Align.canAlign(drive, cameras));
 
   LEDs leds = new LEDs(canAlign);
 
   @Logged(name = "AlignRight")
-  Align alignRightCMD =
-      new Align(
-          drive,
-          cameras,
-          () -> true,
-          driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-          leds);
+  Align alignRightCMD = new Align(
+      drive,
+      cameras,
+      () -> true,
+      driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+      leds);
 
   @Logged(name = "AlignLeft")
-  Align alignLeftCMD =
-      new Align(
-          drive,
-          cameras,
-          () -> false,
-          driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-          leds);
+  Align alignLeftCMD = new Align(
+      drive,
+      cameras,
+      () -> false,
+      driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+      leds);
 
-  Autos autos =
-      new Autos(
-          drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
+  Autos autos = new Autos(
+      drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
   public RobotContainer() {
@@ -90,10 +87,9 @@ public class RobotContainer {
     // leds.runPattern(LEDPattern.rainbow(255, 128)).schedule();
     cameraSetUp();
 
-    supplier =
-        () -> {
-          return drive.getPose().getRotation();
-        };
+    supplier = () -> {
+      return drive.getPose().getRotation();
+    };
   }
 
   private void configureBindings() {
@@ -129,9 +125,9 @@ public class RobotContainer {
     // driver.leftBumper().whileTrue(alignCMD.withName("Align Command"));
     // driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));
 
-    driver.rightBumper().whileTrue(alignRightCMD);
-    driver.leftBumper().whileTrue(alignLeftCMD);
+    driver.rightBumper().whileTrue(alignToRightCoral());
 
+    driver.leftBumper().whileTrue(alignToLeftCoral());
 
     operator
         .povDown()
@@ -188,15 +184,14 @@ public class RobotContainer {
       chooser.addCmd("SYSID", drive::sysId);
       chooser.addCmd(
           "FORWARD",
-          () ->
-              Commands.sequence(
-                      drive.enableSlowMode().withName("Enable Slow Mode"),
-                      drive
-                          .driveCMD(() -> 1, () -> 0, () -> 0)
-                          .withTimeout(1)
-                          .withName("Drive Forward"),
-                      drive.disableSlowMode().withName("Disable Slow Mode"))
-                  .withName("Forward Test Sequence"));
+          () -> Commands.sequence(
+              drive.enableSlowMode().withName("Enable Slow Mode"),
+              drive
+                  .driveCMD(() -> 1, () -> 0, () -> 0)
+                  .withTimeout(1)
+                  .withName("Drive Forward"),
+              drive.disableSlowMode().withName("Disable Slow Mode"))
+              .withName("Forward Test Sequence"));
       chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
       chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
       chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
@@ -211,21 +206,21 @@ public class RobotContainer {
 
   public Command alignToRightCoral() {
     return new Align(
-            drive,
-            cameras,
-            () -> true,
-            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-            leds)
+        drive,
+        cameras,
+        () -> true,
+        driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+        leds)
         .withName("Align to Right Coral");
   }
 
   public Command alignToLeftCoral() {
     return new Align(
-            drive,
-            cameras,
-            () -> false,
-            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-            leds)
+        drive,
+        cameras,
+        () -> false,
+        driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+        leds)
         .withName("Align to Left Coral");
   }
 
@@ -233,36 +228,35 @@ public class RobotContainer {
 
     Thread m_visionThread;
 
-    m_visionThread =
-        new Thread(
-            () -> {
-              // Get the UsbCamera from CameraServer
-              UsbCamera camera = CameraServer.startAutomaticCapture();
+    m_visionThread = new Thread(
+        () -> {
+          // Get the UsbCamera from CameraServer
+          UsbCamera camera = CameraServer.startAutomaticCapture();
 
-              // Set the resolution
-              camera.setResolution(320, 240);
+          // Set the resolution
+          camera.setResolution(320, 240);
 
-              // Get a CvSink. This will capture Mats from the camera
-              CvSink cvSink = CameraServer.getVideo();
+          // Get a CvSink. This will capture Mats from the camera
+          CvSink cvSink = CameraServer.getVideo();
 
-              // Setup a CvSource. This will send images back to the Dashboard
-              CvSource outputStream = CameraServer.putVideo("DriverReefCam", 320, 240);
+          // Setup a CvSource. This will send images back to the Dashboard
+          CvSource outputStream = CameraServer.putVideo("DriverReefCam", 320, 240);
 
-              // Mats are very memory expensive. Lets reuse this Mat.
-              Mat mat = new Mat();
-              while (!Thread.interrupted()) {
-                if (cvSink.grabFrame(mat) == 0) {
-                  outputStream.notifyError(cvSink.getError());
-                  continue;
-                }
-                // Put a rectangle on the image
-                Imgproc.rectangle(
-                    mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
-                // Give the output stream a new image to display
+          // Mats are very memory expensive. Lets reuse this Mat.
+          Mat mat = new Mat();
+          while (!Thread.interrupted()) {
+            if (cvSink.grabFrame(mat) == 0) {
+              outputStream.notifyError(cvSink.getError());
+              continue;
+            }
+            // Put a rectangle on the image
+            Imgproc.rectangle(
+                mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
+            // Give the output stream a new image to display
 
-                outputStream.putFrame(mat);
-              }
-            });
+            outputStream.putFrame(mat);
+          }
+        });
 
     m_visionThread.setDaemon(true);
     m_visionThread.start();
