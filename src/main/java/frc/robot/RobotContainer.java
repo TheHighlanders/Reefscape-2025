@@ -62,7 +62,6 @@ public class RobotContainer {
     configureAutonomous();
 
     drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
-    // leds.runPattern(LEDPattern.rainbow(255, 128)).schedule();
     cameraSetUp();
   }
 

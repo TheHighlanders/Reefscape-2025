@@ -133,7 +133,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
-   // leds.runPattern((LEDPattern.solid(Color.kBlack)));
   }
 
   @Override

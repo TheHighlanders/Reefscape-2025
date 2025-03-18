@@ -28,7 +28,6 @@ import java.util.function.BooleanSupplier;
 public class Align extends Command {
 
 
-  //private final LEDs leds;
 
   /** Constants for the Reef Coral alignment */
   private static final class AlignConstants {
