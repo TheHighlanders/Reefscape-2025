@@ -149,6 +149,8 @@ public class RobotContainer {
         .onTrue(coralScorer.depositCMD().withTimeout(0.1).withName("Quick Deposit"));
     // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
+    operator.rightTrigger(0.5).whileTrue(removeAlgae());
+
     operator
         .start()
         .onTrue(
@@ -266,7 +268,7 @@ public class RobotContainer {
     return elevator
         .elevatorAuto(ElevatorState.L4_POSITION)
         .andThen(
-            Commands.sequence(
+            Commands.parallel(
                 elevator.elevatorAuto(ElevatorState.L2_POSITION), coralScorer.reverseCommand()));
   }
 }
