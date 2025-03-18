@@ -90,6 +90,15 @@ public class VisionHelper {
                   robotToCamera,
                   PoseStrategy.LOWEST_AMBIGUITY,
                   bestTF);
+      case PNP_DISTANCE_TRIG_SOLVE ->
+          estimatedPose =
+              trigSolveCoproc(
+                  filteredResult,
+                  Optional.of(cameraMatrix),
+                  Optional.of(distCoeffs),
+                  robotToCamera,
+                  PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+                  bestTF);
       default -> {
         DriverStation.reportError(
             "[PhotonPoseEstimator] Unknown Position Estimation Strategy!", false);
@@ -180,6 +189,40 @@ public class VisionHelper {
               result.getTimestampSeconds(),
               result.getTargets(),
               PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR));
+    } else {
+      return update(
+          result,
+          cameraMatrix.orElseThrow(),
+          distCoeffs.orElseThrow(),
+          multiTagFallbackStrategy,
+          robotToCamera,
+          new Transform3d());
+    }
+  }
+
+  /** Runs SolvePNP on a coprocessor */
+  private static Optional<EstimatedRobotPose> trigSolveCoproc(
+      PhotonPipelineResult result,
+      Optional<Matrix<N3, N3>> cameraMatrix,
+      Optional<Matrix<N8, N1>> distCoeffs,
+      Transform3d robotToCamera,
+      PoseStrategy multiTagFallbackStrategy,
+      Transform3d bestTF) {
+
+    if (!bestTF.equals(new Transform3d())) {
+      var best_tf = bestTF;
+      var best =
+          new Pose3d()
+              .plus(best_tf) // field-to-camera
+              .relativeTo(Constants.getFieldTagLayout().getOrigin())
+              .plus(robotToCamera.inverse()); // field-to-robot
+
+      return Optional.of(
+          new EstimatedRobotPose(
+              best,
+              result.getTimestampSeconds(),
+              result.getTargets(),
+              PoseStrategy.PNP_DISTANCE_TRIG_SOLVE));
     } else {
       return update(
           result,

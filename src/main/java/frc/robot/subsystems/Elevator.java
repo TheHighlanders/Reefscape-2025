@@ -220,7 +220,8 @@ public class Elevator extends SubsystemBase {
               }
               elevatorController.setReference(
                   targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
-            })
+            },
+            this)
         .withName("Set Elevator Position to " + position);
   }
 

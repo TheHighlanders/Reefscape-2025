@@ -18,9 +18,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import java.util.Set;
-import org.littletonrobotics.junction.Logger;
-import org.littletonrobotics.junction.inputs.LoggedPowerDistribution;
-import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
 
 @Logged
@@ -41,10 +38,6 @@ public class Robot extends TimedRobot {
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
     DataLogManager.start();
     URCL.start(DataLogManager.getLog());
-
-    Logger.addDataReceiver(new WPILOGWriter());
-    LoggedPowerDistribution.getInstance();
-    Logger.start();
     /*
      * https://docs.wpilib.org/en/stable/docs/software/telemetry/robot-telemetry-
      * with-annotations.html
@@ -69,6 +62,7 @@ public class Robot extends TimedRobot {
           // while still logging important information.
           config.minimumImportance = Logged.Importance.DEBUG;
         });
+
     DriverStation.startDataLog(DataLogManager.getLog());
 
     SmartDashboard.putData(CommandScheduler.getInstance());
@@ -80,55 +74,80 @@ public class Robot extends TimedRobot {
     CommandScheduler.getInstance()
         .onCommandInitialize(
             command ->
-                Logger.recordOutput(
-                    "CommandScheduler/"
-                        + getSubsystemNames(command.getRequirements())
-                        + "/"
-                        + command.getName()
-                        + "/State",
-                    "Initializing"));
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Initializing",
+                        0));
 
     CommandScheduler.getInstance()
         .onCommandExecute(
             command ->
-                Logger.recordOutput(
-                    "CommandScheduler/"
-                        + getSubsystemNames(command.getRequirements())
-                        + "/"
-                        + command.getName()
-                        + "/State",
-                    "Running"));
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Running",
+                        0));
 
     CommandScheduler.getInstance()
         .onCommandFinish(
             command ->
-                Logger.recordOutput(
-                    "CommandScheduler/"
-                        + getSubsystemNames(command.getRequirements())
-                        + "/"
-                        + command.getName()
-                        + "/State",
-                    "Finished"));
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Finished",
+                        0));
 
     CommandScheduler.getInstance()
         .onCommandInterrupt(
             (command, interrupter) -> {
               if (interrupter.isEmpty()) {
-                Logger.recordOutput(
-                    "CommandScheduler/"
-                        + getSubsystemNames(command.getRequirements())
-                        + "/"
-                        + command.getName()
-                        + "/State",
-                    "Interrupted");
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Interrupted",
+                        0);
               } else {
-                Logger.recordOutput(
-                    "CommandScheduler/"
-                        + getSubsystemNames(command.getRequirements())
-                        + "/"
-                        + command.getName()
-                        + "/State",
-                    "Interrupted by: " + interrupter.get().getName());
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Interrupted by: " + interrupter.get().getName(),
+                        0);
               }
             });
   }

@@ -11,6 +11,7 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -24,6 +25,7 @@ import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.CommandXboxControllerSubsystem;
+import java.util.function.Supplier;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -40,7 +42,9 @@ public class RobotContainer {
   @Logged(name = "Elevator")
   Elevator elevator = new Elevator();
 
-  Vision cameras = new Vision();
+  Supplier<Rotation2d> supplier;
+
+  Vision cameras = new Vision(supplier);
 
   @Logged(name = "Swerve")
   Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
@@ -49,12 +53,21 @@ public class RobotContainer {
 
   LEDs leds = new LEDs(canAlign);
 
-  @Logged(name = "Align")
-  Align alignCMD =
+  @Logged(name = "AlignRight")
+  Align alignRightCMD =
       new Align(
           drive,
           cameras,
-          driver.rightBumper(),
+          () -> true,
+          driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+          leds);
+
+  @Logged(name = "AlignLeft")
+  Align alignLeftCMD =
+      new Align(
+          drive,
+          cameras,
+          () -> false,
           driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
           leds);
 
@@ -76,6 +89,11 @@ public class RobotContainer {
             .withName("Default Drive Command"));
     // leds.runPattern(LEDPattern.rainbow(255, 128)).schedule();
     cameraSetUp();
+
+    supplier =
+        () -> {
+          return drive.getPose().getRotation();
+        };
   }
 
   private void configureBindings() {
@@ -108,8 +126,12 @@ public class RobotContainer {
     driver.leftTrigger().onTrue(drive.enableSlowMode().withName("Enable Slow Mode"));
     driver.leftTrigger().onFalse(drive.disableSlowMode().withName("Disable Slow Mode"));
 
-    driver.leftBumper().whileTrue(alignCMD.withName("Align Command"));
-    driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));
+    // driver.leftBumper().whileTrue(alignCMD.withName("Align Command"));
+    // driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));
+
+    driver.rightBumper().whileTrue(alignRightCMD);
+    driver.leftBumper().whileTrue(alignLeftCMD);
+
 
     operator
         .povDown()
@@ -244,5 +266,13 @@ public class RobotContainer {
 
     m_visionThread.setDaemon(true);
     m_visionThread.start();
+  }
+
+  public Command removeAlgae() {
+    return elevator
+        .elevatorAuto(ElevatorState.L4_POSITION)
+        .andThen(
+            Commands.sequence(
+                elevator.elevatorAuto(ElevatorState.L2_POSITION), coralScorer.reverseCommand()));
   }
 }
