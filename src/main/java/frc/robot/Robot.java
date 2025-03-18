@@ -71,15 +71,14 @@ public class Robot extends TimedRobot {
     DriverStation.startDataLog(DataLogManager.getLog());
 
     SmartDashboard.putData(CommandScheduler.getInstance());
-      
+
     configureCommandSchedulerLogging();
   }
 
-  public void configureCommandSchedulerLogging(){
+  public void configureCommandSchedulerLogging() {
     CommandScheduler.getInstance()
-    .onCommandInitialize(
-        command ->
-            Logger.recordOutput(
+        .onCommandInitialize(
+            command -> Logger.recordOutput(
                 "CommandScheduler/"
                     + getSubsystemNames(command.getRequirements())
                     + "/"
@@ -87,10 +86,9 @@ public class Robot extends TimedRobot {
                     + "/State",
                 "Initializing"));
 
-CommandScheduler.getInstance()
-    .onCommandExecute(
-        command ->
-            Logger.recordOutput(
+    CommandScheduler.getInstance()
+        .onCommandExecute(
+            command -> Logger.recordOutput(
                 "CommandScheduler/"
                     + getSubsystemNames(command.getRequirements())
                     + "/"
@@ -98,10 +96,9 @@ CommandScheduler.getInstance()
                     + "/State",
                 "Running"));
 
-CommandScheduler.getInstance()
-    .onCommandFinish(
-        command ->
-            Logger.recordOutput(
+    CommandScheduler.getInstance()
+        .onCommandFinish(
+            command -> Logger.recordOutput(
                 "CommandScheduler/"
                     + getSubsystemNames(command.getRequirements())
                     + "/"
@@ -109,29 +106,28 @@ CommandScheduler.getInstance()
                     + "/State",
                 "Finished"));
 
-CommandScheduler.getInstance()
-    .onCommandInterrupt(
-        (command, interrupter) -> {
-          if (interrupter.isEmpty()) {
-            Logger.recordOutput(
-                "CommandScheduler/"
-                    + getSubsystemNames(command.getRequirements())
-                    + "/"
-                    + command.getName()
-                    + "/State",
-                "Interrupted");
-          } else {
-            Logger.recordOutput(
-                "CommandScheduler/"
-                    + getSubsystemNames(command.getRequirements())
-                    + "/"
-                    + command.getName()
-                    + "/State",
-                "Interrupted by: " + interrupter.get().getName());
-          }
-        });
+    CommandScheduler.getInstance()
+        .onCommandInterrupt(
+            (command, interrupter) -> {
+              if (interrupter.isEmpty()) {
+                Logger.recordOutput(
+                    "CommandScheduler/"
+                        + getSubsystemNames(command.getRequirements())
+                        + "/"
+                        + command.getName()
+                        + "/State",
+                    "Interrupted");
+              } else {
+                Logger.recordOutput(
+                    "CommandScheduler/"
+                        + getSubsystemNames(command.getRequirements())
+                        + "/"
+                        + command.getName()
+                        + "/State",
+                    "Interrupted by: " + interrupter.get().getName());
+              }
+            });
   }
-
 
   private String getSubsystemNames(Set<Subsystem> subsystems) {
     nameBuilder.setLength(0);
@@ -185,11 +181,12 @@ CommandScheduler.getInstance()
         m_robotContainer.elevator.updateTuningConstants();
       }
     }
-    loops++;    
+    loops++;
   }
 
   @Override
-  public void disabledExit() {}
+  public void disabledExit() {
+  }
 
   @Override
   public void autonomousInit() {
@@ -203,10 +200,12 @@ CommandScheduler.getInstance()
   }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+  }
 
   @Override
-  public void autonomousExit() {}
+  public void autonomousExit() {
+  }
 
   @Override
   public void teleopInit() {
@@ -221,7 +220,8 @@ CommandScheduler.getInstance()
   }
 
   @Override
-  public void teleopExit() {}
+  public void teleopExit() {
+  }
 
   @Override
   public void testInit() {
@@ -229,8 +229,10 @@ CommandScheduler.getInstance()
   }
 
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+  }
 
   @Override
-  public void testExit() {}
+  public void testExit() {
+  }
 }
