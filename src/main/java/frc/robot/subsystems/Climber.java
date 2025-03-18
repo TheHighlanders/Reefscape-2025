@@ -56,6 +56,8 @@ public class Climber extends SubsystemBase {
         climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     climbMotor.getEncoder().setPosition(0);
     climberPreviousPosition = 0;
+
+    this.setName("Climber");
   }
 
   private SparkMaxConfig createClimberConfig() {

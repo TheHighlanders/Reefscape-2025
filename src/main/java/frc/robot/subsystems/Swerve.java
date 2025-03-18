@@ -239,6 +239,9 @@ public class Swerve extends SubsystemBase {
                 },
                 this));
     attemptZeroingAbsolute();
+
+    this.setName("Drive");
+
   }
 
   @Override

@@ -57,6 +57,9 @@ public class LEDs extends SubsystemBase {
       setDefaultCommand(runPattern(LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue))
           .withName("GradientRedBlue").ignoringDisable(true));
     }
+
+    this.setName("Elevator");
+
   }
 
   @Override

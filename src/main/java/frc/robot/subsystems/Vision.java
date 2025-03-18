@@ -147,6 +147,9 @@ public class Vision extends SubsystemBase {
 
     // Initialize standard deviation with infinite values
     stdDev = VisionHelper.INFINITE_STD_DEVS;
+
+    this.setName("Vision");
+
   }
 
   @Override

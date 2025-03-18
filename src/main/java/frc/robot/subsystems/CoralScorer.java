@@ -35,6 +35,9 @@ public class CoralScorer extends SubsystemBase {
 
     effector.configure(
         effectorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    this.setName("Coral");
+    
   }
 
   private SparkMaxConfig effectorConfig() {

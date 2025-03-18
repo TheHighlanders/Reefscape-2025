@@ -17,8 +17,13 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.commands.Align;
 
+import java.net.http.HttpResponse.PushPromiseHandler;
+import java.util.Set;
+
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.urcl.URCL;
 
 @Logged
@@ -28,6 +33,8 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
+
+  private final StringBuilder nameBuilder = new StringBuilder();
 
   private double loops = 0;
 
@@ -64,6 +71,82 @@ public class Robot extends TimedRobot {
     DriverStation.startDataLog(DataLogManager.getLog());
 
     SmartDashboard.putData(CommandScheduler.getInstance());
+      
+    configureCommandSchedulerLogging();
+  }
+
+  public void configureCommandSchedulerLogging(){
+    CommandScheduler.getInstance()
+    .onCommandInitialize(
+        command ->
+            Logger.recordOutput(
+                "CommandScheduler/"
+                    + getSubsystemNames(command.getRequirements())
+                    + "/"
+                    + command.getName()
+                    + "/State",
+                "Initializing"));
+
+CommandScheduler.getInstance()
+    .onCommandExecute(
+        command ->
+            Logger.recordOutput(
+                "CommandScheduler/"
+                    + getSubsystemNames(command.getRequirements())
+                    + "/"
+                    + command.getName()
+                    + "/State",
+                "Running"));
+
+CommandScheduler.getInstance()
+    .onCommandFinish(
+        command ->
+            Logger.recordOutput(
+                "CommandScheduler/"
+                    + getSubsystemNames(command.getRequirements())
+                    + "/"
+                    + command.getName()
+                    + "/State",
+                "Finished"));
+
+CommandScheduler.getInstance()
+    .onCommandInterrupt(
+        (command, interrupter) -> {
+          if (interrupter.isEmpty()) {
+            Logger.recordOutput(
+                "CommandScheduler/"
+                    + getSubsystemNames(command.getRequirements())
+                    + "/"
+                    + command.getName()
+                    + "/State",
+                "Interrupted");
+          } else {
+            Logger.recordOutput(
+                "CommandScheduler/"
+                    + getSubsystemNames(command.getRequirements())
+                    + "/"
+                    + command.getName()
+                    + "/State",
+                "Interrupted by: " + interrupter.get().getName());
+          }
+        });
+  }
+
+
+  private String getSubsystemNames(Set<Subsystem> subsystems) {
+    nameBuilder.setLength(0);
+    int i = 1;
+    for (var subsystem : subsystems) {
+      nameBuilder.append(subsystem.getName());
+      if (i != subsystems.size()) {
+        nameBuilder.append(" & ");
+      }
+      i++;
+    }
+    if (i == 1) {
+      nameBuilder.append("None");
+    }
+    return nameBuilder.toString();
   }
 
   @Override

@@ -140,6 +140,9 @@ public class Elevator extends SubsystemBase {
     elevatorEncoder.setPosition(0);
 
     trim = 0;
+
+    this.setName("Elevator");
+
   }
 
   @Override
