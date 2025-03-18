@@ -74,27 +74,34 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public Command reverseCommand() {
-    return Commands.startEnd(this::effectorReverse, this::effectorStop, this);
+    return Commands.startEnd(this::effectorReverse, this::effectorStop, this)
+        .withName("Reverse Coral Effector");
   }
 
   public Command intakeCMD() {
     // Runs End Effector forward until game piece detected, then stops it
     return Commands.run(this::effectorForward, this)
         .finallyDo(this::effectorStop)
-        .until(this::hasGamePiece);
+        .until(this::hasGamePiece)
+        .withName("Intake Coral Until Detected");
   }
 
   public Command manualIntakeCMD() {
     return Commands.run(this::effectorSlowForward, this)
         .finallyDo(this::effectorStop)
-        .withTimeout(1);
+        .withTimeout(1)
+        .withName("Manual Slow Intake");
   }
 
   public Command depositCMD() {
-    return Commands.run(this::effectorForward, this).finallyDo(this::effectorStop);
+    return Commands.run(this::effectorForward, this)
+        .finallyDo(this::effectorStop)
+        .withName("Deposit Coral");
   }
 
   public Command slowDepositCMD() {
-    return Commands.run(this::effectorSlowForward, this).finallyDo(this::effectorStop);
+    return Commands.run(this::effectorSlowForward, this)
+        .finallyDo(this::effectorStop)
+        .withName("Slow Deposit Coral");
   }
 }

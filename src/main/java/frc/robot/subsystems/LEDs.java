@@ -34,7 +34,7 @@ public class LEDs extends SubsystemBase {
   public LEDs(Trigger canAlign) {
     this.canAlign = canAlign;
 
-    canAlign.onTrue(runPattern(alignOk));
+    canAlign.onTrue(runPattern(alignOk).withName("Alignment OK Pattern"));
 
     m_led = new AddressableLED(kPort);
     m_buffer = new AddressableLEDBuffer(kLength);
@@ -50,18 +50,22 @@ public class LEDs extends SubsystemBase {
     if (DriverStation.getAlliance().isPresent()) {
       if (DriverStation.getAlliance().get() == Alliance.Red) {
         setDefaultCommand(
-            runPattern(LEDPattern.solid(Color.kRed)).withName("Red").ignoringDisable(true));
+            runPattern(LEDPattern.solid(Color.kRed))
+                .withName("Red Alliance Pattern")
+                .ignoringDisable(true));
       }
       if (DriverStation.getAlliance().get() == Alliance.Blue) {
         setDefaultCommand(
-            runPattern(LEDPattern.solid(Color.kBlue)).withName("Blue").ignoringDisable(true));
+            runPattern(LEDPattern.solid(Color.kBlue))
+                .withName("Blue Alliance Pattern")
+                .ignoringDisable(true));
       }
     } else {
       setDefaultCommand(
           runPattern(
                   LEDPattern.gradient(
                       LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue))
-              .withName("GradientRedBlue")
+              .withName("Red-Blue Gradient Pattern")
               .ignoringDisable(true));
     }
 
@@ -86,6 +90,6 @@ public class LEDs extends SubsystemBase {
    * @param pattern the LED pattern to run
    */
   public Command runPattern(LEDPattern pattern) {
-    return run(() -> pattern.applyTo(m_buffer));
+    return run(() -> pattern.applyTo(m_buffer)).withName("Run LED Pattern");
   }
 }

@@ -158,6 +158,7 @@ public class Align extends Command {
     leds.runPattern(
             LEDPattern.rainbow(255, 128)
                 .scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d / 120d)))
+        .withName("Rainbow LED Pattern")
         .schedule();
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
@@ -274,7 +275,7 @@ public class Align extends Command {
   @Override
   public void end(boolean interrupted) {
     swerve.stopDrive();
-    vibrate.schedule();
+    vibrate.withName("Vibrate Controller").schedule();
     SmartDashboard.putBoolean("ReefAlign/Completed", true);
   }
 

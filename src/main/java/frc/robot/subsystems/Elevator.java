@@ -185,41 +185,43 @@ public class Elevator extends SubsystemBase {
             () -> {
               elevatorEncoder.setPosition(0);
             })
-        .ignoringDisable(true);
+        .ignoringDisable(true)
+        .withName("Zero Elevator Encoder");
   }
 
   public Command setPosition(ElevatorState position) {
     return Commands.runOnce(
-        () -> {
-          if (position != ElevatorState.CURRENT) {
-            uppydowny = position;
-          }
-          switch (uppydowny) {
-            case HOME:
-              targetPosition = ElevatorConstants.homeTarget;
-              break;
-            case L2_POSITION:
-              targetPosition = ElevatorConstants.l2Target + trim + positionOffset;
-              break;
-            case L3_POSITION:
-              targetPosition = ElevatorConstants.l3Target + trim + positionOffset;
-              break;
-            case L4_POSITION:
-              targetPosition = ElevatorConstants.l4Target + trim + positionOffset;
-              break;
-            case ALGAELOW:
-              targetPosition = ElevatorConstants.algaeLow + trim;
-              break;
-            case ALGAEHIGH:
-              targetPosition = ElevatorConstants.algaeHigh + trim;
-              break;
-            default:
-              targetPosition = ElevatorConstants.homeTarget;
-              break;
-          }
-          elevatorController.setReference(
-              targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
-        });
+            () -> {
+              if (position != ElevatorState.CURRENT) {
+                uppydowny = position;
+              }
+              switch (uppydowny) {
+                case HOME:
+                  targetPosition = ElevatorConstants.homeTarget;
+                  break;
+                case L2_POSITION:
+                  targetPosition = ElevatorConstants.l2Target + trim + positionOffset;
+                  break;
+                case L3_POSITION:
+                  targetPosition = ElevatorConstants.l3Target + trim + positionOffset;
+                  break;
+                case L4_POSITION:
+                  targetPosition = ElevatorConstants.l4Target + trim + positionOffset;
+                  break;
+                case ALGAELOW:
+                  targetPosition = ElevatorConstants.algaeLow + trim;
+                  break;
+                case ALGAEHIGH:
+                  targetPosition = ElevatorConstants.algaeHigh + trim;
+                  break;
+                default:
+                  targetPosition = ElevatorConstants.homeTarget;
+                  break;
+              }
+              elevatorController.setReference(
+                  targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
+            })
+        .withName("Set Elevator Position to " + position);
   }
 
   public void sendTuningConstants() {
@@ -275,7 +277,8 @@ public class Elevator extends SubsystemBase {
   public Command jogElevator(double voltage) {
     return Commands.run(
             () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
-        .finallyDo(() -> elevatorMotor.stopMotor());
+        .finallyDo(() -> elevatorMotor.stopMotor())
+        .withName("Jog Elevator at " + voltage + " Volts");
   }
 
   public boolean isAtSetpoint(double tolerance) {
@@ -289,9 +292,15 @@ public class Elevator extends SubsystemBase {
   public Command elevatorAuto(ElevatorState targetState) {
     switch (targetState) {
       case HOME:
-        return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtHome(5)));
+        return setPosition(targetState)
+            .withName("Set Elevator Home")
+            .alongWith(Commands.waitUntil(() -> isAtHome(5)).withName("Wait for Home"))
+            .withName("Move Elevator Home");
       default:
-        return setPosition(targetState).alongWith(Commands.waitUntil(() -> isAtSetpoint(0.5)));
+        return setPosition(targetState)
+            .withName("Set Elevator to " + targetState)
+            .alongWith(Commands.waitUntil(() -> isAtSetpoint(0.5)).withName("Wait for Setpoint"))
+            .withName("Move Elevator to " + targetState);
     }
   }
 
@@ -300,19 +309,20 @@ public class Elevator extends SubsystemBase {
   }
 
   public Command trimCMD(DoubleSupplier trimSup) {
-    return Commands.run(() -> trim(trimSup.getAsDouble()));
+    return Commands.run(() -> trim(trimSup.getAsDouble())).withName("Trim Elevator");
   }
 
   public Command offsetElevator() {
     return Commands.startEnd(
-        () -> {
-          positionOffset = ElevatorConstants.coralBetweenReefOffset;
-          setPosition(uppydowny).schedule();
-        },
-        () -> {
-          positionOffset = 0;
-          setPosition(uppydowny).schedule();
-        });
+            () -> {
+              positionOffset = ElevatorConstants.coralBetweenReefOffset;
+              setPosition(uppydowny).schedule();
+            },
+            () -> {
+              positionOffset = 0;
+              setPosition(uppydowny).schedule();
+            })
+        .withName("Offset Elevator");
   }
 
   @Logged(name = "Elevator Target", importance = Importance.INFO)
@@ -327,16 +337,17 @@ public class Elevator extends SubsystemBase {
 
   public Command algaeCMD(DoubleSupplier algae) {
     return runOnce(
-        () -> {
-          if (algae.getAsDouble() <= -0.5) {
-            setPosition(ElevatorState.ALGAEHIGH).schedule();
-            ;
-          } else if (algae.getAsDouble() >= 0.5) {
-            setPosition(ElevatorState.ALGAELOW).schedule();
-            ;
-          }
-          System.out.print(algae.getAsDouble());
-        });
+            () -> {
+              if (algae.getAsDouble() <= -0.5) {
+                setPosition(ElevatorState.ALGAEHIGH).schedule();
+                ;
+              } else if (algae.getAsDouble() >= 0.5) {
+                setPosition(ElevatorState.ALGAELOW).schedule();
+                ;
+              }
+              System.out.print(algae.getAsDouble());
+            })
+        .withName("Algae Position Command");
   }
 
   @Logged(name = "Elevator at Setpoint", importance = Importance.INFO)

@@ -149,7 +149,9 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-    implementation group: 'edu.wpi.first.epilogue', name: 'epilogue-processor-java', version: '2025.0.0-alpha-2'
+    def akitJson = new groovy.json.JsonSlurper().parseText(new File(projectDir.getAbsolutePath() + "/vendordeps/AdvantageKit.json").text)
+    annotationProcessor "org.littletonrobotics.akit:akit-autolog:$akitJson.version"
+    annotationProcessor group: 'edu.wpi.first.epilogue', name: 'epilogue-processor-java', version: '2025.0.0-alpha-2'
 }
 
 test {

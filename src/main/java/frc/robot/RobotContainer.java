@@ -52,7 +52,11 @@ public class RobotContainer {
   @Logged(name = "Align")
   Align alignCMD =
       new Align(
-          drive, cameras, driver.rightBumper(), driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
+          drive,
+          cameras,
+          driver.rightBumper(),
+          driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+          leds);
 
   Autos autos =
       new Autos(
@@ -66,7 +70,10 @@ public class RobotContainer {
     configureBindings();
     configureAutonomous();
 
-    drive.setDefaultCommand(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
+    drive.setDefaultCommand(
+        drive
+            .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
+            .withName("Default Drive Command"));
     // leds.runPattern(LEDPattern.rainbow(255, 128)).schedule();
     cameraSetUp();
   }
@@ -74,58 +81,72 @@ public class RobotContainer {
   private void configureBindings() {
     // Controls Spreadsheet \/
     // https://docs.google.com/spreadsheets/d/1bb3pvQep2hsePMl8YiyaagtdjtIkL8Z2Oqf_t2ND-68/edit?gid=0#gid=0
-    operator.a().onTrue(elevator.setPosition(ElevatorState.HOME));
-    operator.x().onTrue(elevator.setPosition(ElevatorState.L2_POSITION));
-    operator.y().onTrue(elevator.setPosition(ElevatorState.L3_POSITION));
-    operator.b().onTrue(elevator.setPosition(ElevatorState.L4_POSITION));
-    operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY));
-    operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator());
+    operator.a().onTrue(elevator.setPosition(ElevatorState.HOME).withName("Set Elevator Home"));
+    operator
+        .x()
+        .onTrue(elevator.setPosition(ElevatorState.L2_POSITION).withName("Set Elevator L2"));
+    operator
+        .y()
+        .onTrue(elevator.setPosition(ElevatorState.L3_POSITION).withName("Set Elevator L3"));
+    operator
+        .b()
+        .onTrue(elevator.setPosition(ElevatorState.L4_POSITION).withName("Set Elevator L4"));
+    operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY).withName("Algae Control"));
+    operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator().withName("Offset Elevator"));
 
     // operator.leftBumper().whileTrue(elevator.offsetElevator());
-    operator.leftStick().whileTrue(coralScorer.manualIntakeCMD());
+    operator.leftStick().whileTrue(coralScorer.manualIntakeCMD().withName("Manual Intake"));
 
-    driver.start().whileTrue(elevator.zeroElevator());
-    driver.povRight().onTrue(drive.resetGyro());
+    driver.start().whileTrue(elevator.zeroElevator().withName("Zero Elevator"));
+    driver.povRight().onTrue(drive.resetGyro().withName("Reset Gyro"));
 
-    driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD());
-    driver.a().whileTrue(coralScorer.reverseCommand());
+    driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD().withName("Deposit Coral"));
+    driver.a().whileTrue(coralScorer.reverseCommand().withName("Reverse Coral"));
 
-    driver.x().onTrue(drive.pointWheelsInXPattern());
+    driver.x().onTrue(drive.pointWheelsInXPattern().withName("X Pattern Wheels"));
 
-    driver.leftTrigger().onTrue(drive.enableSlowMode());
-    driver.leftTrigger().onFalse(drive.disableSlowMode());
+    driver.leftTrigger().onTrue(drive.enableSlowMode().withName("Enable Slow Mode"));
+    driver.leftTrigger().onFalse(drive.disableSlowMode().withName("Disable Slow Mode"));
 
-    driver.leftBumper().whileTrue(alignCMD);
-    driver.rightBumper().whileTrue(alignCMD);
+    driver.leftBumper().whileTrue(alignCMD.withName("Align Command"));
+    driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));
 
     operator
         .povDown()
         .or(operator.povDownLeft())
         .or(operator.povDownRight())
-        .whileTrue(climber.createClimbOutCommand());
+        .whileTrue(climber.createClimbOutCommand().withName("Climb Out"));
 
     operator
         .povUp()
         .or(operator.povUpLeft())
         .or(operator.povUpRight())
-        .whileTrue(climber.createClimbInCommand());
-    operator.povRight().onTrue(climber.holdClimbPosition());
+        .whileTrue(climber.createClimbInCommand().withName("Climb In"));
+    operator.povRight().onTrue(climber.holdClimbPosition().withName("Hold Climb Position"));
 
     // operator.start().toggleOnTrue(drive.pointWheelsForward());
     // operator.back().whileTrue(drive.pidTuningJogAngle());
-    operator.rightBumper().onTrue(coralScorer.depositCMD().withTimeout(0.1));
+    operator
+        .rightBumper()
+        .onTrue(coralScorer.depositCMD().withTimeout(0.1).withName("Quick Deposit"));
     // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
     operator
         .start()
-        .onTrue(Commands.runOnce(() -> drive.resetOdometry(new Pose2d())).ignoringDisable(true));
+        .onTrue(
+            Commands.runOnce(() -> drive.resetOdometry(new Pose2d()))
+                .ignoringDisable(true)
+                .withName("Reset Odometry"));
 
     operator
         .rightStick()
         .whileTrue(
             elevator
                 .trimCMD(operator::getRightY)
-                .andThen(elevator.setPosition(ElevatorState.CURRENT)));
+                .withName("Trim Elevator")
+                .andThen(
+                    elevator.setPosition(ElevatorState.CURRENT).withName("Set Current Position"))
+                .withName("Trim and Set Elevator"));
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
@@ -147,9 +168,13 @@ public class RobotContainer {
           "FORWARD",
           () ->
               Commands.sequence(
-                  drive.enableSlowMode(),
-                  drive.driveCMD(() -> 1, () -> 0, () -> 0).withTimeout(1),
-                  drive.disableSlowMode()));
+                      drive.enableSlowMode().withName("Enable Slow Mode"),
+                      drive
+                          .driveCMD(() -> 1, () -> 0, () -> 0)
+                          .withTimeout(1)
+                          .withName("Drive Forward"),
+                      drive.disableSlowMode().withName("Disable Slow Mode"))
+                  .withName("Forward Test Sequence"));
       chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
       chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
       chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
@@ -163,12 +188,23 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    return new Align(drive, cameras, () -> true, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
+    return new Align(
+            drive,
+            cameras,
+            () -> true,
+            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+            leds)
+        .withName("Align to Right Coral");
   }
 
   public Command alignToLeftCoral() {
     return new Align(
-        drive, cameras, () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
+            drive,
+            cameras,
+            () -> false,
+            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+            leds)
+        .withName("Align to Left Coral");
   }
 
   private void cameraSetUp() {

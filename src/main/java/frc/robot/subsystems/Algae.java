@@ -84,13 +84,16 @@ public class Algae extends SubsystemBase {
 
   private Command toPosition(double position) {
     return Commands.runOnce(
-        () ->
-            algaeBendMotor.getClosedLoopController().setReference(position, ControlType.kPosition));
+            () ->
+                algaeBendMotor
+                    .getClosedLoopController()
+                    .setReference(position, ControlType.kPosition))
+        .withName("Move Algae to Position " + position);
   }
 
   // TODO change intake and output brushless motors to PID
   public Command homePosition() {
-    return toPosition(0);
+    return toPosition(0).withName("Algae Home Position");
   }
 
   public Command processorPosition() {
@@ -106,19 +109,22 @@ public class Algae extends SubsystemBase {
                 algaeBendMotor.configure(
                     algaeBendConfig(false),
                     SparkBase.ResetMode.kResetSafeParameters,
-                    SparkBase.PersistMode.kPersistParameters));
+                    SparkBase.PersistMode.kPersistParameters))
+        .withName("Algae Processor Position");
   }
 
   public Command dislodgePosition() {
-    return toPosition(AlgaeConstants.algaeDislodgePosition);
+    return toPosition(AlgaeConstants.algaeDislodgePosition).withName("Algae Dislodge Position");
   }
 
   // TODO LOOK AT VALUES
   public Command intakeAlgae() {
-    return Commands.startEnd(() -> algaeIntakeMotor.set(1), () -> algaeIntakeMotor.set(0.0), this);
+    return Commands.startEnd(() -> algaeIntakeMotor.set(1), () -> algaeIntakeMotor.set(0.0), this)
+        .withName("Intake Algae");
   }
 
   public Command outputAlgae() {
-    return Commands.startEnd(() -> algaeIntakeMotor.set(-1), () -> algaeIntakeMotor.set(0.0), this);
+    return Commands.startEnd(() -> algaeIntakeMotor.set(-1), () -> algaeIntakeMotor.set(0.0), this)
+        .withName("Output Algae");
   }
 }
