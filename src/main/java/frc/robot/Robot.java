@@ -12,18 +12,15 @@ import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import frc.robot.commands.Align;
-
-import java.net.http.HttpResponse.PushPromiseHandler;
 import java.util.Set;
-
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.inputs.LoggedPowerDistribution;
+import org.littletonrobotics.junction.wpilog.WPILOGWriter;
 import org.littletonrobotics.urcl.URCL;
 
 @Logged
@@ -44,6 +41,10 @@ public class Robot extends TimedRobot {
     WebServer.start(5800, Filesystem.getDeployDirectory().getPath());
     DataLogManager.start();
     URCL.start(DataLogManager.getLog());
+
+    Logger.addDataReceiver(new WPILOGWriter());
+    LoggedPowerDistribution.getInstance();
+    Logger.start();
     /*
      * https://docs.wpilib.org/en/stable/docs/software/telemetry/robot-telemetry-
      * with-annotations.html
@@ -78,33 +79,36 @@ public class Robot extends TimedRobot {
   public void configureCommandSchedulerLogging() {
     CommandScheduler.getInstance()
         .onCommandInitialize(
-            command -> Logger.recordOutput(
-                "CommandScheduler/"
-                    + getSubsystemNames(command.getRequirements())
-                    + "/"
-                    + command.getName()
-                    + "/State",
-                "Initializing"));
+            command ->
+                Logger.recordOutput(
+                    "CommandScheduler/"
+                        + getSubsystemNames(command.getRequirements())
+                        + "/"
+                        + command.getName()
+                        + "/State",
+                    "Initializing"));
 
     CommandScheduler.getInstance()
         .onCommandExecute(
-            command -> Logger.recordOutput(
-                "CommandScheduler/"
-                    + getSubsystemNames(command.getRequirements())
-                    + "/"
-                    + command.getName()
-                    + "/State",
-                "Running"));
+            command ->
+                Logger.recordOutput(
+                    "CommandScheduler/"
+                        + getSubsystemNames(command.getRequirements())
+                        + "/"
+                        + command.getName()
+                        + "/State",
+                    "Running"));
 
     CommandScheduler.getInstance()
         .onCommandFinish(
-            command -> Logger.recordOutput(
-                "CommandScheduler/"
-                    + getSubsystemNames(command.getRequirements())
-                    + "/"
-                    + command.getName()
-                    + "/State",
-                "Finished"));
+            command ->
+                Logger.recordOutput(
+                    "CommandScheduler/"
+                        + getSubsystemNames(command.getRequirements())
+                        + "/"
+                        + command.getName()
+                        + "/State",
+                    "Finished"));
 
     CommandScheduler.getInstance()
         .onCommandInterrupt(
@@ -185,8 +189,7 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledExit() {
-  }
+  public void disabledExit() {}
 
   @Override
   public void autonomousInit() {
@@ -200,12 +203,10 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void autonomousPeriodic() {
-  }
+  public void autonomousPeriodic() {}
 
   @Override
-  public void autonomousExit() {
-  }
+  public void autonomousExit() {}
 
   @Override
   public void teleopInit() {
@@ -220,8 +221,7 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void teleopExit() {
-  }
+  public void teleopExit() {}
 
   @Override
   public void testInit() {
@@ -229,10 +229,8 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void testPeriodic() {
-  }
+  public void testPeriodic() {}
 
   @Override
-  public void testExit() {
-  }
+  public void testExit() {}
 }

@@ -28,7 +28,8 @@ public class LEDs extends SubsystemBase {
 
   LEDPattern alignOk = LEDPattern.solid(Color.kGreen);
   LEDPattern allianceColor;
- // LEDPattern pattern = blink.blink(Seconds.of(.1));
+
+  // LEDPattern pattern = blink.blink(Seconds.of(.1));
 
   public LEDs(Trigger canAlign) {
     this.canAlign = canAlign;
@@ -48,18 +49,23 @@ public class LEDs extends SubsystemBase {
 
     if (DriverStation.getAlliance().isPresent()) {
       if (DriverStation.getAlliance().get() == Alliance.Red) {
-        setDefaultCommand(runPattern(LEDPattern.solid(Color.kRed)).withName("Red").ignoringDisable(true));
+        setDefaultCommand(
+            runPattern(LEDPattern.solid(Color.kRed)).withName("Red").ignoringDisable(true));
       }
       if (DriverStation.getAlliance().get() == Alliance.Blue) {
-        setDefaultCommand(runPattern(LEDPattern.solid(Color.kBlue)).withName("Blue").ignoringDisable(true));
+        setDefaultCommand(
+            runPattern(LEDPattern.solid(Color.kBlue)).withName("Blue").ignoringDisable(true));
       }
     } else {
-      setDefaultCommand(runPattern(LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue))
-          .withName("GradientRedBlue").ignoringDisable(true));
+      setDefaultCommand(
+          runPattern(
+                  LEDPattern.gradient(
+                      LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue))
+              .withName("GradientRedBlue")
+              .ignoringDisable(true));
     }
 
     this.setName("Elevator");
-
   }
 
   @Override

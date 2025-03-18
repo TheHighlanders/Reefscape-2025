@@ -142,7 +142,6 @@ public class Elevator extends SubsystemBase {
     trim = 0;
 
     this.setName("Elevator");
-
   }
 
   @Override

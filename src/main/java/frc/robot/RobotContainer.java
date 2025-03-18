@@ -4,11 +4,6 @@
 
 package frc.robot;
 
-import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
-
 import choreo.auto.AutoChooser;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CvSink;
@@ -29,12 +24,15 @@ import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.CommandXboxControllerSubsystem;
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
 
 public class RobotContainer {
 
   public final CommandXboxControllerSubsystem driver = new CommandXboxControllerSubsystem(0);
   public final CommandXboxControllerSubsystem operator = new CommandXboxControllerSubsystem(1);
-
 
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
@@ -47,21 +45,21 @@ public class RobotContainer {
   @Logged(name = "Swerve")
   Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
 
-  Trigger canAlign = new Trigger(()->Align.canAlign(drive, cameras));
+  Trigger canAlign = new Trigger(() -> Align.canAlign(drive, cameras));
 
   LEDs leds = new LEDs(canAlign);
 
   @Logged(name = "Align")
-  Align alignCMD = new Align(drive, cameras, driver.rightBumper(), driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
+  Align alignCMD =
+      new Align(
+          drive, cameras, driver.rightBumper(), driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
 
   Autos autos =
-      new Autos(drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
+      new Autos(
+          drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
-
-
   public RobotContainer() {
-
 
     chooser = new AutoChooser();
 
@@ -169,7 +167,8 @@ public class RobotContainer {
   }
 
   public Command alignToLeftCoral() {
-    return new Align(drive, cameras, () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
+    return new Align(
+        drive, cameras, () -> false, driver.rumbleCmd(0.5, 0.5).withTimeout(0.5), leds);
   }
 
   private void cameraSetUp() {

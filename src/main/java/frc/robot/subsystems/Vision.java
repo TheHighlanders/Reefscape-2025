@@ -103,11 +103,12 @@ public class Vision extends SubsystemBase {
 
   StructPublisher[] camPoses = {
     NetworkTableInstance.getDefault()
-    .getStructTopic("/Vision/Vision 0 Pose", Pose2d.struct)
-    .publish(),
+        .getStructTopic("/Vision/Vision 0 Pose", Pose2d.struct)
+        .publish(),
     NetworkTableInstance.getDefault()
-    .getStructTopic("/Vision/Vision 1 Pose", Pose2d.struct)
-    .publish()};
+        .getStructTopic("/Vision/Vision 1 Pose", Pose2d.struct)
+        .publish()
+  };
 
   // This is for timing the difference between when the vision is processed and
   // when it is published
@@ -149,7 +150,6 @@ public class Vision extends SubsystemBase {
     stdDev = VisionHelper.INFINITE_STD_DEVS;
 
     this.setName("Vision");
-
   }
 
   @Override
@@ -292,10 +292,10 @@ public class Vision extends SubsystemBase {
       return Optional.empty();
     }
 
-      if (bestEstimate.isPresent()) {
-        // Construct an estimated pose with this camera's data
-        return bestEstimate;
-      }
+    if (bestEstimate.isPresent()) {
+      // Construct an estimated pose with this camera's data
+      return bestEstimate;
+    }
 
     return Optional.empty();
   }
