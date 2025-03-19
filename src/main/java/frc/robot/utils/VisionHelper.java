@@ -22,6 +22,7 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 /** Utility class for vision processing and pose estimation */
 public class VisionHelper {
   // Standard deviations based on tag count
+
   public static final Matrix<N3, N1> SINGLE_TAG_STD_DEVS = VecBuilder.fill(0.5, 0.5, 0.9);
   public static final Matrix<N3, N1> DOUBLE_TAG_STD_DEVS = VecBuilder.fill(0.3, 0.3, 0.6);
   public static final Matrix<N3, N1> MULTI_TAG_STD_DEVS = VecBuilder.fill(0.2, 0.2, 0.4);
@@ -144,7 +145,7 @@ public class VisionHelper {
             TargetModel.kAprilTag36h11);
 
     // Try fallback strategy if solvePNP fails for some reason
-    if (pnpResult.isEmpty())
+    if (pnpResult.isEmpty()) {
       return update(
           result,
           cameraMatrix.get(),
@@ -152,6 +153,7 @@ public class VisionHelper {
           multiTagFallbackStrategy,
           robotToCamera,
           new Transform3d());
+    }
 
     var best =
         new Pose3d()
@@ -245,11 +247,14 @@ public class VisionHelper {
       double targetPoseAmbiguity = target.getPoseAmbiguity();
 
       // Reject if not a tag on this field
-      if (target.getFiducialId() < 1 || target.getFiducialId() > 22) continue;
+      if (target.getFiducialId() < 1 || target.getFiducialId() > 22) {
+        continue;
+      }
 
       // Reject if too far
-      if (target.getBestCameraToTarget().getTranslation().getNorm() > MAX_SINGLE_TAG_DISTANCE)
+      if (target.getBestCameraToTarget().getTranslation().getNorm() > MAX_SINGLE_TAG_DISTANCE) {
         continue;
+      }
 
       // Make sure the target is a Fiducial target.
       if (targetPoseAmbiguity != -1 && targetPoseAmbiguity < lowestAmbiguityScore) {
@@ -260,7 +265,9 @@ public class VisionHelper {
 
     // Although there are confirmed to be targets, none of them may be fiducial
     // targets.
-    if (lowestAmbiguityTarget == null) return Optional.empty();
+    if (lowestAmbiguityTarget == null) {
+      return Optional.empty();
+    }
     int targetFiducialId = lowestAmbiguityTarget.getFiducialId();
 
     Optional<Pose3d> targetPosition = Constants.getFieldTagLayout().getTagPose(targetFiducialId);
@@ -394,14 +401,20 @@ public class VisionHelper {
 
     for (PhotonTrackedTarget target : targets) {
       // Skip targets with invalid IDs
-      if (target.getFiducialId() < 1 || target.getFiducialId() > 22) continue;
+      if (target.getFiducialId() < 1 || target.getFiducialId() > 22) {
+        continue;
+      }
 
       // Skip targets with high ambiguity
-      if (target.getPoseAmbiguity() > maxAmbiguity) continue;
+      if (target.getPoseAmbiguity() > maxAmbiguity) {
+        continue;
+      }
 
       // Skip targets that are too far away
       double distance = target.getBestCameraToTarget().getTranslation().getNorm();
-      if (distance > maxDistance) continue;
+      if (distance > maxDistance) {
+        continue;
+      }
 
       filteredTargets.add(target);
     }

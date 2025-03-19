@@ -96,13 +96,14 @@ public class Align extends Command {
   private Pose2d targetPose = new Pose2d();
   private Pose2d closestReefTagPose = new Pose2d();
   private boolean targetRightCoral; // Set during initialize
-  private boolean hasTargetTagOnInit = true;
+
   Vision vision;
 
   StructPublisher<Pose2d> targetPosePublisher =
       NetworkTableInstance.getDefault()
           .getStructTopic("Vision/AlignTarget", Pose2d.struct)
           .publish();
+
   private final Command vibrate;
 
   @Logged(name = "xError", importance = Importance.INFO)
@@ -171,16 +172,7 @@ public class Align extends Command {
     rotController.setTolerance(
         AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
 
-    hasTargetTagOnInit = vision.hasTarget();
-
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
-
-    if (Constants.devMode) {
-      SmartDashboard.putNumber("ReefAlign/TagX", closestReefTagPose.getX());
-      SmartDashboard.putNumber("ReefAlign/TagY", closestReefTagPose.getY());
-      SmartDashboard.putString("ReefAlign/TargetSide", targetRightCoral ? "RIGHT" : "LEFT");
-      SmartDashboard.putBoolean("ReefAlign/Started With Vision Target", hasTargetTagOnInit);
-    }
 
     calculateTargetPose();
     targetPosePublisher.set(targetPose);

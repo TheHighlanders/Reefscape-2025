@@ -253,23 +253,6 @@ public class Vision extends SubsystemBase {
     if (bestEstimate.isPresent()) {
       // Publish the estimated pose
       visionEstPose.set(bestEstimate.get().estimatedPose.toPose2d());
-
-      // Log debug information
-      // SmartDashboard.putNumber("Vision/Target Count", bestEstimate.get().targetsUsed.size());
-      // lastProcessedTimestamp = Timer.getFPGATimestamp();
-      // SmartDashboard.putNumber("Vision/Last Processing Time", lastProcessedTimestamp);
-
-      // if (!bestEstimate.get().targetsUsed.isEmpty()) {
-      //   // SmartDashboard.putNumber(
-      //   // "Vision/Average Distance", calculateAverageDistance(bestEstimate.get().targetsUsed));
-
-      //   // Log first target's info
-      //   // PhotonTrackedTarget firstTarget = bestEstimate.get().targetsUsed.get(0);
-      //   // SmartDashboard.putNumber("Vision/FirstTarget/FiducialID",
-      // firstTarget.getFiducialId());
-      //   // SmartDashboard.putNumber("Vision/FirstTarget/Ambiguity",
-      // firstTarget.getPoseAmbiguity());
-      // }
     }
 
     // Log target status

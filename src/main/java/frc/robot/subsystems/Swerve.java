@@ -100,7 +100,7 @@ public class Swerve extends SubsystemBase {
 
   DoubleSupplier elevatorHeight;
 
-  private Set<Module> needZeroing = new HashSet<Module>();
+  private final Set<Module> needZeroing = new HashSet<>();
 
   PIDController headingDeadbandController =
       new PIDController(

@@ -1,7 +1,6 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.AddressableLED;
@@ -16,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class LEDs extends SubsystemBase {
+
   Trigger canAlign;
 
   /** Creates a new LEDs. */
@@ -31,7 +31,6 @@ public class LEDs extends SubsystemBase {
   LEDPattern allianceColor;
 
   // LEDPattern pattern = blink.blink(Seconds.of(.1));
-
   public LEDs(Trigger canAlign) {
     this.canAlign = canAlign;
 
@@ -49,7 +48,6 @@ public class LEDs extends SubsystemBase {
     // written by
     // the last command to run will continue to be displayed.
     // Note: Other default patterns could be used instead!
-
     if (DriverStation.getAlliance().isPresent()) {
       // if (DriverStation.getAlliance().get() == Alliance.Red) {
       //   // setDefaultCommand(

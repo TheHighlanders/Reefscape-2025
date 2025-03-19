@@ -1,7 +1,6 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
 import com.revrobotics.RelativeEncoder;
@@ -60,6 +59,7 @@ class ElevatorConstants {
 }
 
 public class Elevator extends SubsystemBase {
+
   public enum ElevatorState {
     HOME,
     L2_POSITION,
@@ -131,7 +131,6 @@ public class Elevator extends SubsystemBase {
     antiSlamVoltageOffset = ElevatorConstants.antiSlamVoltageOffset;
 
     // Reset the position to 0 to start within the range of the soft limits
-
     elevatorController = elevatorMotor.getClosedLoopController();
 
     elevatorEncoder = elevatorMotor.getEncoder();

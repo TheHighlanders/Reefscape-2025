@@ -1,7 +1,6 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -22,6 +21,7 @@ import frc.robot.Constants;
 import frc.robot.subsystems.ClimberConstants.PowerPoint;
 
 final class ClimberConstants {
+
   static final int climberCurrentLimit = 40;
 
   static final int climbMotorID = 42;
@@ -42,6 +42,7 @@ final class ClimberConstants {
 }
 
 public class Climber extends SubsystemBase {
+
   /** Creates a new Climber. */
   private Timer holdTimer = new Timer();
 

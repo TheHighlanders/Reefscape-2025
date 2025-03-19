@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Constants;
 
 final class ModuleConstants {
+
   static final double angleP = 0.2;
   static final double angleI = 0.0;
   static final double angleD = 0.0;
@@ -189,7 +190,6 @@ public class Module {
     // // shouldn't ever target over 90 degrees anyway
     // double cosineScalar = Math.abs(Math.cos(Units.rotationsToRadians(steerMotorError)));
     // velocityToSet *= cosineScalar;
-
     if (isOpenLoop) {
       double motorPercent = state.speedMetersPerSecond / ModuleConstants.maxSpeed;
       driveMotor.set(motorPercent);

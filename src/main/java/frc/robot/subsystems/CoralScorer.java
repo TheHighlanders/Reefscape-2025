@@ -1,7 +1,6 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -16,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 final class CoralScorerConstants {
+
   static final int intakePhotoSensorDIOPin = 9;
   static final int motorID = 51;
   static final int currentLimit = 40;
@@ -23,6 +23,7 @@ final class CoralScorerConstants {
 }
 
 public class CoralScorer extends SubsystemBase {
+
   SparkMax effector;
 
   private final DigitalInput photoSensor;
