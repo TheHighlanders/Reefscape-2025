@@ -136,7 +136,8 @@ public class Autos {
         .and(leftStartToleftFar.active())
         .onTrue(
             alignToRightCoral
-                .get().withName("Align1")
+                .get()
+                .withName("Align1")
                 // .alongWith(
                 //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
                 .andThen(score().withName("Score First Piece"))
@@ -155,7 +156,8 @@ public class Autos {
         .and(leftStationToleftClose.active())
         .onTrue(
             alignToLeftCoral
-                .get().withName("Align2")
+                .get()
+                .withName("Align2")
                 // .alongWith(
                 //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
                 .andThen(score().withName("Score Second Piece"))

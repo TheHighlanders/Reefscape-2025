@@ -11,7 +11,6 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -25,7 +24,6 @@ import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.CommandXboxControllerSubsystem;
-import java.util.function.Supplier;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -42,9 +40,7 @@ public class RobotContainer {
   @Logged(name = "Elevator")
   Elevator elevator = new Elevator();
 
-  Supplier<Rotation2d> supplier;
-
-  Vision cameras = new Vision(supplier);
+  Vision cameras = new Vision();
 
   @Logged(name = "Swerve")
   Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
@@ -54,23 +50,26 @@ public class RobotContainer {
   LEDs leds = new LEDs(canAlign);
 
   @Logged(name = "AlignRight")
-  Align alignRightCMD = new Align(
-      drive,
-      cameras,
-      () -> true,
-      driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-      leds);
+  Align alignRightCMD =
+      new Align(
+          drive,
+          cameras,
+          () -> true,
+          driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+          leds);
 
   @Logged(name = "AlignLeft")
-  Align alignLeftCMD = new Align(
-      drive,
-      cameras,
-      () -> false,
-      driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-      leds);
+  Align alignLeftCMD =
+      new Align(
+          drive,
+          cameras,
+          () -> false,
+          driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+          leds);
 
-  Autos autos = new Autos(
-      drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
+  Autos autos =
+      new Autos(
+          drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
   public RobotContainer() {
@@ -80,17 +79,12 @@ public class RobotContainer {
     configureBindings();
     configureAutonomous();
 
-
     drive.setDefaultCommand(
         drive
             .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
             .withName("Default Drive Command"));
 
     cameraSetUp();
-
-    supplier = () -> {
-      return drive.getPose().getRotation();
-    };
   }
 
   private void configureBindings() {
@@ -126,9 +120,9 @@ public class RobotContainer {
     // driver.leftBumper().whileTrue(alignCMD.withName("Align Command"));
     // driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));
 
-    driver.rightBumper().whileTrue(alignToRightCoral());
+    driver.rightBumper().whileTrue(alignRightCMD.withName("Align Right Command"));
 
-    driver.leftBumper().whileTrue(alignToLeftCoral());
+    driver.leftBumper().whileTrue(alignLeftCMD.withName("Align Left Command"));
 
     operator
         .povDown()
@@ -187,14 +181,15 @@ public class RobotContainer {
       chooser.addCmd("SYSID", drive::sysId);
       chooser.addCmd(
           "FORWARD",
-          () -> Commands.sequence(
-              drive.enableSlowMode().withName("Enable Slow Mode"),
-              drive
-                  .driveCMD(() -> 1, () -> 0, () -> 0)
-                  .withTimeout(1)
-                  .withName("Drive Forward"),
-              drive.disableSlowMode().withName("Disable Slow Mode"))
-              .withName("Forward Test Sequence"));
+          () ->
+              Commands.sequence(
+                      drive.enableSlowMode().withName("Enable Slow Mode"),
+                      drive
+                          .driveCMD(() -> 1, () -> 0, () -> 0)
+                          .withTimeout(1)
+                          .withName("Drive Forward"),
+                      drive.disableSlowMode().withName("Disable Slow Mode"))
+                  .withName("Forward Test Sequence"));
       chooser.addRoutine("Test Drive Routine", autos::testDriveTrajRoutine);
       chooser.addRoutine("Test Rotate Routine", autos::testRotateTrajRoutine);
       chooser.addRoutine("Test Drive & Rotate Routine", autos::testDriveRotateTrajRoutine);
@@ -209,21 +204,21 @@ public class RobotContainer {
 
   public Command alignToRightCoral() {
     return new Align(
-        drive,
-        cameras,
-        () -> true,
-        driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-        leds)
+            drive,
+            cameras,
+            () -> true,
+            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+            leds)
         .withName("Align to Right Coral");
   }
 
   public Command alignToLeftCoral() {
     return new Align(
-        drive,
-        cameras,
-        () -> false,
-        driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-        leds)
+            drive,
+            cameras,
+            () -> false,
+            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+            leds)
         .withName("Align to Left Coral");
   }
 
@@ -231,35 +226,36 @@ public class RobotContainer {
 
     Thread m_visionThread;
 
-    m_visionThread = new Thread(
-        () -> {
-          // Get the UsbCamera from CameraServer
-          UsbCamera camera = CameraServer.startAutomaticCapture();
+    m_visionThread =
+        new Thread(
+            () -> {
+              // Get the UsbCamera from CameraServer
+              UsbCamera camera = CameraServer.startAutomaticCapture();
 
-          // Set the resolution
-          camera.setResolution(320, 240);
+              // Set the resolution
+              camera.setResolution(320, 240);
 
-          // Get a CvSink. This will capture Mats from the camera
-          CvSink cvSink = CameraServer.getVideo();
+              // Get a CvSink. This will capture Mats from the camera
+              CvSink cvSink = CameraServer.getVideo();
 
-          // Setup a CvSource. This will send images back to the Dashboard
-          CvSource outputStream = CameraServer.putVideo("DriverReefCam", 320, 240);
+              // Setup a CvSource. This will send images back to the Dashboard
+              CvSource outputStream = CameraServer.putVideo("DriverReefCam", 320, 240);
 
-          // Mats are very memory expensive. Lets reuse this Mat.
-          Mat mat = new Mat();
-          while (!Thread.interrupted()) {
-            if (cvSink.grabFrame(mat) == 0) {
-              outputStream.notifyError(cvSink.getError());
-              continue;
-            }
-            // Put a rectangle on the image
-            Imgproc.rectangle(
-                mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
-            // Give the output stream a new image to display
+              // Mats are very memory expensive. Lets reuse this Mat.
+              Mat mat = new Mat();
+              while (!Thread.interrupted()) {
+                if (cvSink.grabFrame(mat) == 0) {
+                  outputStream.notifyError(cvSink.getError());
+                  continue;
+                }
+                // Put a rectangle on the image
+                Imgproc.rectangle(
+                    mat, new Point(160, 240), new Point(160, 0), new Scalar(255, 0, 0), 5);
+                // Give the output stream a new image to display
 
-            outputStream.putFrame(mat);
-          }
-        });
+                outputStream.putFrame(mat);
+              }
+            });
 
     m_visionThread.setDaemon(true);
     m_visionThread.start();

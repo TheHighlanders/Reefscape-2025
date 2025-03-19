@@ -154,7 +154,7 @@ public class Align extends Command {
     Pose2d currentPose = swerve.getPose();
     // vibrate.accept(0.5);
 
-    if(!Align.canAlign(swerve, vision)){
+    if (!Align.canAlign(swerve, vision)) {
       this.cancel();
     }
 

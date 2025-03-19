@@ -6,7 +6,6 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -25,7 +24,6 @@ import frc.robot.utils.VisionHelper.VisionMeasurement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -34,23 +32,26 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 final class VisionConstants {
+
   static final PoseStrategy poseStrategy = PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
-  static final Transform3d reefRight = new Transform3d(
-      new Translation3d(0.205511, -0.114292, 0.459399),
-      new Rotation3d(
-          Units.degreesToRadians(0), Units.degreesToRadians(27), Units.degreesToRadians(0)));
+  static final Transform3d reefRight =
+      new Transform3d(
+          new Translation3d(0.205511, -0.114292, 0.459399),
+          new Rotation3d(
+              Units.degreesToRadians(0), Units.degreesToRadians(27), Units.degreesToRadians(0)));
 
-  static final Transform3d reefLeft = new Transform3d(
-      new Translation3d(0.1708, 0.30731, 0.2307),
-      new Rotation3d(
-          Units.degreesToRadians(0),
-          Units.degreesToRadians(-19.4),
-          Units.degreesToRadians(30)));
+  static final Transform3d reefLeft =
+      new Transform3d(
+          new Translation3d(0.1708, 0.30731, 0.2307),
+          new Rotation3d(
+              Units.degreesToRadians(0),
+              Units.degreesToRadians(-19.4),
+              Units.degreesToRadians(30)));
 
   static final int[] reefTagIds = {
-      6, 7, 8, 9, 10, 11, // RED
-      17, 18, 19, 20, 21, 22 // BLUE
+    6, 7, 8, 9, 10, 11, // RED
+    17, 18, 19, 20, 21, 22 // BLUE
   };
 
   static final double cameraFPS = 20.0d;
@@ -78,8 +79,8 @@ final class VisionConstants {
 public class Vision extends SubsystemBase {
 
   private static final CameraConfig[] CAMERA_CONFIGS = {
-      new CameraConfig("ReefRight", VisionConstants.reefRight),
-      new CameraConfig("ReefLeft", VisionConstants.reefLeft)
+    new CameraConfig("ReefRight", VisionConstants.reefRight),
+    new CameraConfig("ReefLeft", VisionConstants.reefLeft)
   };
 
   public static final int cameraCount = CAMERA_CONFIGS.length;
@@ -101,25 +102,18 @@ public class Vision extends SubsystemBase {
 
   private Optional<EstimatedRobotPose> bestEstimate = Optional.empty();
   // For publishing best estimate to NetworkTables
-  StructPublisher<Pose2d> visionEstPose = NetworkTableInstance.getDefault()
-      .getStructTopic("/Vision/Vision Best Estimated Pose", Pose2d.struct)
-      .publish();
-
-  StructPublisher[] camPoses = {
+  StructPublisher<Pose2d> visionEstPose =
       NetworkTableInstance.getDefault()
-          .getStructTopic("/Vision/Vision 0 Pose", Pose2d.struct)
-          .publish(),
-      NetworkTableInstance.getDefault()
-          .getStructTopic("/Vision/Vision 1 Pose", Pose2d.struct)
-          .publish()
-  };
+          .getStructTopic("/Vision/Vision Best Estimated Pose", Pose2d.struct)
+          .publish();
 
+  private final List<StructPublisher<Pose2d>> camPoses = new ArrayList<>();
   // This is for timing the difference between when the vision is processed and
   // when it is published
   private double lastProcessedTimestamp = 0;
 
   /** Creates a new Vision. */
-  public Vision(Supplier<Rotation2d> headingSup) {
+  public Vision() {
     // Load the AprilTag field layout
     this.aprilTagFieldLayout = Constants.getFieldTagLayout();
 
@@ -137,11 +131,17 @@ public class Vision extends SubsystemBase {
       cameraNames[i] = CAMERA_CONFIGS[i].name;
       cameras[i] = new PhotonCamera(cameraNames[i]);
 
-      poseEstimators[i] = new PhotonPoseEstimator(
-          aprilTagFieldLayout, VisionConstants.poseStrategy, CAMERA_CONFIGS[i].transform);
+      poseEstimators[i] =
+          new PhotonPoseEstimator(
+              aprilTagFieldLayout, VisionConstants.poseStrategy, CAMERA_CONFIGS[i].transform);
       poseEstimators[i].setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
       cameraPoses[i] = new Pose3d();
+
+      camPoses.add(
+          NetworkTableInstance.getDefault()
+              .getStructTopic("/Vision/Vision " + i + " Pose", Pose2d.struct)
+              .publish());
     }
 
     // Store reef tag poses for quick lookup
@@ -189,16 +189,18 @@ public class Vision extends SubsystemBase {
       frameCounter = 0;
 
       // Get vision data from this camera
-      Optional<EstimatedRobotPose> camEstimate = VisionHelper.update(
-          result,
-          VisionConstants.CAMERA_INTRINSICS,
-          VisionConstants.CAMERA_DISTORTION,
-          VisionConstants.poseStrategy,
-          CAMERA_CONFIGS[i].transform,
-          result.multitagResult
-              .map((pnpResult) -> pnpResult.estimatedPose.best)
-              .orElse(
-                  Transform3d.kZero)); // Use the transform from the coprocessor if available
+      Optional<EstimatedRobotPose> camEstimate =
+          VisionHelper.update(
+              result,
+              VisionConstants.CAMERA_INTRINSICS,
+              VisionConstants.CAMERA_DISTORTION,
+              VisionConstants.poseStrategy,
+              CAMERA_CONFIGS[i].transform,
+              result
+                  .multitagResult
+                  .map((pnpResult) -> pnpResult.estimatedPose.best)
+                  .orElse(
+                      Transform3d.kZero)); // Use the transform from the coprocessor if available
       // poseEstimators[i].update(result);
 
       // If we got a valid estimate, check if it's better than our current best
@@ -209,7 +211,7 @@ public class Vision extends SubsystemBase {
         // Calculate overall confidence metric (lower is better)
         double confidence = camStdDev.get(0, 0) + camStdDev.get(1, 0) + camStdDev.get(2, 0);
 
-        camPoses[i].set(camEstimate.get().estimatedPose.toPose2d());
+        camPoses.get(i).set(camEstimate.get().estimatedPose.toPose2d());
         confidences[i] = confidence;
 
         // Update our best estimate if this one is better
@@ -229,7 +231,9 @@ public class Vision extends SubsystemBase {
       }
     }
 
-    if (!MathUtil.isNear(prevBestConfidence, confidences[prevBestCamera],
+    if (!MathUtil.isNear(
+        prevBestConfidence,
+        confidences[prevBestCamera],
         VisionConstants.FRAME_LEEWAY_CONFIDENCE_THRESHOLD)) {
       bestEstimate = Optional.empty();
     }
@@ -253,13 +257,12 @@ public class Vision extends SubsystemBase {
 
       // Log debug information
       // SmartDashboard.putNumber("Vision/Target Count", bestEstimate.get().targetsUsed.size());
-
       lastProcessedTimestamp = Timer.getFPGATimestamp();
       // SmartDashboard.putNumber("Vision/Last Processing Time", lastProcessedTimestamp);
 
       if (!bestEstimate.get().targetsUsed.isEmpty()) {
         // SmartDashboard.putNumber(
-            // "Vision/Average Distance", calculateAverageDistance(bestEstimate.get().targetsUsed));
+        // "Vision/Average Distance", calculateAverageDistance(bestEstimate.get().targetsUsed));
 
         // Log first target's info
         PhotonTrackedTarget firstTarget = bestEstimate.get().targetsUsed.get(0);
@@ -276,9 +279,8 @@ public class Vision extends SubsystemBase {
    * Get the estimated robot pose from a specific camera
    *
    * @param cameraIndex The index of the camera to use
-   * @return Optional containing the estimated robot pose from the specified
-   *         camera, or empty if no
-   *         valid estimate
+   * @return Optional containing the estimated robot pose from the specified camera, or empty if no
+   *     valid estimate
    */
   public Optional<EstimatedRobotPose> getEstimatedRobotPose(int cameraIndex) {
     // Check if the index is valid
@@ -302,8 +304,7 @@ public class Vision extends SubsystemBase {
   /**
    * Get the best estimated robot pose from all cameras
    *
-   * @return Optional containing the best estimated robot pose, or empty if no
-   *         valid estimate
+   * @return Optional containing the best estimated robot pose, or empty if no valid estimate
    */
   public Optional<EstimatedRobotPose> getEstimatedRobotPose() {
     // This will return the best pose that was calculated during the last periodic
@@ -321,11 +322,9 @@ public class Vision extends SubsystemBase {
   }
 
   /**
-   * Get a VisionMeasurement object that includes both the pose estimate and
-   * confidence
+   * Get a VisionMeasurement object that includes both the pose estimate and confidence
    *
-   * @return VisionMeasurement with pose and confidence, or empty if no valid
-   *         measurement
+   * @return VisionMeasurement with pose and confidence, or empty if no valid measurement
    */
   public Optional<VisionHelper.VisionMeasurement> getVisionMeasurement() {
     Optional<EstimatedRobotPose> poseEst = getEstimatedRobotPose();
@@ -403,10 +402,11 @@ public class Vision extends SubsystemBase {
    */
   private PhotonPipelineResult filterCameraResult(PhotonPipelineResult result) {
     // Use VisionHelper to filter targets by distance and ambiguity
-    List<PhotonTrackedTarget> filteredTargets = VisionHelper.filterTargets(
-        result.getTargets(),
-        VisionConstants.MAX_TAG_DISTANCE,
-        VisionConstants.MAX_POSE_AMBIGUITY);
+    List<PhotonTrackedTarget> filteredTargets =
+        VisionHelper.filterTargets(
+            result.getTargets(),
+            VisionConstants.MAX_TAG_DISTANCE,
+            VisionConstants.MAX_POSE_AMBIGUITY);
 
     // Create a new pipeline result with filtered targets
     return new PhotonPipelineResult(result.metadata, filteredTargets, result.getMultiTagResult());
@@ -414,6 +414,7 @@ public class Vision extends SubsystemBase {
 
   // Helper class for camera configuration
   private static class CameraConfig {
+
     public final String name;
     public final Transform3d transform;
 

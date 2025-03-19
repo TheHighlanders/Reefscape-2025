@@ -14,7 +14,6 @@ import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.commands.Align;
 
 public class LEDs extends SubsystemBase {
   Trigger canAlign;
@@ -36,7 +35,9 @@ public class LEDs extends SubsystemBase {
   public LEDs(Trigger canAlign) {
     this.canAlign = canAlign;
 
-    canAlign.onTrue(runPattern(alignOk).withName("Alignment OK Pattern")).onFalse(runPattern(allianceLED).withName("Alignment NOT OK Pattern"));
+    canAlign
+        .onTrue(runPattern(alignOk).withName("Alignment OK Pattern"))
+        .onFalse(runPattern(allianceLED).withName("Alignment NOT OK Pattern"));
 
     m_led = new AddressableLED(kPort);
     m_buffer = new AddressableLEDBuffer(kLength);
@@ -55,7 +56,7 @@ public class LEDs extends SubsystemBase {
       //   //     runPattern(LEDPattern.solid(Color.kRed))
       //   //         .withName("Red Alliance Pattern")
       //   //         .ignoringDisable(true));
-      //   allianceLED 
+      //   allianceLED
       // }
       if (DriverStation.getAlliance().get() == Alliance.Blue) {
         // setDefaultCommand(
@@ -64,7 +65,7 @@ public class LEDs extends SubsystemBase {
         //         .ignoringDisable(true));
         allianceLED = LEDPattern.solid(Color.kBlue);
       }
-    } 
+    }
     // else {
     //   setDefaultCommand(
     //       runPattern(

@@ -138,7 +138,6 @@ public class Elevator extends SubsystemBase {
 
     reverseLimitSwitch = elevatorMotor.getReverseLimitSwitch();
 
-
     elevatorEncoder.setPosition(0);
 
     trim = 0;
