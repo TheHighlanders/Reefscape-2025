@@ -1,39 +1,32 @@
 package frc.robot.commands;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.LEDPattern;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
-
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
-
-import java.util.Map;
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
+@Logged
 public class Align extends Command {
-
-
 
   /** Constants for the Reef Coral alignment */
   private static final class AlignConstants {
-    // IDs of AprilTags on the reef
-    // Update with actual reef tag IDs
-
     // Distance from robot center to front bumper (meters)
     static final double robotCenterToFrontDistance = -0.39;
 
@@ -44,88 +37,144 @@ public class Align extends Command {
     static final double ejectOffset = 0.27;
 
     // Position tolerance (meters)
-    static final double velocityTolerance = 0.0;
+    static final double positionTolerance = 0.05;
+
+    // Velocity tolerance (meters/s)
+    static final double velocityTolerance = 0.1;
 
     // Rotation tolerance (radians)
-    static final double rotationVelocityTolerance = 0.01;
+    static final double rotationTolerance = 0;
+
+    // Rotation velocity tolerance (rad/s)
+    static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
-    static final double maxApproachSpeed = 1.5;
+    static final double maxApproachSpeed = 2.5;
+    static final double maxApproachAccel = 2;
 
     // Maximum rotation speed (rad/s)
-    static final double maxRotationSpeed = 1.0;
+    static final double maxRotationSpeed = 5;
+    static final double maxRotationAccel = 1.5;
 
-    static final double translateP = 3; // 2.25;
-    static final double translateI = 0.01; // 0.05;
+    static final double translateP = 5;
+    static final double translateI = 0.02;
     static final double translateD = 0;
 
-    static final double rotateP = 2; // 1.5;
+    static final double rotateP = 3;
     static final double rotateI = 0;
-    static final double rotateD = 0; // 0.5;
+    static final double rotateD = 0;
   }
+
   private final LEDs leds;
   private final Swerve swerve;
-  private final Vision vision;
   private final BooleanSupplier targetRightCoralSupplier; // true = right
 
-  private final PIDController xController =
-      new PIDController(
-          AlignConstants.translateP, AlignConstants.translateI, AlignConstants.translateD);
+  private final ProfiledPIDController xController =
+      new ProfiledPIDController(
+          AlignConstants.translateP,
+          AlignConstants.translateI,
+          AlignConstants.translateD,
+          new TrapezoidProfile.Constraints(
+              AlignConstants.maxApproachSpeed, AlignConstants.maxApproachAccel));
 
-  private final PIDController yController =
-      new PIDController(
-          AlignConstants.translateP, AlignConstants.translateI, AlignConstants.translateD);
+  private final ProfiledPIDController yController =
+      new ProfiledPIDController(
+          AlignConstants.translateP,
+          AlignConstants.translateI,
+          AlignConstants.translateD,
+          new TrapezoidProfile.Constraints(
+              AlignConstants.maxApproachSpeed, AlignConstants.maxApproachAccel));
 
-  private final PIDController rotController =
-      new PIDController(AlignConstants.rotateP, AlignConstants.rotateI, AlignConstants.rotateD);
+  private final ProfiledPIDController rotController =
+      new ProfiledPIDController(
+          AlignConstants.rotateP,
+          AlignConstants.rotateI,
+          AlignConstants.rotateD,
+          new TrapezoidProfile.Constraints(
+              AlignConstants.maxRotationSpeed, AlignConstants.maxRotationAccel));
 
-  private Pose2d targetPose;
-  private Pose2d closestReefTagPose;
+  private Pose2d targetPose = new Pose2d();
+  private Pose2d closestReefTagPose = new Pose2d();
   private boolean targetRightCoral; // Set during initialize
   private boolean hasTargetTagOnInit = true;
+  Vision vision;
 
   StructPublisher<Pose2d> targetPosePublisher =
       NetworkTableInstance.getDefault()
           .getStructTopic("Vision/AlignTarget", Pose2d.struct)
           .publish();
-  private Command vibrate;
+  private final Command vibrate;
+
+  @Logged(name = "xError", importance = Importance.INFO)
+  private double xError = -1;
+
+  @Logged(name = "yError", importance = Importance.INFO)
+  private double yError = -1;
+
+  @Logged(name = "rotError", importance = Importance.INFO)
+  private double rotError = -1;
+
+  @Logged(name = "xSpeed", importance = Importance.INFO)
+  private double xSpeed = -1;
+
+  @Logged(name = "ySpeed", importance = Importance.INFO)
+  private double ySpeed = -1;
+
+  @Logged(name = "rotSpeed", importance = Importance.INFO)
+  private double rotSpeed = -1;
 
   /**
    * Creates a command to align with coral of a reef tag.
+   *
    * @param leds
    * @param swerve The swerve drive subsystem
-   * @param vision The vision subsystem
    * @param targetRightCoralSupplier Supplies whether to target right coral (true) or left coral
    *     (false)
    */
-  public Align(Swerve swerve, Vision vision, BooleanSupplier targetRightCoralSupplier, Command vibrate, LEDs leds) {
+  public Align(
+      Swerve swerve,
+      Vision vision,
+      BooleanSupplier targetRightCoralSupplier,
+      Command vibrate,
+      LEDs leds) {
     this.swerve = swerve;
     this.vision = vision;
     this.leds = leds;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
-
     this.vibrate = vibrate;
+    this.vision = vision;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
 
-    addRequirements(swerve, vision);
+    addRequirements(swerve);
   }
 
   @Override
   public void initialize() {
+    Pose2d currentPose = swerve.getPose();
     // vibrate.accept(0.5);
-    leds.runPattern(LEDPattern.rainbow(255, 128).scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d/120d))).schedule();
-    
 
-    yController.setTolerance(0.01, 0.01);
-    xController.setTolerance(0.01, 0.01);
-    rotController.setTolerance(0.01);
+    if(!Align.canAlign(swerve, vision)){
+      this.cancel();
+    }
 
-    
+    leds.runPattern(
+            LEDPattern.rainbow(255, 128)
+                .scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d / 120d)))
+        .withName("Rainbow LED Pattern")
+        .schedule();
+
+    closestReefTagPose = vision.findClosestReefTag(currentPose);
+    // Set tolerances for velocity-based completion
+    xController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
+    yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
+    rotController.setTolerance(
+        AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
+
     hasTargetTagOnInit = vision.hasTarget();
 
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
-    closestReefTagPose = vision.findClosestReefTag(swerve.getPose());
+
     if (Constants.devMode) {
       SmartDashboard.putNumber("ReefAlign/TagX", closestReefTagPose.getX());
       SmartDashboard.putNumber("ReefAlign/TagY", closestReefTagPose.getY());
@@ -134,8 +183,24 @@ public class Align extends Command {
     }
 
     calculateTargetPose();
-
     targetPosePublisher.set(targetPose);
+
+    // Get current robot pose
+
+    ChassisSpeeds currentSpeeds =
+        ChassisSpeeds.fromRobotRelativeSpeeds(
+            swerve.kinematics.toChassisSpeeds(swerve.getModuleStates()),
+            swerve.getPose().getRotation());
+    SmartDashboard.putNumber("Align/X Init Speed", -currentSpeeds.vxMetersPerSecond);
+    SmartDashboard.putNumber("Align/Y Init Speed", -currentSpeeds.vyMetersPerSecond);
+
+    SmartDashboard.putNumber("Align/ROt Init Speed", -currentSpeeds.omegaRadiansPerSecond);
+
+    // Reset controllers with the current error and target of 0 (no error)
+    xController.reset(currentPose.getX(), -currentSpeeds.vxMetersPerSecond);
+    yController.reset(currentPose.getY(), -currentSpeeds.vyMetersPerSecond);
+    rotController.reset(
+        currentPose.getRotation().getRadians(), -currentSpeeds.omegaRadiansPerSecond);
   }
 
   private void calculateTargetPose() {
@@ -168,23 +233,40 @@ public class Align extends Command {
 
     Pose2d currentPose = swerve.getPose();
 
-    double xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());
-    double ySpeed = yController.calculate(currentPose.getY(), targetPose.getY());
+    // Calculate errors
+    xError = Math.abs(targetPose.getX() - currentPose.getX());
+    yError = Math.abs(targetPose.getY() - currentPose.getY());
+    rotError = Math.abs(targetPose.getRotation().minus(currentPose.getRotation()).getRadians());
 
-    double rotSpeed =
+    // Calculate outputs by setting goal to 0 (we want zero error)
+    xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());
+    ySpeed = yController.calculate(currentPose.getY(), targetPose.getY());
+    rotSpeed =
         rotController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
-    xSpeed =
-        MathUtil.clamp(xSpeed, -AlignConstants.maxApproachSpeed, AlignConstants.maxApproachSpeed);
-    ySpeed =
-        MathUtil.clamp(ySpeed, -AlignConstants.maxApproachSpeed, AlignConstants.maxApproachSpeed);
-    rotSpeed =
-        MathUtil.clamp(rotSpeed, -AlignConstants.maxRotationSpeed, AlignConstants.maxRotationSpeed);
+    // Limit speeds to max values
+    // xSpeed =
+    //     MathUtil.clamp(xSpeed, -AlignConstants.maxApproachSpeed,
+    // AlignConstants.maxApproachSpeed);
+    // ySpeed =
+    //     MathUtil.clamp(ySpeed, -AlignConstants.maxApproachSpeed,
+    // AlignConstants.maxApproachSpeed);
+    // rotSpeed =
+    //     MathUtil.clamp(rotSpeed, -AlignConstants.maxRotationSpeed,
+    // AlignConstants.maxRotationSpeed);
     if (Constants.devMode) {
+      SmartDashboard.putNumber("ReefAlign/XError", xError);
+      SmartDashboard.putNumber("ReefAlign/YError", yError);
+      SmartDashboard.putNumber("ReefAlign/RotError", rotError);
       SmartDashboard.putNumber("ReefAlign/XSpeed", xSpeed);
       SmartDashboard.putNumber("ReefAlign/YSpeed", ySpeed);
       SmartDashboard.putNumber("ReefAlign/RotSpeed", rotSpeed);
+
+      // Also log velocities for debugging
+      SmartDashboard.putNumber("ReefAlign/XVelocity", xController.getSetpoint().velocity);
+      SmartDashboard.putNumber("ReefAlign/YVelocity", yController.getSetpoint().velocity);
+      SmartDashboard.putNumber("ReefAlign/RotVelocity", rotController.getSetpoint().velocity);
     }
 
     swerve.driveChassisSpeedsRobotRelative(
@@ -196,16 +278,11 @@ public class Align extends Command {
   public void end(boolean interrupted) {
     swerve.stopDrive();
     vibrate.schedule();
-    SmartDashboard.putBoolean("ReefAlign/Completed", true);
-    
+    // SmartDashboard.putBoolean("ReefAlign/Completed", true);
   }
-
 
   @Override
   public boolean isFinished() {
-    if (!hasTargetTagOnInit) {
-      return true;
-    }
     Pose2d currentPose = swerve.getPose();
     double distanceToTarget = currentPose.getTranslation().getDistance(targetPose.getTranslation());
     double rotationError =
@@ -216,17 +293,18 @@ public class Align extends Command {
       SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
     }
 
-
-
-    return yController.atSetpoint() && xController.atSetpoint() && rotController.atSetpoint();
+    // Check if velocity is close to zero rather than position at setpoint
+    return xController.atGoal()
+        && yController.atGoal()
+        && rotController.getVelocityError() < AlignConstants.rotationVelocityTolerance;
   }
 
-  public static boolean canAlign(Swerve swerve, Vision vision){
+  public static boolean canAlign(Swerve swerve, Vision vision) {
 
     Pose2d closestReefTagPose = vision.findClosestReefTag(swerve.getPose());
     Pose2d currentPose = swerve.getPose();
 
-    return (closestReefTagPose.getTranslation().minus(currentPose.getTranslation()).getNorm() < 2 || vision.hasTarget());
-    
-  }  
+    return (closestReefTagPose.getTranslation().minus(currentPose.getTranslation()).getNorm() < 2
+        && vision.hasTarget());
+  }
 }

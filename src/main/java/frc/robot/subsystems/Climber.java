@@ -56,6 +56,8 @@ public class Climber extends SubsystemBase {
         climberConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     climbMotor.getEncoder().setPosition(0);
     climberPreviousPosition = 0;
+
+    this.setName("Climber");
   }
 
   private SparkMaxConfig createClimberConfig() {
@@ -128,16 +130,18 @@ public class Climber extends SubsystemBase {
   public Command createClimbOutCommand() {
     // TODO: make sure 1 is correct direction
     return Commands.startEnd(
-        () -> climbMotor.set(-0.5),
-        // Stop the climber at the end of the command
-        () -> climbMotor.set(0.0),
-        this);
+            () -> climbMotor.set(-0.5),
+            // Stop the climber at the end of the command
+            () -> climbMotor.set(0.0),
+            this)
+        .withName("Climb Out Command");
   }
 
   public Command findZeroPosition() {
     return Commands.run(this::findClimberZeroTick, this)
         .until(() -> holdTimer.hasElapsed(ClimberConstants.timeToZeroClimber))
-        .finallyDo(this::handleAtZeroPosition);
+        .finallyDo(this::handleAtZeroPosition)
+        .withName("Find Climber Zero Position");
   }
 
   public Command climbCommand() {
@@ -146,18 +150,21 @@ public class Climber extends SubsystemBase {
             () ->
                 MathUtil.isNear(
                     ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
-        .finallyDo(holdPosition());
+        .finallyDo(holdPosition())
+        .withName("Climb In Command");
   }
 
   public Command createClimbInCommand() {
-    return Commands.startEnd(() -> climbMotor.set(1), () -> climbMotor.set(0.0), this);
+    return Commands.startEnd(() -> climbMotor.set(1), () -> climbMotor.set(0.0), this)
+        .withName("Climb In Command");
   }
 
   public Command holdClimbPosition() {
-    return Commands.runOnce(holdPosition(), this);
+    return Commands.runOnce(holdPosition(), this).withName("Hold Climb Position");
   }
 
   public Command createClimbInSlowCommand() {
-    return Commands.startEnd(() -> climbMotor.set(0.4), () -> climbMotor.set(0.0), this);
+    return Commands.startEnd(() -> climbMotor.set(0.4), () -> climbMotor.set(0.0), this)
+        .withName("Climb In Slow Command");
   }
 }

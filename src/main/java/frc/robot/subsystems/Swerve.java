@@ -1,7 +1,6 @@
 // Copyrght (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Meters;
@@ -112,7 +111,7 @@ public class Swerve extends SubsystemBase {
   Module[] modules = new Module[4];
   AHRS gyro;
   SwerveDrivePoseEstimator poseEst;
-  SwerveDriveKinematics kinematics;
+  public SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
   double accelLim = SwerveConstants.accelLim;
   SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
@@ -133,24 +132,19 @@ public class Swerve extends SubsystemBase {
 
   SwerveState current = SwerveState.NORMAL;
 
-  private final Vision[] cameras;
-  private EstimatedRobotPose[] lastEstimatedPoses;
-  private final Pose3d[] cameraPoses;
+  private final Vision vision;
+  private EstimatedRobotPose lastEstimatedPoses;
+  private Pose3d cameraPose;
   private double lastEstTimestamp = 0.0;
 
   /** Creates a new Swerve. */
-  public Swerve(Vision[] cameras, DoubleSupplier elevatorHeight) {
-    this.cameras = cameras;
+  public Swerve(Vision vision, DoubleSupplier elevatorHeight) {
+    this.vision = vision;
     this.elevatorHeight = elevatorHeight;
-    this.lastEstimatedPoses = new EstimatedRobotPose[cameras.length];
-    this.cameraPoses = new Pose3d[cameras.length];
+    this.cameraPose = new Pose3d();
 
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
-    }
-
-    for (int i = 0; i < cameras.length; i++) {
-      cameraPoses[i] = new Pose3d();
     }
 
     // Using +X as forward, and +Y as left, as per
@@ -243,6 +237,8 @@ public class Swerve extends SubsystemBase {
                 },
                 this));
     attemptZeroingAbsolute();
+
+    this.setName("Drive");
   }
 
   @Override
@@ -269,55 +265,47 @@ public class Swerve extends SubsystemBase {
 
   /** Process vision data from all cameras and update pose estimation */
   private void updateVision() {
-    for (int i = 0; i < cameras.length; i++) {
-      // Get the latest result from this camera
-      Optional<EstimatedRobotPose> estPose = cameras[i].getEstimatedRobotPose();
+    // Get the best result from vision
+    Optional<EstimatedRobotPose> estPose = vision.getEstimatedRobotPose();
 
-      if (estPose.isPresent()) {
-        // Store the camera pose for debugging
-        cameraPoses[i] = estPose.get().estimatedPose;
-        lastEstimatedPoses[i] = estPose.get();
+    if (estPose.isPresent()) {
+      // Store the camera pose for debugging
+      cameraPose = estPose.get().estimatedPose;
+      lastEstimatedPoses = estPose.get();
 
-        // Get standard deviations from the camera
-        Matrix<N3, N1> stdDev = cameras[i].getEstimationStdDev();
+      // Get standard deviations from the camera
+      Matrix<N3, N1> stdDev = vision.getEstimationStdDev();
 
-        // Apply additional scaling based on game state
-        if (DriverStation.isAutonomous()) {
-          // Increase uncertainty during auto
-          stdDev = stdDev.times(2.0);
-        }
-
-        // Apply camera-specific scaling if needed
-        if (cameras[i].getName().contains("Back")) {
-          stdDev = stdDev.times(1.5);
-        }
-
-        // Add measurement to pose estimator
-        poseEst.addVisionMeasurement(
-            estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
-
-        lastEstTimestamp = estPose.get().timestampSeconds;
-
-        // Log vision data
-        SmartDashboard.putNumber(
-            "Vision/" + cameras[i].getName() + "/Processing Delay",
-            Timer.getFPGATimestamp() - lastEstTimestamp);
-
-        SmartDashboard.putNumber(
-            "Vision/" + cameras[i].getName() + "/Target Count", estPose.get().targetsUsed.size());
-
-        // Log tag positions if in dev mode
-        if (Constants.devMode && !estPose.get().targetsUsed.isEmpty()) {
-          SmartDashboard.putNumber(
-              "Vision/" + cameras[i].getName() + "/First Tag ID",
-              estPose.get().targetsUsed.get(0).getFiducialId());
-        }
+      // Apply additional scaling based on game state
+      if (DriverStation.isAutonomous()) {
+        // Increase uncertainty during auto
+        stdDev = stdDev.times(2.0);
       }
 
-      // Log whether this camera has a valid result
-      SmartDashboard.putBoolean(
-          "Vision/" + cameras[i].getName() + "/Has Target", estPose.isPresent());
+      // Add measurement to pose estimator
+      poseEst.addVisionMeasurement(
+          estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
+
+      lastEstTimestamp = estPose.get().timestampSeconds;
+
+      // Log vision data
+      SmartDashboard.putNumber(
+          "Vision/" + vision.getName() + "/Processing Delay",
+          Timer.getFPGATimestamp() - lastEstTimestamp);
+
+      SmartDashboard.putNumber(
+          "Vision/" + vision.getName() + "/Target Count", estPose.get().targetsUsed.size());
+
+      // Log tag positions if in dev mode
+      if (Constants.devMode && !estPose.get().targetsUsed.isEmpty()) {
+        SmartDashboard.putNumber(
+            "Vision/" + vision.getName() + "/First Tag ID",
+            estPose.get().targetsUsed.get(0).getFiducialId());
+      }
     }
+
+    // Log whether this camera has a valid result
+    SmartDashboard.putBoolean("Vision/" + vision.getName() + "/Has Target", estPose.isPresent());
 
     // Log camera poses for debugging
     if (Constants.devMode) {
@@ -327,25 +315,13 @@ public class Swerve extends SubsystemBase {
   }
 
   /**
-   * Get the array of camera poses for visualization
-   *
-   * @return Array of camera poses in field coordinates
-   */
-  public Pose3d[] getCameraPoses() {
-    return cameraPoses;
-  }
-
-  /**
    * Get a specific camera's pose
    *
    * @param index The camera index
    * @return The camera's pose in field coordinates
    */
-  public Pose3d getCameraPose(int index) {
-    if (index >= 0 && index < cameraPoses.length) {
-      return cameraPoses[index];
-    }
-    return new Pose3d();
+  public Pose3d getCameraPose() {
+    return cameraPose;
   }
 
   @Logged(name = "Estimated Pose", importance = Importance.INFO)
@@ -376,6 +352,18 @@ public class Swerve extends SubsystemBase {
     }
 
     return outputs;
+  }
+
+  @Logged(name = "Drive Angle Errors", importance = Importance.INFO)
+  public double[] getAngleErrors() {
+    double[] out = new double[4];
+
+    for (int i = 0; i < modules.length; i++) {
+      out[i] =
+          modules[i].getSetpoint().angle.getDegrees() - modules[i].getState().angle.getDegrees();
+    }
+
+    return out;
   }
 
   @Logged(name = "Angle Applied Outputs", importance = Importance.INFO)
@@ -417,7 +405,8 @@ public class Swerve extends SubsystemBase {
               }
             },
             this)
-        .ignoringDisable(true);
+        .ignoringDisable(true)
+        .withName("Read Angle Encoders");
   }
 
   @Logged(name = "Gyro", importance = Importance.INFO)
@@ -435,7 +424,7 @@ public class Swerve extends SubsystemBase {
    * @param direction The direction (forward or reverse) to run the test in
    */
   public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-    return sysId.quasistatic(direction);
+    return sysId.quasistatic(direction).withName("SysId Quasistatic " + direction);
   }
 
   /**
@@ -444,18 +433,19 @@ public class Swerve extends SubsystemBase {
    * @param direction The direction (forward or reverse) to run the test in
    */
   public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-    return sysId.dynamic(direction);
+    return sysId.dynamic(direction).withName("SysId Dynamic " + direction);
   }
 
   public Command sysId() {
     return Commands.sequence(
-        sysIdDynamic(Direction.kForward),
-        Commands.waitSeconds(1),
-        sysIdDynamic(Direction.kReverse),
-        Commands.waitSeconds(1),
-        sysIdQuasistatic(Direction.kForward),
-        Commands.waitSeconds(1),
-        sysIdQuasistatic(Direction.kReverse));
+            sysIdDynamic(Direction.kForward).withName("Dynamic Forward"),
+            Commands.waitSeconds(1).withName("Wait 1"),
+            sysIdDynamic(Direction.kReverse).withName("Dynamic Reverse"),
+            Commands.waitSeconds(1).withName("Wait 2"),
+            sysIdQuasistatic(Direction.kForward).withName("Quasistatic Forward"),
+            Commands.waitSeconds(1).withName("Wait 3"),
+            sysIdQuasistatic(Direction.kReverse).withName("Quasistatic Reverse"))
+        .withName("Complete SysId Sequence");
   }
 
   /*
@@ -463,7 +453,6 @@ public class Swerve extends SubsystemBase {
    * +X is to the driver behind the glass's right
    * +Y is away from the driver
    */
-
   /**
    * @param x Supplier for desired Alliance Relative X translation
    * @param y Supplier for desired Alliance Relative Y translation
@@ -486,15 +475,17 @@ public class Swerve extends SubsystemBase {
 
   public Command pidTuningJogDrive() {
     return new RunCommand(
-        () -> {
-          SwerveModuleState state =
-              new SwerveModuleState(
-                  SmartDashboard.getNumber("Tuning/Swerve/Velocity Setpoint", 0), new Rotation2d());
-          for (Module m : modules) {
-            m.setModuleState(state, false);
-          }
-        },
-        this);
+            () -> {
+              SwerveModuleState state =
+                  new SwerveModuleState(
+                      SmartDashboard.getNumber("Tuning/Swerve/Velocity Setpoint", 0),
+                      new Rotation2d());
+              for (Module m : modules) {
+                m.setModuleState(state, false);
+              }
+            },
+            this)
+        .withName("PID Tuning Jog Drive");
   }
 
   /**
@@ -504,20 +495,21 @@ public class Swerve extends SubsystemBase {
    */
   public Command pointWheelsInXPattern() {
     return new RunCommand(
-        () -> {
-          SwerveModuleState[] states = new SwerveModuleState[4];
+            () -> {
+              SwerveModuleState[] states = new SwerveModuleState[4];
 
-          // FL at 45°, FR at 135°, BL at 315° (-45°), BR at 225° (-135°)
-          states[0] = new SwerveModuleState(0, Rotation2d.fromDegrees(45)); // Front Left
-          states[1] = new SwerveModuleState(0, Rotation2d.fromDegrees(135)); // Front Right
-          states[2] = new SwerveModuleState(0, Rotation2d.fromDegrees(315)); // Back Left
-          states[3] = new SwerveModuleState(0, Rotation2d.fromDegrees(225)); // Back Right
+              // FL at 45°, FR at 135°, BL at 315° (-45°), BR at 225° (-135°)
+              states[0] = new SwerveModuleState(0, Rotation2d.fromDegrees(45)); // Front Left
+              states[1] = new SwerveModuleState(0, Rotation2d.fromDegrees(135)); // Front Right
+              states[2] = new SwerveModuleState(0, Rotation2d.fromDegrees(315)); // Back Left
+              states[3] = new SwerveModuleState(0, Rotation2d.fromDegrees(225)); // Back Right
 
-          for (int i = 0; i < modules.length; i++) {
-            modules[i].setModuleState(states[i], false);
-          }
-        },
-        this);
+              for (int i = 0; i < modules.length; i++) {
+                modules[i].setModuleState(states[i], false);
+              }
+            },
+            this)
+        .withName("Point Wheels in X Pattern");
   }
 
   public Command driveForwardTimed(double velocity, double timeSec) {
@@ -531,7 +523,8 @@ public class Swerve extends SubsystemBase {
             },
             this)
         .withTimeout(timeSec)
-        .finallyDo(this::stopDrive);
+        .finallyDo(this::stopDrive)
+        .withName("Drive Forward Timed " + velocity + "m/s for " + timeSec + "s");
   }
 
   public void stopDrive() {
@@ -548,29 +541,34 @@ public class Swerve extends SubsystemBase {
             Rotation2d.fromDegrees(SmartDashboard.getNumber("Tuning/Swerve/Angle Setpoint", 0))
                 .plus(modules[0].getAnglePosition()));
     return new RunCommand(
-        () -> {
-          for (Module m : modules) {
-            m.setModuleState(state, false);
-          }
-        },
-        this);
+            () -> {
+              for (Module m : modules) {
+                m.setModuleState(state, false);
+              }
+            },
+            this)
+        .withName("PID Tuning Jog Angle");
   }
 
   public Command pointWheelsForward() {
     return new RunCommand(
-        () -> {
-          for (Module m : modules) {
-            m.setModuleState(new SwerveModuleState(0, new Rotation2d()), false);
-          }
-        },
-        this);
+            () -> {
+              for (Module m : modules) {
+                m.setModuleState(new SwerveModuleState(0, new Rotation2d()), false);
+              }
+            },
+            this)
+        .withName("Point Wheels Forward");
   }
 
   public Command resetWheelsToZero() {
     return Commands.runOnce(
-        () -> {
-          for (Module m : modules) m.angleEncoder.setPosition(0);
-        });
+            () -> {
+              for (Module m : modules) {
+                m.angleEncoder.setPosition(0);
+              }
+            })
+        .withName("Reset Wheels to Zero");
   }
 
   public Command presetWheelsToTraj(SwerveSample sample) {
@@ -583,14 +581,17 @@ public class Swerve extends SubsystemBase {
     }
 
     return Commands.sequence(
-        Commands.runOnce(
-            () -> {
-              for (int i = 0; i < modules.length; i++) {
-                wheelDirections[i].optimize(getModulePostions()[i].angle);
-                modules[i].setModuleState(wheelDirections[i], false);
-              }
-            }),
-        Commands.waitUntil(() -> areModulesAtAngleSetpoint(wheelDirections)));
+            Commands.runOnce(
+                    () -> {
+                      for (int i = 0; i < modules.length; i++) {
+                        wheelDirections[i].optimize(getModulePostions()[i].angle);
+                        modules[i].setModuleState(wheelDirections[i], false);
+                      }
+                    })
+                .withName("Set Wheel Directions"),
+            Commands.waitUntil(() -> areModulesAtAngleSetpoint(wheelDirections))
+                .withName("Wait for Modules at Angle"))
+        .withName("Preset Wheels to Trajectory");
   }
 
   public boolean areModulesAtAngleSetpoint(SwerveModuleState[] directions) {
@@ -649,7 +650,6 @@ public class Swerve extends SubsystemBase {
 
     // Comment to disable heading correction
     // omega = headingCorrection(x, y, omega);
-
     ChassisSpeeds chassisSpeeds;
 
     if (current == SwerveState.NORMAL) {
@@ -664,7 +664,6 @@ public class Swerve extends SubsystemBase {
       // } else {
       // x = 0;
       // }
-
       chassisSpeeds = new ChassisSpeeds(y, x, omega);
     }
 
@@ -784,11 +783,11 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command enableSlowMode() {
-    return Commands.runOnce(() -> current = SwerveState.LINEUP);
+    return Commands.runOnce(() -> current = SwerveState.LINEUP).withName("Enable Slow Mode");
   }
 
   public Command disableSlowMode() {
-    return Commands.runOnce(() -> current = SwerveState.NORMAL);
+    return Commands.runOnce(() -> current = SwerveState.NORMAL).withName("Disable Slow Mode");
   }
 
   public void driveVoltage(Measure<VoltageUnit> voltage) {
@@ -829,15 +828,17 @@ public class Swerve extends SubsystemBase {
                         poseEst.getEstimatedPosition().getX(),
                         poseEst.getEstimatedPosition().getY(),
                         new Rotation2d())))
-        .ignoringDisable(true);
+        .ignoringDisable(true)
+        .withName("Reset Gyro");
   }
 
   public Command resetOdometry() {
     return Commands.runOnce(
-        () -> {
-          poseEst.resetTranslation(new Translation2d());
-          resetGyro();
-        });
+            () -> {
+              poseEst.resetTranslation(new Translation2d());
+              resetGyro();
+            })
+        .withName("Reset Odometry");
   }
 
   public void sendDiagnostics() {

@@ -12,12 +12,12 @@ import edu.wpi.first.net.WebServer;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.LEDs;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import java.util.Set;
 import org.littletonrobotics.urcl.URCL;
 
 @Logged
@@ -27,6 +27,8 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private final RobotContainer m_robotContainer;
+
+  private final StringBuilder nameBuilder = new StringBuilder();
 
   private double loops = 0;
 
@@ -60,9 +62,110 @@ public class Robot extends TimedRobot {
           // while still logging important information.
           config.minimumImportance = Logged.Importance.DEBUG;
         });
+
     DriverStation.startDataLog(DataLogManager.getLog());
 
     SmartDashboard.putData(CommandScheduler.getInstance());
+
+    configureCommandSchedulerLogging();
+  }
+
+  public void configureCommandSchedulerLogging() {
+    CommandScheduler.getInstance()
+        .onCommandInitialize(
+            command ->
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Initializing",
+                        0));
+
+    CommandScheduler.getInstance()
+        .onCommandExecute(
+            command ->
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Running",
+                        0));
+
+    CommandScheduler.getInstance()
+        .onCommandFinish(
+            command ->
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Finished",
+                        0));
+
+    CommandScheduler.getInstance()
+        .onCommandInterrupt(
+            (command, interrupter) -> {
+              if (interrupter.isEmpty()) {
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Interrupted",
+                        0);
+              } else {
+                DataLogManager.getLog()
+                    .appendString(
+                        DataLogManager.getLog()
+                            .start(
+                                "CommandScheduler/"
+                                    + getSubsystemNames(command.getRequirements())
+                                    + "/"
+                                    + command.getName()
+                                    + "/State",
+                                "string"),
+                        "Interrupted by: " + interrupter.get().getName(),
+                        0);
+              }
+            });
+  }
+
+  private String getSubsystemNames(Set<Subsystem> subsystems) {
+    nameBuilder.setLength(0);
+    int i = 1;
+    for (var subsystem : subsystems) {
+      nameBuilder.append(subsystem.getName());
+      if (i != subsystems.size()) {
+        nameBuilder.append(" & ");
+      }
+      i++;
+    }
+    if (i == 1) {
+      nameBuilder.append("None");
+    }
+    return nameBuilder.toString();
   }
 
   @Override
@@ -101,7 +204,7 @@ public class Robot extends TimedRobot {
         m_robotContainer.elevator.updateTuningConstants();
       }
     }
-    loops++;    
+    loops++;
   }
 
   @Override
@@ -133,6 +236,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopPeriodic() {
+    SmartDashboard.putBoolean("CAN ALIGN", m_robotContainer.canAlign.getAsBoolean());
   }
 
   @Override

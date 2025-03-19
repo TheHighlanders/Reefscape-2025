@@ -1,10 +1,12 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -23,6 +25,7 @@ import frc.robot.utils.VisionHelper.VisionMeasurement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -33,18 +36,25 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 final class VisionConstants {
   static final PoseStrategy poseStrategy = PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
-  static final Transform3d frontFacingCam =
-      new Transform3d(
-          new Translation3d(0.205486, -0.122174, 0.4376928),
-          new Rotation3d(0, Units.degreesToRadians(25.5), 0));
+  static final Transform3d reefRight = new Transform3d(
+      new Translation3d(0.205511, -0.114292, 0.459399),
+      new Rotation3d(
+          Units.degreesToRadians(0), Units.degreesToRadians(27), Units.degreesToRadians(0)));
+
+  static final Transform3d reefLeft = new Transform3d(
+      new Translation3d(0.1708, 0.30731, 0.2307),
+      new Rotation3d(
+          Units.degreesToRadians(0),
+          Units.degreesToRadians(-19.4),
+          Units.degreesToRadians(30)));
 
   static final int[] reefTagIds = {
-    6, 7, 8, 9, 10, 11, // RED
-    17, 18, 19, 20, 21, 22 // BLUE
+      6, 7, 8, 9, 10, 11, // RED
+      17, 18, 19, 20, 21, 22 // BLUE
   };
 
-  static final double cameraFPS = 20;
-  static final double debounceFrames = Math.ceil(50 / cameraFPS);
+  static final double cameraFPS = 20.0d;
+  static final double debounceFrames = Math.ceil(50d / cameraFPS);
 
   // Maximum acceptable distance for reliable tag detection
   static final double MAX_TAG_DISTANCE = 6.0; // meters
@@ -56,23 +66,11 @@ final class VisionConstants {
   static final Matrix<N3, N3> CAMERA_INTRINSICS = new Matrix<>(Nat.N3(), Nat.N3());
   static final Matrix<N8, N1> CAMERA_DISTORTION = new Matrix<>(Nat.N8(), Nat.N1());
 
+  public static final double FRAME_LEEWAY_CONFIDENCE_THRESHOLD = 0.5;
+
   // Initialize camera intrinsics and distortion with typical values
   static {
-    // These are example values and should be replaced with actual camera
-    // calibration
-    double[][] intrinsics = {
-      {700.0, 0.0, 320.0},
-      {0.0, 700.0, 240.0},
-      {0.0, 0.0, 1.0}
-    };
-
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        CAMERA_INTRINSICS.set(i, j, intrinsics[i][j]);
-      }
-    }
-
-    // Fill distortion coefficients with zeros
+    CAMERA_INTRINSICS.fill(0);
     CAMERA_DISTORTION.fill(0.0);
   }
 }
@@ -80,8 +78,11 @@ final class VisionConstants {
 public class Vision extends SubsystemBase {
 
   private static final CameraConfig[] CAMERA_CONFIGS = {
-    new CameraConfig("ReefCamera", VisionConstants.frontFacingCam)
+      new CameraConfig("ReefRight", VisionConstants.reefRight),
+      new CameraConfig("ReefLeft", VisionConstants.reefLeft)
   };
+
+  public static final int cameraCount = CAMERA_CONFIGS.length;
 
   // Internal camera management
   private final PhotonCamera[] cameras;
@@ -89,42 +90,55 @@ public class Vision extends SubsystemBase {
   private final Pose3d[] cameraPoses;
   private final String[] cameraNames;
 
+  private double prevBestConfidence;
+  private int prevBestCamera;
+
   private final AprilTagFieldLayout aprilTagFieldLayout;
   private Matrix<N3, N1> stdDev = VisionHelper.INFINITE_STD_DEVS;
   private final List<Pose2d> reefTagPoses = new ArrayList<>();
   private boolean hasTarget = false;
   private int frameCounter = 0;
 
+  private Optional<EstimatedRobotPose> bestEstimate = Optional.empty();
   // For publishing best estimate to NetworkTables
-  StructPublisher<Pose2d> visionEstPose =
+  StructPublisher<Pose2d> visionEstPose = NetworkTableInstance.getDefault()
+      .getStructTopic("/Vision/Vision Best Estimated Pose", Pose2d.struct)
+      .publish();
+
+  StructPublisher[] camPoses = {
       NetworkTableInstance.getDefault()
-          .getStructTopic("/Vision/Vision Estimated Pose", Pose2d.struct)
-          .publish();
+          .getStructTopic("/Vision/Vision 0 Pose", Pose2d.struct)
+          .publish(),
+      NetworkTableInstance.getDefault()
+          .getStructTopic("/Vision/Vision 1 Pose", Pose2d.struct)
+          .publish()
+  };
 
   // This is for timing the difference between when the vision is processed and
   // when it is published
   private double lastProcessedTimestamp = 0;
 
   /** Creates a new Vision. */
-  public Vision() {
+  public Vision(Supplier<Rotation2d> headingSup) {
     // Load the AprilTag field layout
     this.aprilTagFieldLayout = Constants.getFieldTagLayout();
 
     // Initialize camera arrays
-    int cameraCount = CAMERA_CONFIGS.length;
     cameras = new PhotonCamera[cameraCount];
     poseEstimators = new PhotonPoseEstimator[cameraCount];
     cameraPoses = new Pose3d[cameraCount];
     cameraNames = new String[cameraCount];
+
+    prevBestConfidence = 0;
+    prevBestCamera = 0;
 
     // Initialize all cameras and pose estimators
     for (int i = 0; i < cameraCount; i++) {
       cameraNames[i] = CAMERA_CONFIGS[i].name;
       cameras[i] = new PhotonCamera(cameraNames[i]);
 
-      poseEstimators[i] =
-          new PhotonPoseEstimator(
-              aprilTagFieldLayout, VisionConstants.poseStrategy, CAMERA_CONFIGS[i].transform);
+      poseEstimators[i] = new PhotonPoseEstimator(
+          aprilTagFieldLayout, VisionConstants.poseStrategy, CAMERA_CONFIGS[i].transform);
       poseEstimators[i].setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
       cameraPoses[i] = new Pose3d();
@@ -140,13 +154,19 @@ public class Vision extends SubsystemBase {
 
     // Initialize standard deviation with infinite values
     stdDev = VisionHelper.INFINITE_STD_DEVS;
+
+    this.setName("Vision");
   }
 
   @Override
   public void periodic() {
     // Process all cameras
-    Optional<EstimatedRobotPose> bestEstimate = Optional.empty();
+    bestEstimate = Optional.empty();
     double bestConfidence = Double.POSITIVE_INFINITY;
+
+    double[] confidences = new double[cameraCount];
+
+    int bestCamera = 0;
 
     for (int i = 0; i < cameras.length; i++) {
       // Get all unread results from this camera
@@ -165,15 +185,21 @@ public class Vision extends SubsystemBase {
         continue;
       }
 
+      hasTarget = true;
+      frameCounter = 0;
+
       // Get vision data from this camera
-      Optional<EstimatedRobotPose> camEstimate =
-          VisionHelper.update(
-              result,
-              VisionConstants.CAMERA_INTRINSICS,
-              VisionConstants.CAMERA_DISTORTION,
-              VisionConstants.poseStrategy,
-              CAMERA_CONFIGS[i].transform,
-              new Transform3d()); // Use the transform from the coprocessor if available
+      Optional<EstimatedRobotPose> camEstimate = VisionHelper.update(
+          result,
+          VisionConstants.CAMERA_INTRINSICS,
+          VisionConstants.CAMERA_DISTORTION,
+          VisionConstants.poseStrategy,
+          CAMERA_CONFIGS[i].transform,
+          result.multitagResult
+              .map((pnpResult) -> pnpResult.estimatedPose.best)
+              .orElse(
+                  Transform3d.kZero)); // Use the transform from the coprocessor if available
+      // poseEstimators[i].update(result);
 
       // If we got a valid estimate, check if it's better than our current best
       if (camEstimate.isPresent()) {
@@ -183,71 +209,76 @@ public class Vision extends SubsystemBase {
         // Calculate overall confidence metric (lower is better)
         double confidence = camStdDev.get(0, 0) + camStdDev.get(1, 0) + camStdDev.get(2, 0);
 
+        camPoses[i].set(camEstimate.get().estimatedPose.toPose2d());
+        confidences[i] = confidence;
+
         // Update our best estimate if this one is better
         if (confidence < bestConfidence) {
           bestEstimate = camEstimate;
           bestConfidence = confidence;
           stdDev = camStdDev;
+          bestCamera = i;
           cameraPoses[i] = camEstimate.get().estimatedPose;
         }
-
         // Log individual camera data
         SmartDashboard.putNumber(
             "Vision/" + cameraNames[i] + "/Target Count", camEstimate.get().targetsUsed.size());
         SmartDashboard.putNumber("Vision/" + cameraNames[i] + "/Confidence", confidence);
+      } else {
+        confidences[i] = -1;
       }
     }
 
+    if (!MathUtil.isNear(prevBestConfidence, confidences[prevBestCamera],
+        VisionConstants.FRAME_LEEWAY_CONFIDENCE_THRESHOLD)) {
+      bestEstimate = Optional.empty();
+    }
+    prevBestConfidence = bestConfidence;
+    prevBestCamera = bestCamera;
+
+    // If we've lost the target for too many frames, mark as no target
+    if (frameCounter > VisionConstants.debounceFrames) {
+      hasTarget = false;
+      stdDev = VisionHelper.INFINITE_STD_DEVS;
+    } else {
+      frameCounter++;
+    }
+
+    SmartDashboard.putNumber("Vision/Frame Counter", frameCounter);
+
     // Process the best estimate
     if (bestEstimate.isPresent()) {
-      frameCounter = 0;
-      hasTarget = true;
-
       // Publish the estimated pose
       visionEstPose.set(bestEstimate.get().estimatedPose.toPose2d());
 
       // Log debug information
-      SmartDashboard.putNumber("Vision/Target Count", bestEstimate.get().targetsUsed.size());
+      // SmartDashboard.putNumber("Vision/Target Count", bestEstimate.get().targetsUsed.size());
 
       lastProcessedTimestamp = Timer.getFPGATimestamp();
-      SmartDashboard.putNumber("Vision/Last Processing Time", lastProcessedTimestamp);
+      // SmartDashboard.putNumber("Vision/Last Processing Time", lastProcessedTimestamp);
 
       if (!bestEstimate.get().targetsUsed.isEmpty()) {
-        SmartDashboard.putNumber(
-            "Vision/Average Distance", calculateAverageDistance(bestEstimate.get().targetsUsed));
+        // SmartDashboard.putNumber(
+            // "Vision/Average Distance", calculateAverageDistance(bestEstimate.get().targetsUsed));
 
         // Log first target's info
         PhotonTrackedTarget firstTarget = bestEstimate.get().targetsUsed.get(0);
-        SmartDashboard.putNumber("Vision/FirstTarget/FiducialID", firstTarget.getFiducialId());
-        SmartDashboard.putNumber("Vision/FirstTarget/Ambiguity", firstTarget.getPoseAmbiguity());
-      }
-    } else {
-      // If we've lost the target for too many frames, mark as no target
-      if (frameCounter > VisionConstants.debounceFrames) {
-        hasTarget = false;
-        stdDev = VisionHelper.INFINITE_STD_DEVS;
-      } else {
-        frameCounter++;
+        // SmartDashboard.putNumber("Vision/FirstTarget/FiducialID", firstTarget.getFiducialId());
+        // SmartDashboard.putNumber("Vision/FirstTarget/Ambiguity", firstTarget.getPoseAmbiguity());
       }
     }
 
     // Log target status
     SmartDashboard.putBoolean("Vision/Has Target", hasTarget);
-
-    // Log standard deviations (confidence values)
-    if (stdDev.getNumRows() >= 3) {
-      SmartDashboard.putNumber("Vision/StdDev/X", stdDev.get(0, 0));
-      SmartDashboard.putNumber("Vision/StdDev/Y", stdDev.get(1, 0));
-      SmartDashboard.putNumber("Vision/StdDev/Theta", stdDev.get(2, 0));
-    }
   }
 
   /**
    * Get the estimated robot pose from a specific camera
    *
    * @param cameraIndex The index of the camera to use
-   * @return Optional containing the estimated robot pose from the specified camera, or empty if no
-   *     valid estimate
+   * @return Optional containing the estimated robot pose from the specified
+   *         camera, or empty if no
+   *         valid estimate
    */
   public Optional<EstimatedRobotPose> getEstimatedRobotPose(int cameraIndex) {
     // Check if the index is valid
@@ -271,7 +302,8 @@ public class Vision extends SubsystemBase {
   /**
    * Get the best estimated robot pose from all cameras
    *
-   * @return Optional containing the best estimated robot pose, or empty if no valid estimate
+   * @return Optional containing the best estimated robot pose, or empty if no
+   *         valid estimate
    */
   public Optional<EstimatedRobotPose> getEstimatedRobotPose() {
     // This will return the best pose that was calculated during the last periodic
@@ -280,26 +312,20 @@ public class Vision extends SubsystemBase {
       return Optional.empty();
     }
 
-    // Find the camera with a valid pose
-    for (Pose3d cameraPose : cameraPoses) {
-      if (!cameraPose.equals(new Pose3d())) {
-        // Construct an estimated pose with this camera's data
-        return Optional.of(
-            new EstimatedRobotPose(
-                cameraPose,
-                Timer.getFPGATimestamp(),
-                new ArrayList<>(), // Ideally, store the actual targets
-                VisionConstants.poseStrategy));
-      }
+    if (bestEstimate.isPresent()) {
+      // Construct an estimated pose with this camera's data
+      return bestEstimate;
     }
 
     return Optional.empty();
   }
 
   /**
-   * Get a VisionMeasurement object that includes both the pose estimate and confidence
+   * Get a VisionMeasurement object that includes both the pose estimate and
+   * confidence
    *
-   * @return VisionMeasurement with pose and confidence, or empty if no valid measurement
+   * @return VisionMeasurement with pose and confidence, or empty if no valid
+   *         measurement
    */
   public Optional<VisionHelper.VisionMeasurement> getVisionMeasurement() {
     Optional<EstimatedRobotPose> poseEst = getEstimatedRobotPose();
@@ -377,11 +403,10 @@ public class Vision extends SubsystemBase {
    */
   private PhotonPipelineResult filterCameraResult(PhotonPipelineResult result) {
     // Use VisionHelper to filter targets by distance and ambiguity
-    List<PhotonTrackedTarget> filteredTargets =
-        VisionHelper.filterTargets(
-            result.getTargets(),
-            VisionConstants.MAX_TAG_DISTANCE,
-            VisionConstants.MAX_POSE_AMBIGUITY);
+    List<PhotonTrackedTarget> filteredTargets = VisionHelper.filterTargets(
+        result.getTargets(),
+        VisionConstants.MAX_TAG_DISTANCE,
+        VisionConstants.MAX_POSE_AMBIGUITY);
 
     // Create a new pipeline result with filtered targets
     return new PhotonPipelineResult(result.metadata, filteredTargets, result.getMultiTagResult());
