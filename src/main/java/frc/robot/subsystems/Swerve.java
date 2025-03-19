@@ -251,6 +251,8 @@ public class Swerve extends SubsystemBase {
         getGyroAngle(),
         getModulePostions());
 
+    this.vision.addHeadingDataToEstimators(getGyroAngle());
+
     // Update visualization
     field.setRobotPose(getPose());
 

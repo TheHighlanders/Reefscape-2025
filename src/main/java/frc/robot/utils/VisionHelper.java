@@ -93,12 +93,12 @@ public class VisionHelper {
                   bestTF);
       case PNP_DISTANCE_TRIG_SOLVE ->
           estimatedPose =
-              trigSolveCoproc(
+              trigSolveStrategy(
                   filteredResult,
                   Optional.of(cameraMatrix),
                   Optional.of(distCoeffs),
                   robotToCamera,
-                  PoseStrategy.PNP_DISTANCE_TRIG_SOLVE,
+                  PoseStrategy.LOWEST_AMBIGUITY,
                   bestTF);
       default -> {
         DriverStation.reportError(
@@ -202,38 +202,39 @@ public class VisionHelper {
     }
   }
 
-  /** Runs SolvePNP on a coprocessor */
-  private static Optional<EstimatedRobotPose> trigSolveCoproc(
+  private static Optional<EstimatedRobotPose> trigSolveStrategy(
       PhotonPipelineResult result,
       Optional<Matrix<N3, N3>> cameraMatrix,
       Optional<Matrix<N8, N1>> distCoeffs,
       Transform3d robotToCamera,
-      PoseStrategy multiTagFallbackStrategy,
+      PoseStrategy fallbackStrategy,
       Transform3d bestTF) {
 
-    if (!bestTF.equals(new Transform3d())) {
-      var best_tf = bestTF;
-      var best =
-          new Pose3d()
-              .plus(best_tf) // field-to-camera
-              .relativeTo(Constants.getFieldTagLayout().getOrigin())
-              .plus(robotToCamera.inverse()); // field-to-robot
-
-      return Optional.of(
-          new EstimatedRobotPose(
-              best,
-              result.getTimestampSeconds(),
-              result.getTargets(),
-              PoseStrategy.PNP_DISTANCE_TRIG_SOLVE));
-    } else {
+    // If no heading data is available or the transform is empty, use fallback strategy
+    if (bestTF.equals(new Transform3d())) {
       return update(
           result,
           cameraMatrix.orElseThrow(),
           distCoeffs.orElseThrow(),
-          multiTagFallbackStrategy,
+          fallbackStrategy,
           robotToCamera,
-          new Transform3d());
+          bestTF);
     }
+
+    // Similar to multiTagOnCoprocStrategy but incorporating heading data
+    var best_tf = bestTF;
+    var best =
+        new Pose3d()
+            .plus(best_tf) // field-to-camera
+            .relativeTo(Constants.getFieldTagLayout().getOrigin())
+            .plus(robotToCamera.inverse()); // field-to-robot
+
+    return Optional.of(
+        new EstimatedRobotPose(
+            best,
+            result.getTimestampSeconds(),
+            result.getTargets(),
+            PoseStrategy.PNP_DISTANCE_TRIG_SOLVE));
   }
 
   /** Return the estimated position of the robot with the lowest position ambiguity */

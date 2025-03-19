@@ -6,6 +6,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -83,7 +84,7 @@ public class Vision extends SubsystemBase {
     new CameraConfig("ReefLeft", VisionConstants.reefLeft)
   };
 
-  public static final int cameraCount = CAMERA_CONFIGS.length;
+  public static final int CAMERA_COUNT = CAMERA_CONFIGS.length;
 
   // Internal camera management
   private final PhotonCamera[] cameras;
@@ -118,16 +119,16 @@ public class Vision extends SubsystemBase {
     this.aprilTagFieldLayout = Constants.getFieldTagLayout();
 
     // Initialize camera arrays
-    cameras = new PhotonCamera[cameraCount];
-    poseEstimators = new PhotonPoseEstimator[cameraCount];
-    cameraPoses = new Pose3d[cameraCount];
-    cameraNames = new String[cameraCount];
+    cameras = new PhotonCamera[CAMERA_COUNT];
+    poseEstimators = new PhotonPoseEstimator[CAMERA_COUNT];
+    cameraPoses = new Pose3d[CAMERA_COUNT];
+    cameraNames = new String[CAMERA_COUNT];
 
     prevBestConfidence = 0;
     prevBestCamera = 0;
 
     // Initialize all cameras and pose estimators
-    for (int i = 0; i < cameraCount; i++) {
+    for (int i = 0; i < CAMERA_COUNT; i++) {
       cameraNames[i] = CAMERA_CONFIGS[i].name;
       cameras[i] = new PhotonCamera(cameraNames[i]);
 
@@ -164,7 +165,7 @@ public class Vision extends SubsystemBase {
     bestEstimate = Optional.empty();
     double bestConfidence = Double.POSITIVE_INFINITY;
 
-    double[] confidences = new double[cameraCount];
+    double[] confidences = new double[CAMERA_COUNT];
 
     int bestCamera = 0;
 
@@ -199,8 +200,7 @@ public class Vision extends SubsystemBase {
               result
                   .multitagResult
                   .map((pnpResult) -> pnpResult.estimatedPose.best)
-                  .orElse(
-                      Transform3d.kZero)); // Use the transform from the coprocessor if available
+                  .orElse(Transform3d.kZero));
 
       // If we got a valid estimate, check if it's better than our current best
       if (camEstimate.isPresent()) {
@@ -394,6 +394,12 @@ public class Vision extends SubsystemBase {
 
     // Create a new pipeline result with filtered targets
     return new PhotonPipelineResult(result.metadata, filteredTargets, result.getMultiTagResult());
+  }
+
+  public void addHeadingDataToEstimators(Rotation2d heading) {
+    for (PhotonPoseEstimator estimator : poseEstimators) {
+      estimator.addHeadingData(Timer.getFPGATimestamp(), heading);
+    }
   }
 
   // Helper class for camera configuration
