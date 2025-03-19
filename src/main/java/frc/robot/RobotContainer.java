@@ -80,11 +80,12 @@ public class RobotContainer {
     configureBindings();
     configureAutonomous();
 
+
     drive.setDefaultCommand(
         drive
             .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
             .withName("Default Drive Command"));
-    // leds.runPattern(LEDPattern.rainbow(255, 128)).schedule();
+
     cameraSetUp();
 
     supplier = () -> {

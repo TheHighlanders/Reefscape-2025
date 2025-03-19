@@ -25,8 +25,6 @@ import java.util.function.BooleanSupplier;
 @Logged
 public class Align extends Command {
 
-  // private final LEDs leds;
-
   /** Constants for the Reef Coral alignment */
   private static final class AlignConstants {
     // Distance from robot center to front bumper (meters)
