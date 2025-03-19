@@ -33,7 +33,7 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 
 final class VisionConstants {
 
-  static final PoseStrategy poseStrategy = PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
+  static final PoseStrategy POSE_STRATEGY = PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
 
   static final Transform3d reefRight =
       new Transform3d(
@@ -54,8 +54,8 @@ final class VisionConstants {
     17, 18, 19, 20, 21, 22 // BLUE
   };
 
-  static final double cameraFPS = 20.0d;
-  static final double debounceFrames = Math.ceil(50d / cameraFPS);
+  static final double CAMERA_MEAN_FPS = 20.0d;
+  static final double DEBOUNCE_FRAMES = Math.ceil(50d / CAMERA_MEAN_FPS);
 
   // Maximum acceptable distance for reliable tag detection
   static final double MAX_TAG_DISTANCE = 6.0; // meters
@@ -133,7 +133,7 @@ public class Vision extends SubsystemBase {
 
       poseEstimators[i] =
           new PhotonPoseEstimator(
-              aprilTagFieldLayout, VisionConstants.poseStrategy, CAMERA_CONFIGS[i].transform);
+              aprilTagFieldLayout, VisionConstants.POSE_STRATEGY, CAMERA_CONFIGS[i].transform);
       poseEstimators[i].setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
       cameraPoses[i] = new Pose3d();
@@ -194,14 +194,13 @@ public class Vision extends SubsystemBase {
               result,
               VisionConstants.CAMERA_INTRINSICS,
               VisionConstants.CAMERA_DISTORTION,
-              VisionConstants.poseStrategy,
+              VisionConstants.POSE_STRATEGY,
               CAMERA_CONFIGS[i].transform,
               result
                   .multitagResult
                   .map((pnpResult) -> pnpResult.estimatedPose.best)
                   .orElse(
                       Transform3d.kZero)); // Use the transform from the coprocessor if available
-      // poseEstimators[i].update(result);
 
       // If we got a valid estimate, check if it's better than our current best
       if (camEstimate.isPresent()) {
@@ -241,7 +240,7 @@ public class Vision extends SubsystemBase {
     prevBestCamera = bestCamera;
 
     // If we've lost the target for too many frames, mark as no target
-    if (frameCounter > VisionConstants.debounceFrames) {
+    if (frameCounter > VisionConstants.DEBOUNCE_FRAMES) {
       hasTarget = false;
       stdDev = VisionHelper.INFINITE_STD_DEVS;
     } else {
@@ -257,18 +256,20 @@ public class Vision extends SubsystemBase {
 
       // Log debug information
       // SmartDashboard.putNumber("Vision/Target Count", bestEstimate.get().targetsUsed.size());
-      lastProcessedTimestamp = Timer.getFPGATimestamp();
+      // lastProcessedTimestamp = Timer.getFPGATimestamp();
       // SmartDashboard.putNumber("Vision/Last Processing Time", lastProcessedTimestamp);
 
-      if (!bestEstimate.get().targetsUsed.isEmpty()) {
-        // SmartDashboard.putNumber(
-        // "Vision/Average Distance", calculateAverageDistance(bestEstimate.get().targetsUsed));
+      // if (!bestEstimate.get().targetsUsed.isEmpty()) {
+      //   // SmartDashboard.putNumber(
+      //   // "Vision/Average Distance", calculateAverageDistance(bestEstimate.get().targetsUsed));
 
-        // Log first target's info
-        PhotonTrackedTarget firstTarget = bestEstimate.get().targetsUsed.get(0);
-        // SmartDashboard.putNumber("Vision/FirstTarget/FiducialID", firstTarget.getFiducialId());
-        // SmartDashboard.putNumber("Vision/FirstTarget/Ambiguity", firstTarget.getPoseAmbiguity());
-      }
+      //   // Log first target's info
+      //   // PhotonTrackedTarget firstTarget = bestEstimate.get().targetsUsed.get(0);
+      //   // SmartDashboard.putNumber("Vision/FirstTarget/FiducialID",
+      // firstTarget.getFiducialId());
+      //   // SmartDashboard.putNumber("Vision/FirstTarget/Ambiguity",
+      // firstTarget.getPoseAmbiguity());
+      // }
     }
 
     // Log target status
@@ -295,7 +296,7 @@ public class Vision extends SubsystemBase {
               cameraPoses[cameraIndex],
               Timer.getFPGATimestamp(),
               new ArrayList<>(), // Ideally, we'd store the actual targets
-              VisionConstants.poseStrategy));
+              VisionConstants.POSE_STRATEGY));
     }
 
     return Optional.empty();
