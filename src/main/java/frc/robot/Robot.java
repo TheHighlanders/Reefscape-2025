@@ -29,8 +29,7 @@ public class Robot extends TimedRobot {
 
   private final RobotContainer m_robotContainer;
 
-  @NotLogged
-  private final StringBuilder nameBuilder = new StringBuilder();
+  @NotLogged private final StringBuilder nameBuilder = new StringBuilder();
 
   private double loops = 0;
 

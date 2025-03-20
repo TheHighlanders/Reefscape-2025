@@ -146,7 +146,6 @@ public class RobotContainer {
 
     operator.rightTrigger(0.5).whileTrue(removeAlgaeLow());
 
-
     operator
         .start()
         .onTrue(
@@ -213,8 +212,10 @@ public class RobotContainer {
         .withName("Align to Right Coral");
   }
 
-  public Command scoreL1(){
-    return Commands.parallel(coralScorer.slowDepositCMD(), drive.driveRobotRelativeCMD(()->0, ()->0.5, ()->0)).withTimeout(1.5);
+  public Command scoreL1() {
+    return Commands.parallel(
+            coralScorer.slowDepositCMD(), drive.driveRobotRelativeCMD(() -> 0, () -> 0.5, () -> 0))
+        .withTimeout(1.5);
   }
 
   public Command alignToLeftCoral() {
@@ -269,9 +270,7 @@ public class RobotContainer {
   public Command removeAlgae(ElevatorState height) {
     return elevator
         .elevatorAuto(ElevatorState.L4_POSITION)
-        .andThen(
-            Commands.parallel(
-                elevator.elevatorAuto(height), coralScorer.reverseCommand()));
+        .andThen(Commands.parallel(elevator.elevatorAuto(height), coralScorer.reverseCommand()));
   }
 
   public Command removeAlgaeLow() {

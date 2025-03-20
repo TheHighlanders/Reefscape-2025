@@ -183,10 +183,6 @@ public class Align extends Command {
         ChassisSpeeds.fromRobotRelativeSpeeds(
             swerve.kinematics.toChassisSpeeds(swerve.getModuleStates()),
             swerve.getPose().getRotation());
-    SmartDashboard.putNumber("Align/X Init Speed", currentSpeeds.vxMetersPerSecond);
-    SmartDashboard.putNumber("Align/Y Init Speed", -currentSpeeds.vyMetersPerSecond);
-
-    SmartDashboard.putNumber("Align/ROt Init Speed", -currentSpeeds.omegaRadiansPerSecond);
 
     // Reset controllers with the current error and target of 0 (no error)
     xController.reset(currentPose.getX(), currentSpeeds.vxMetersPerSecond);
@@ -270,7 +266,6 @@ public class Align extends Command {
   public void end(boolean interrupted) {
     swerve.stopDrive();
     vibrate.schedule();
-    // SmartDashboard.putBoolean("ReefAlign/Completed", true);
   }
 
   @Override
@@ -286,10 +281,8 @@ public class Align extends Command {
     }
 
     // Check if velocity is close to zero rather than position at setpoint
-    return xController.atGoal()
-        && yController.atGoal()
-        && rotController.atGoal();
-        // && rotController.getVelocityError() < AlignConstants.rotationVelocityTolerance;
+    return xController.atGoal() && yController.atGoal() && rotController.atGoal();
+    // && rotController.getVelocityError() < AlignConstants.rotationVelocityTolerance;
   }
 
   public static boolean canAlign(Swerve swerve, Vision vision) {

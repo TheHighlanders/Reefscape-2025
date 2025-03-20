@@ -266,7 +266,7 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
 
     // Send diagnostic information
-    sendDiagnostics();
+    // sendDiagnostics();
   }
 
   /** Process vision data from all cameras and update pose estimation */
@@ -475,11 +475,13 @@ public class Swerve extends SubsystemBase {
         .withName("Swerve Drive Command");
   }
 
-  public Command driveRobotRelativeCMD(DoubleSupplier x, DoubleSupplier y, DoubleSupplier omega){
-    return Commands.run(()-> {
-      ChassisSpeeds speeds = new ChassisSpeeds(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble());
-      driveChassisSpeedsRobotRelative(speeds);
-    });
+  public Command driveRobotRelativeCMD(DoubleSupplier x, DoubleSupplier y, DoubleSupplier omega) {
+    return Commands.run(
+        () -> {
+          ChassisSpeeds speeds =
+              new ChassisSpeeds(x.getAsDouble(), y.getAsDouble(), omega.getAsDouble());
+          driveChassisSpeedsRobotRelative(speeds);
+        });
   }
 
   public double squaredCurve(double input) {

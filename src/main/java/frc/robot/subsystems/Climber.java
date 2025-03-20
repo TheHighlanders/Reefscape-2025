@@ -76,7 +76,6 @@ public class Climber extends SubsystemBase {
     // .reverseSoftLimit(-ClimberConstants.climberSoftLimit)
     // .reverseSoftLimitEnabled(true);
     climberHoldVoltage = ClimberConstants.climberHoldVoltage;
-    SmartDashboard.putNumber("Climber/ClimberHoldVoltage", climberHoldVoltage);
 
     return climberConfig;
   }

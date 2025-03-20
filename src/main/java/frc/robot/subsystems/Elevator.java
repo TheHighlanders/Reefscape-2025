@@ -26,9 +26,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
-
-import static frc.robot.subsystems.ElevatorConstants.forwardSoftLimit;
-
 import java.util.function.DoubleSupplier;
 
 class ElevatorConstants {
@@ -83,8 +80,7 @@ public class Elevator extends SubsystemBase {
   double targetPosition;
   double positionOffset;
 
-  @Logged
-  double trim;
+  @Logged double trim;
 
   double arbFF;
   double antiSlamVoltageOffset;
@@ -101,18 +97,21 @@ public class Elevator extends SubsystemBase {
   public Elevator() { // Creates a new Elevator.
     SparkMaxConfig elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(ElevatorConstants.elevMotorID, MotorType.kBrushless);
-    elevatorMotorConfig.encoder
+    elevatorMotorConfig
+        .encoder
         .positionConversionFactor(ElevatorConstants.elevPCF)
         .velocityConversionFactor(ElevatorConstants.elevPCF);
 
     elevatorMotorConfig.idleMode(IdleMode.kBrake).inverted(true);
 
-    elevatorMotorConfig.limitSwitch
+    elevatorMotorConfig
+        .limitSwitch
         .reverseLimitSwitchType(Type.kNormallyOpen)
         .reverseLimitSwitchEnabled(false)
         .forwardLimitSwitchEnabled(false);
 
-    elevatorMotorConfig.softLimit
+    elevatorMotorConfig
+        .softLimit
         .forwardSoftLimit(ElevatorConstants.forwardSoftLimit)
         .forwardSoftLimitEnabled(true)
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
@@ -123,7 +122,8 @@ public class Elevator extends SubsystemBase {
     elevatorMotorConfig.closedLoopRampRate(0.05);
 
     // Set PID gains
-    elevatorMotorConfig.closedLoop // pid loop to control elevator elevating rate
+    elevatorMotorConfig
+        .closedLoop // pid loop to control elevator elevating rate
         .p(ElevatorConstants.elevP)
         .i(ElevatorConstants.elevI) // TODO find these desirerd values
         .d(ElevatorConstants.elevD);
@@ -185,46 +185,46 @@ public class Elevator extends SubsystemBase {
 
   public Command zeroElevator() {
     return Commands.runOnce(
-        () -> {
-          elevatorEncoder.setPosition(0);
-        })
+            () -> {
+              elevatorEncoder.setPosition(0);
+            })
         .ignoringDisable(true)
         .withName("Zero Elevator Encoder");
   }
 
   public Command setPosition(ElevatorState position) {
     return Commands.runOnce(
-        () -> {
-          if (position != ElevatorState.CURRENT) {
-            setpoint = position;
-          }
-          switch (setpoint) {
-            case HOME:
-              targetPosition = ElevatorConstants.homeTarget;
-              break;
-            case L2_POSITION:
-              targetPosition = ElevatorConstants.l2Target + trim + positionOffset;
-              break;
-            case L3_POSITION:
-              targetPosition = ElevatorConstants.l3Target + trim + positionOffset;
-              break;
-            case L4_POSITION:
-              targetPosition = ElevatorConstants.l4Target + trim + positionOffset;
-              break;
-            case ALGAELOW:
-              targetPosition = ElevatorConstants.algaeLow + trim;
-              break;
-            case ALGAEHIGH:
-              targetPosition = ElevatorConstants.algaeHigh + trim;
-              break;
-            default:
-              targetPosition = ElevatorConstants.homeTarget;
-              break;
-          }
-          elevatorController.setReference(
-              targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
-        },
-        this)
+            () -> {
+              if (position != ElevatorState.CURRENT) {
+                setpoint = position;
+              }
+              switch (setpoint) {
+                case HOME:
+                  targetPosition = ElevatorConstants.homeTarget;
+                  break;
+                case L2_POSITION:
+                  targetPosition = ElevatorConstants.l2Target + trim + positionOffset;
+                  break;
+                case L3_POSITION:
+                  targetPosition = ElevatorConstants.l3Target + trim + positionOffset;
+                  break;
+                case L4_POSITION:
+                  targetPosition = ElevatorConstants.l4Target + trim + positionOffset;
+                  break;
+                case ALGAELOW:
+                  targetPosition = ElevatorConstants.algaeLow + trim;
+                  break;
+                case ALGAEHIGH:
+                  targetPosition = ElevatorConstants.algaeHigh + trim;
+                  break;
+                default:
+                  targetPosition = ElevatorConstants.homeTarget;
+                  break;
+              }
+              elevatorController.setReference(
+                  targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
+            },
+            this)
         .withName("Set Elevator Position to " + position);
   }
 
@@ -251,13 +251,15 @@ public class Elevator extends SubsystemBase {
     double p = SmartDashboard.getNumber("Tuning/Elevator/Elevator P", ElevatorConstants.elevP);
     double i = SmartDashboard.getNumber("Tuning/Elevator/Elevator I", ElevatorConstants.elevI);
     double d = SmartDashboard.getNumber("Tuning/Elevator/Elevator D", ElevatorConstants.elevD);
-    double f = SmartDashboard.getNumber("Tuning/Elevator/Elevator F", ElevatorConstants.feedForward);
+    double f =
+        SmartDashboard.getNumber("Tuning/Elevator/Elevator F", ElevatorConstants.feedForward);
 
     double mV = SmartDashboard.getNumber("Tuning/Elevator/Max V", maxV);
     double mA = SmartDashboard.getNumber("Tuning/Elevator/Max A", maxA);
 
-    antiSlamVoltageOffset = SmartDashboard.getNumber(
-        "Tuning/Elevator/Anti Slam Voltage", ElevatorConstants.antiSlamVoltageOffset);
+    antiSlamVoltageOffset =
+        SmartDashboard.getNumber(
+            "Tuning/Elevator/Anti Slam Voltage", ElevatorConstants.antiSlamVoltageOffset);
 
     SparkMaxConfig config = new SparkMaxConfig();
     config.closedLoop.pid(p, i, d);
@@ -278,7 +280,7 @@ public class Elevator extends SubsystemBase {
 
   public Command jogElevator(double voltage) {
     return Commands.run(
-        () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
+            () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
         .finallyDo(() -> elevatorMotor.stopMotor())
         .withName("Jog Elevator at " + voltage + " Volts");
   }
@@ -316,14 +318,14 @@ public class Elevator extends SubsystemBase {
 
   public Command offsetElevator() {
     return Commands.startEnd(
-        () -> {
-          positionOffset = ElevatorConstants.coralBetweenReefOffset;
-          setPosition(setpoint).schedule();
-        },
-        () -> {
-          positionOffset = 0;
-          setPosition(setpoint).schedule();
-        })
+            () -> {
+              positionOffset = ElevatorConstants.coralBetweenReefOffset;
+              setPosition(setpoint).schedule();
+            },
+            () -> {
+              positionOffset = 0;
+              setPosition(setpoint).schedule();
+            })
         .withName("Offset Elevator");
   }
 
@@ -339,16 +341,16 @@ public class Elevator extends SubsystemBase {
 
   public Command algaeCMD(DoubleSupplier algae) {
     return runOnce(
-        () -> {
-          if (algae.getAsDouble() <= -0.5) {
-            setPosition(ElevatorState.ALGAEHIGH).schedule();
-            ;
-          } else if (algae.getAsDouble() >= 0.5) {
-            setPosition(ElevatorState.ALGAELOW).schedule();
-            ;
-          }
-          System.out.print(algae.getAsDouble());
-        })
+            () -> {
+              if (algae.getAsDouble() <= -0.5) {
+                setPosition(ElevatorState.ALGAEHIGH).schedule();
+                ;
+              } else if (algae.getAsDouble() >= 0.5) {
+                setPosition(ElevatorState.ALGAELOW).schedule();
+                ;
+              }
+              System.out.print(algae.getAsDouble());
+            })
         .withName("Algae Position Command");
   }
 
