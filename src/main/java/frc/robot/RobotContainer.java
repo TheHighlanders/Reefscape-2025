@@ -113,6 +113,8 @@ public class RobotContainer {
 
     driver.x().onTrue(drive.pointWheelsInXPattern().withName("X Pattern Wheels"));
 
+    driver.y().onTrue(scoreL1().withName("L1 Macro"));
+
     driver.leftTrigger().onTrue(drive.enableSlowMode().withName("Enable Slow Mode"));
     driver.leftTrigger().onFalse(drive.disableSlowMode().withName("Disable Slow Mode"));
 
@@ -142,7 +144,8 @@ public class RobotContainer {
         .onTrue(coralScorer.depositCMD().withTimeout(0.1).withName("Quick Deposit"));
     // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
-    operator.rightTrigger(0.5).whileTrue(removeAlgae());
+    operator.rightTrigger(0.5).whileTrue(removeAlgaeLow());
+
 
     operator
         .start()
@@ -210,6 +213,10 @@ public class RobotContainer {
         .withName("Align to Right Coral");
   }
 
+  public Command scoreL1(){
+    return Commands.parallel(coralScorer.slowDepositCMD(), drive.driveRobotRelativeCMD(()->0, ()->0.5, ()->0)).withTimeout(1.5);
+  }
+
   public Command alignToLeftCoral() {
     return new Align(
             drive,
@@ -259,11 +266,19 @@ public class RobotContainer {
     m_visionThread.start();
   }
 
-  public Command removeAlgae() {
+  public Command removeAlgae(ElevatorState height) {
     return elevator
         .elevatorAuto(ElevatorState.L4_POSITION)
         .andThen(
             Commands.parallel(
-                elevator.elevatorAuto(ElevatorState.L2_POSITION), coralScorer.reverseCommand()));
+                elevator.elevatorAuto(height), coralScorer.reverseCommand()));
+  }
+
+  public Command removeAlgaeLow() {
+    return removeAlgae(ElevatorState.ALGAELOW);
+  }
+
+  public Command removeAlgaeHigh() {
+    return removeAlgae(ElevatorState.ALGAEHIGH);
   }
 }

@@ -5,6 +5,7 @@ package frc.robot;
 
 import edu.wpi.first.epilogue.Epilogue;
 import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.NotLogged;
 import edu.wpi.first.epilogue.logging.FileBackend;
 import edu.wpi.first.epilogue.logging.errors.ErrorHandler;
 import edu.wpi.first.net.WebServer;
@@ -28,6 +29,7 @@ public class Robot extends TimedRobot {
 
   private final RobotContainer m_robotContainer;
 
+  @NotLogged
   private final StringBuilder nameBuilder = new StringBuilder();
 
   private double loops = 0;

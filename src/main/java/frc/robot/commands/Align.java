@@ -43,24 +43,24 @@ public class Align extends Command {
     static final double velocityTolerance = 0.1;
 
     // Rotation tolerance (radians)
-    static final double rotationTolerance = 0;
+    static final double rotationTolerance = 0.2;
 
     // Rotation velocity tolerance (rad/s)
     static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
     static final double maxApproachSpeed = 2.5;
-    static final double maxApproachAccel = 2;
+    static final double maxApproachAccel = 5;
 
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 5;
-    static final double maxRotationAccel = 1.5;
+    static final double maxRotationAccel = 5;
 
     static final double translateP = 5;
     static final double translateI = 0.02;
     static final double translateD = 0;
 
-    static final double rotateP = 3;
+    static final double rotateP = 5;
     static final double rotateI = 0;
     static final double rotateD = 0;
   }
@@ -183,13 +183,13 @@ public class Align extends Command {
         ChassisSpeeds.fromRobotRelativeSpeeds(
             swerve.kinematics.toChassisSpeeds(swerve.getModuleStates()),
             swerve.getPose().getRotation());
-    SmartDashboard.putNumber("Align/X Init Speed", -currentSpeeds.vxMetersPerSecond);
+    SmartDashboard.putNumber("Align/X Init Speed", currentSpeeds.vxMetersPerSecond);
     SmartDashboard.putNumber("Align/Y Init Speed", -currentSpeeds.vyMetersPerSecond);
 
     SmartDashboard.putNumber("Align/ROt Init Speed", -currentSpeeds.omegaRadiansPerSecond);
 
     // Reset controllers with the current error and target of 0 (no error)
-    xController.reset(currentPose.getX(), -currentSpeeds.vxMetersPerSecond);
+    xController.reset(currentPose.getX(), currentSpeeds.vxMetersPerSecond);
     yController.reset(currentPose.getY(), -currentSpeeds.vyMetersPerSecond);
     rotController.reset(
         currentPose.getRotation().getRadians(), -currentSpeeds.omegaRadiansPerSecond);
@@ -288,7 +288,8 @@ public class Align extends Command {
     // Check if velocity is close to zero rather than position at setpoint
     return xController.atGoal()
         && yController.atGoal()
-        && rotController.getVelocityError() < AlignConstants.rotationVelocityTolerance;
+        && rotController.atGoal();
+        // && rotController.getVelocityError() < AlignConstants.rotationVelocityTolerance;
   }
 
   public static boolean canAlign(Swerve swerve, Vision vision) {
