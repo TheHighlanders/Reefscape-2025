@@ -32,6 +32,11 @@ public class LEDs extends SubsystemBase {
 
   // LEDPattern pattern = blink.blink(Seconds.of(.1));
   public LEDs(Trigger canAlign) {
+
+    if (DriverStation.getAlliance().get() == Alliance.Blue) {
+      allianceLED = LEDPattern.solid(Color.kBlue);
+    }
+
     this.canAlign = canAlign;
 
     canAlign
@@ -56,13 +61,7 @@ public class LEDs extends SubsystemBase {
       //   //         .ignoringDisable(true));
       //   allianceLED
       // }
-      if (DriverStation.getAlliance().get() == Alliance.Blue) {
-        // setDefaultCommand(
-        //     runPattern(LEDPattern.solid(Color.kBlue))
-        //         .withName("Blue Alliance Pattern")
-        //         .ignoringDisable(true));
-        allianceLED = LEDPattern.solid(Color.kBlue);
-      }
+
     }
     // else {
     //   setDefaultCommand(

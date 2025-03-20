@@ -43,7 +43,7 @@ public class Align extends Command {
     static final double velocityTolerance = 0.1;
 
     // Rotation tolerance (radians)
-    static final double rotationTolerance = 0.2;
+    static final double rotationTolerance = 0.03;
 
     // Rotation velocity tolerance (rad/s)
     static final double rotationVelocityTolerance = 0.05;
@@ -57,10 +57,10 @@ public class Align extends Command {
     static final double maxRotationAccel = 5;
 
     static final double translateP = 5;
-    static final double translateI = 0.02;
+    static final double translateI = 0.1;
     static final double translateD = 0;
 
-    static final double rotateP = 5;
+    static final double rotateP = 3;
     static final double rotateI = 0;
     static final double rotateD = 0;
   }
@@ -231,16 +231,6 @@ public class Align extends Command {
         rotController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
-    // Limit speeds to max values
-    // xSpeed =
-    //     MathUtil.clamp(xSpeed, -AlignConstants.maxApproachSpeed,
-    // AlignConstants.maxApproachSpeed);
-    // ySpeed =
-    //     MathUtil.clamp(ySpeed, -AlignConstants.maxApproachSpeed,
-    // AlignConstants.maxApproachSpeed);
-    // rotSpeed =
-    //     MathUtil.clamp(rotSpeed, -AlignConstants.maxRotationSpeed,
-    // AlignConstants.maxRotationSpeed);
     if (Constants.devMode) {
       SmartDashboard.putNumber("ReefAlign/XError", xError);
       SmartDashboard.putNumber("ReefAlign/YError", yError);

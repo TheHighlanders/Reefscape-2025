@@ -62,6 +62,9 @@ public class RobotContainer {
           drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
+  @Logged(name = "nextScoreHeight")
+  ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
+
   public RobotContainer() {
 
     chooser = new AutoChooser();
@@ -80,16 +83,21 @@ public class RobotContainer {
   private void configureBindings() {
     // Controls Spreadsheet \/
     // https://docs.google.com/spreadsheets/d/1bb3pvQep2hsePMl8YiyaagtdjtIkL8Z2Oqf_t2ND-68/edit?gid=0#gid=0
-    operator.a().onTrue(elevator.setPosition(ElevatorState.HOME).withName("Set Elevator Home"));
+    operator
+        .a()
+        .onTrue(elevator.setNextElevatorHeight(ElevatorState.HOME).withName("Set Elevator Home"));
     operator
         .x()
-        .onTrue(elevator.setPosition(ElevatorState.L2_POSITION).withName("Set Elevator L2"));
+        .onTrue(
+            elevator.setNextElevatorHeight(ElevatorState.L2_POSITION).withName("Set Elevator L2"));
     operator
         .y()
-        .onTrue(elevator.setPosition(ElevatorState.L3_POSITION).withName("Set Elevator L3"));
+        .onTrue(
+            elevator.setNextElevatorHeight(ElevatorState.L3_POSITION).withName("Set Elevator L3"));
     operator
         .b()
-        .onTrue(elevator.setPosition(ElevatorState.L4_POSITION).withName("Set Elevator L4"));
+        .onTrue(
+            elevator.setNextElevatorHeight(ElevatorState.L4_POSITION).withName("Set Elevator L4"));
     operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY).withName("Algae Control"));
     operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator().withName("Offset Elevator"));
 
@@ -99,7 +107,11 @@ public class RobotContainer {
     driver.start().whileTrue(elevator.zeroElevator().withName("Zero Elevator"));
     driver.povRight().onTrue(drive.resetGyro().withName("Reset Gyro"));
 
-    driver.rightTrigger(0.5).whileTrue(coralScorer.depositCMD().withName("Deposit Coral"));
+    driver
+        .rightTrigger(0.5)
+        .and(driver.leftBumper().negate())
+        .and(driver.rightBumper().negate())
+        .whileTrue(coralScorer.depositCMD().withName("Deposit Coral"));
     driver.a().whileTrue(coralScorer.reverseCommand().withName("Reverse Coral"));
 
     driver.x().onTrue(drive.pointWheelsInXPattern().withName("X Pattern Wheels"));
@@ -110,10 +122,22 @@ public class RobotContainer {
     driver.leftTrigger().onFalse(drive.disableSlowMode().withName("Disable Slow Mode"));
 
     // driver.leftBumper().whileTrue(alignCMD.withName("Align Command"));
-    // driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));
-    driver.rightBumper().whileTrue(alignCommand.withName("Align Right Command"));
+    // driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));]\[]
+    driver.rightBumper().whileTrue(fullAutoAlignAndScore());
+    driver
+        .rightBumper()
+        .onFalse(
+            elevator
+                .setPosition(ElevatorState.HOME)
+                .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")));
 
-    driver.leftBumper().whileTrue(alignCommand.withName("Align Left Command"));
+    driver.leftBumper().whileTrue(fullAutoAlignAndScore());
+    driver
+        .leftBumper()
+        .onFalse(
+            elevator
+                .setPosition(ElevatorState.HOME)
+                .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")));
 
     operator
         .povDown()
@@ -259,9 +283,7 @@ public class RobotContainer {
   }
 
   public Command removeAlgae(ElevatorState height) {
-    return elevator
-        .elevatorAuto(ElevatorState.L4_POSITION)
-        .andThen(Commands.parallel(elevator.elevatorAuto(height), coralScorer.reverseCommand()));
+    return Commands.parallel(elevator.elevatorAuto(height), coralScorer.reverseCommand());
   }
 
   public Command removeAlgaeLow() {
@@ -270,5 +292,41 @@ public class RobotContainer {
 
   public Command removeAlgaeHigh() {
     return removeAlgae(ElevatorState.ALGAEHIGH);
+  }
+
+  private Command fullAutoAlignAndScore() {
+    Command align =
+        new Align(
+            drive,
+            cameras,
+            driver.rightBumper(),
+            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+            leds);
+
+    return Commands.sequence(
+        align
+            .alongWith(drive.enableSlowMode().withName("Enable Slow Mode"))
+            .until(
+                driver
+                    .rightTrigger()
+                    .or(driver.leftTrigger())
+                    .or(isTryingToDrive().and(() -> Commands.waitSeconds(0.5).isFinished()))),
+        drive
+            .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
+            .withName("Default Drive Command")
+            .until(driver.rightTrigger().or(driver.leftTrigger())),
+        elevator.runToNextHeight(),
+        coralScorer
+            .slowDepositCMD()
+            .until(driver.rightTrigger().negate().and(driver.leftTrigger().negate())),
+        removeAlgae(ElevatorState.HOME)
+            .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")));
+  }
+
+  public Trigger isTryingToDrive() {
+    return driver
+        .axisMagnitudeGreaterThan(0, 0.05)
+        .or(driver.axisMagnitudeGreaterThan(1, 0.05))
+        .or(driver.axisMagnitudeGreaterThan(4, 0.05));
   }
 }

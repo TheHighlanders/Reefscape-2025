@@ -26,7 +26,9 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
+import java.util.Set;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 class ElevatorConstants {
 
@@ -93,6 +95,8 @@ public class Elevator extends SubsystemBase {
 
   private double maxV = ElevatorConstants.maxVelocity;
   private double maxA = ElevatorConstants.maxAccel;
+
+  public Supplier<ElevatorState> nextScoreHeight = () -> ElevatorState.L4_POSITION;
 
   public Elevator() { // Creates a new Elevator.
     SparkMaxConfig elevatorMotorConfig = new SparkMaxConfig();
@@ -367,5 +371,17 @@ public class Elevator extends SubsystemBase {
   @Logged(name = "Elevator Limit Switch")
   public boolean getElevatorLimitSwitch() {
     return reverseLimitSwitch.isPressed();
+  }
+
+  public Command setNextElevatorHeight(ElevatorState nextState) {
+    return Commands.runOnce(
+        () -> {
+          nextScoreHeight = () -> nextState;
+        });
+  }
+
+  public Command runToNextHeight() {
+    return Commands.defer(() -> elevatorAuto(nextScoreHeight.get()), Set.of(this));
+    // return elevatorAuto(nextScoreHeight.get());
   }
 }
