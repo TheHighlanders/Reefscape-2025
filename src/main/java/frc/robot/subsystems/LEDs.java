@@ -26,7 +26,7 @@ public class LEDs extends SubsystemBase {
   private final AddressableLED m_led;
   private final AddressableLEDBuffer m_buffer;
 
-  LEDPattern alignOk = LEDPattern.solid(Color.kGreen);
+  public static final LEDPattern alignOk = LEDPattern.solid(Color.kGreen);
   LEDPattern allianceLED = LEDPattern.solid(Color.kRed);
   LEDPattern allianceColor;
 
@@ -35,8 +35,8 @@ public class LEDs extends SubsystemBase {
     this.canAlign = canAlign;
 
     canAlign
-        .onTrue(runPattern(alignOk).withName("Alignment OK Pattern"))
-        .onFalse(runPattern(allianceLED).withName("Alignment NOT OK Pattern"));
+        .onTrue(runPatternCommand(alignOk).withName("Alignment OK Pattern"))
+        .onFalse(runPatternCommand(allianceLED).withName("Alignment NOT OK Pattern"));
 
     m_led = new AddressableLED(kPort);
     m_buffer = new AddressableLEDBuffer(kLength);
@@ -73,7 +73,7 @@ public class LEDs extends SubsystemBase {
     //           .ignoringDisable(true));
     // }
 
-    runPattern(allianceColor);
+    runPatternCommand(allianceColor);
 
     this.setName("LEDs");
   }
@@ -95,7 +95,15 @@ public class LEDs extends SubsystemBase {
    *
    * @param pattern the LED pattern to run
    */
-  public Command runPattern(LEDPattern pattern) {
-    return run(() -> pattern.applyTo(m_buffer)).withName("Run LED Pattern");
+  public Command runPatternCommand(LEDPattern pattern) {
+    return runOnce(() -> runPattern(pattern)).withName("Run LED Pattern");
+  }
+
+  public void runPattern(LEDPattern pattern) {
+    pattern.applyTo(m_buffer);
+  }
+
+  public LEDPattern getAllianceLed() {
+    return allianceLED;
   }
 }

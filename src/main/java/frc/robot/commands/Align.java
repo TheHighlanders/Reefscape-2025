@@ -160,10 +160,8 @@ public class Align extends Command {
     }
 
     leds.runPattern(
-            LEDPattern.rainbow(255, 128)
-                .scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d / 120d)))
-        .withName("Rainbow LED Pattern")
-        .schedule();
+        LEDPattern.rainbow(255, 128)
+            .scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d / 120d)));
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
     // Set tolerances for velocity-based completion
@@ -266,6 +264,7 @@ public class Align extends Command {
   public void end(boolean interrupted) {
     swerve.stopDrive();
     vibrate.schedule();
+    leds.runPattern(leds.getAllianceLed());
   }
 
   @Override

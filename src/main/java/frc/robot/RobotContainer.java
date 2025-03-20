@@ -48,21 +48,12 @@ public class RobotContainer {
 
   LEDs leds = new LEDs(canAlign);
 
-  @Logged(name = "AlignRight")
-  Align alignRightCMD =
+  @Logged(name = "Align Command")
+  Align alignCommand =
       new Align(
           drive,
           cameras,
-          () -> true,
-          driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-          leds);
-
-  @Logged(name = "AlignLeft")
-  Align alignLeftCMD =
-      new Align(
-          drive,
-          cameras,
-          () -> false,
+          driver.rightBumper(),
           driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
           leds);
 
@@ -120,9 +111,9 @@ public class RobotContainer {
 
     // driver.leftBumper().whileTrue(alignCMD.withName("Align Command"));
     // driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));
-    driver.rightBumper().whileTrue(alignRightCMD.withName("Align Right Command"));
+    driver.rightBumper().whileTrue(alignCommand.withName("Align Right Command"));
 
-    driver.leftBumper().whileTrue(alignLeftCMD.withName("Align Left Command"));
+    driver.leftBumper().whileTrue(alignCommand.withName("Align Left Command"));
 
     operator
         .povDown()
