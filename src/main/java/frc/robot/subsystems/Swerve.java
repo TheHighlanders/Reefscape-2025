@@ -55,6 +55,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
 final class SwerveConstants {
 
@@ -251,7 +252,9 @@ public class Swerve extends SubsystemBase {
         getGyroAngle(),
         getModulePostions());
 
-    this.vision.addHeadingDataToEstimators(getGyroAngle());
+    if (VisionConstants.POSE_STRATEGY == PoseStrategy.PNP_DISTANCE_TRIG_SOLVE) {
+      this.vision.addHeadingDataToEstimators(poseEst.getEstimatedPosition().getRotation());
+    }
 
     // Update visualization
     field.setRobotPose(getPose());
