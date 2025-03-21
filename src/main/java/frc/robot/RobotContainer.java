@@ -334,6 +334,6 @@ public class RobotContainer {
   }
 
   public Trigger hasJoystickZeroed(){
-    return new Trigger(()->joystickZeroTracker.isScheduled());
+    return new Trigger(()->!joystickZeroTracker.isScheduled());
   }
 }
