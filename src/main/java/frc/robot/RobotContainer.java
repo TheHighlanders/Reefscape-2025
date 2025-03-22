@@ -311,7 +311,11 @@ public class RobotContainer {
     return Commands.sequence(
         align
             .alongWith(drive.enableSlowMode().withName("Enable Slow Mode"), joystickZeroTracker)
-            .until(driver.rightTrigger().or(driver.leftTrigger()).or(isTryingToDrive())),
+            .until(
+                driver
+                    .rightTrigger()
+                    .or(driver.leftTrigger())
+                    .or(isTryingToDrive().and(hasJoystickZeroed()))),
         drive
             .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
             .withName("Default Drive Command")
