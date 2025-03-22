@@ -38,10 +38,10 @@ final class VisionConstants {
 
   static final Transform3d reefRight =
       new Transform3d(
-          new Translation3d(0.20446, -0.12066 , 0.40855),
+          new Translation3d(0.20446, -0.12066, 0.40855),
           new Rotation3d(
-              Units.degreesToRadians(0), 
-              Units.degreesToRadians(-25.3517097711), 
+              Units.degreesToRadians(0),
+              Units.degreesToRadians(-25.3517097711),
               Units.degreesToRadians(20)));
 
   static final Transform3d reefLeft =

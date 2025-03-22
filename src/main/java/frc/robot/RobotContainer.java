@@ -63,7 +63,9 @@ public class RobotContainer {
           drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
-  public Command joystickZeroTracker = new RunCommand(()->{}).until(()-> Math.abs(driver.getLeftX())<=0.25 && Math.abs(driver.getLeftY())<=0.25);
+  public Command joystickZeroTracker =
+      new RunCommand(() -> {})
+          .until(() -> Math.abs(driver.getLeftX()) <= 0.25 && Math.abs(driver.getLeftY()) <= 0.25);
 
   @Logged(name = "nextScoreHeight")
   ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
@@ -308,12 +310,8 @@ public class RobotContainer {
 
     return Commands.sequence(
         align
-            .alongWith(drive.enableSlowMode().withName("Enable Slow Mode"),joystickZeroTracker)
-            .until(
-                driver
-                    .rightTrigger()
-                    .or(driver.leftTrigger())
-                    .or(isTryingToDrive().and(hasJoystickZeroed()))),
+            .alongWith(drive.enableSlowMode().withName("Enable Slow Mode"), joystickZeroTracker)
+            .until(driver.rightTrigger().or(driver.leftTrigger()).or(isTryingToDrive())),
         drive
             .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
             .withName("Default Drive Command")
@@ -333,7 +331,7 @@ public class RobotContainer {
         .or(driver.axisMagnitudeGreaterThan(4, 0.05));
   }
 
-  public Trigger hasJoystickZeroed(){
-    return new Trigger(()->!joystickZeroTracker.isScheduled());
+  public Trigger hasJoystickZeroed() {
+    return new Trigger(() -> !joystickZeroTracker.isScheduled());
   }
 }
