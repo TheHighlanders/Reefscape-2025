@@ -88,23 +88,49 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
+    Trigger manual = operator.rightTrigger();
     // Controls Spreadsheet \/
     // https://docs.google.com/spreadsheets/d/1bb3pvQep2hsePMl8YiyaagtdjtIkL8Z2Oqf_t2ND-68/edit?gid=0#gid=0
     operator
         .a()
+        .and(manual.negate())
         .onTrue(elevator.setNextElevatorHeight(ElevatorState.HOME).withName("Set Elevator Home"));
     operator
         .x()
+        .and(manual.negate())
         .onTrue(
             elevator.setNextElevatorHeight(ElevatorState.L2_POSITION).withName("Set Elevator L2"));
     operator
         .y()
+        .and(manual.negate())
         .onTrue(
             elevator.setNextElevatorHeight(ElevatorState.L3_POSITION).withName("Set Elevator L3"));
     operator
         .b()
+        .and(manual.negate())
         .onTrue(
             elevator.setNextElevatorHeight(ElevatorState.L4_POSITION).withName("Set Elevator L4"));
+
+    operator
+        .a()
+        .and(manual)
+        .onTrue(elevator.setPosition(ElevatorState.HOME).withName("Set Elevator Home"));
+    operator
+        .x()
+        .and(manual)
+        .onTrue(
+            elevator.setPosition(ElevatorState.L2_POSITION).withName("Set Elevator L2"));
+    operator
+        .y()
+        .and(manual)
+        .onTrue(
+            elevator.setPosition(ElevatorState.L3_POSITION).withName("Set Elevator L3"));
+    operator
+        .b()
+        .and(manual)
+        .onTrue(
+            elevator.setPosition(ElevatorState.L4_POSITION).withName("Set Elevator L4"));
+
     operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY).withName("Algae Control"));
     operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator().withName("Offset Elevator"));
 
@@ -132,7 +158,9 @@ public class RobotContainer {
 
     // driver.leftBumper().whileTrue(alignCMD.withName("Align Command"));
     // driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));]\[]
-    driver.rightBumper().whileTrue(fullAutoAlignAndScore());
+    driver.rightBumper().and(manual.negate()).whileTrue(fullAutoAlignAndScore());
+    driver.rightBumper().and(manual).whileTrue(alignToRightCoral());
+
     driver
         .rightBumper()
         .onFalse(
@@ -140,7 +168,9 @@ public class RobotContainer {
                 .setPosition(ElevatorState.HOME)
                 .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")));
 
-    driver.leftBumper().whileTrue(fullAutoAlignAndScore());
+    driver.leftBumper().and(manual.negate()).whileTrue(fullAutoAlignAndScore());
+    driver.leftBumper().and(manual).whileTrue(alignToLeftCoral());
+
     driver
         .leftBumper()
         .onFalse(
