@@ -140,11 +140,11 @@ public class RobotContainer {
     driver.start().whileTrue(elevator.zeroElevator().withName("Zero Elevator"));
     driver.povRight().onTrue(drive.resetGyro().withName("Reset Gyro"));
 
-    driver
-        .rightTrigger(0.5)
-        .and(driver.leftBumper().negate())
-        .and(driver.rightBumper().negate())
-        .whileTrue(coralScorer.depositCMD().withName("Deposit Coral"));
+    // driver
+    //     .rightTrigger(0.5)
+    //     .and(driver.leftBumper().negate())
+    //     .and(driver.rightBumper().negate())
+    //     .whileTrue(coralScorer.depositCMD().withName("Deposit Coral"));
     driver.a().whileTrue(coralScorer.reverseCommand().withName("Reverse Coral"));
 
     driver.x().onTrue(drive.pointWheelsInXPattern().withName("X Pattern Wheels"));
@@ -160,6 +160,8 @@ public class RobotContainer {
     // driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));]\[]
     driver.rightBumper().and(manual.negate()).whileTrue(fullAutoAlignAndScore());
     driver.rightBumper().and(manual).whileTrue(alignToRightCoral());
+
+    driver.rightTrigger().onTrue(autoScore());
 
     driver
         .rightBumper()
@@ -339,10 +341,15 @@ public class RobotContainer {
   private Command fullAutoAlignAndScore() {
     return Commands.sequence(
         slowModeAndWait(),
-        driveUntilTrigger(),
-        elevator.runToNextHeight(),
-        depositUntilTrigger(),
-        removeAlgaeAndSlowMode());
+        driveUntilTrigger());
+  }
+
+  private Command autoScore(){
+    return Commands.sequence(
+      elevator.runToNextHeight(),
+      depositUntilTrigger(),
+      removeAlgaeAndSlowMode()
+    );
   }
 
   public Trigger isTryingToDrive() {
@@ -369,7 +376,7 @@ public class RobotContainer {
     return drive
         .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
         .withName("Default Drive Command")
-        .until(driver.rightTrigger().or(driver.leftTrigger()));
+        .until(driver.rightTrigger());
   }
 
   public Command depositUntilTrigger() {

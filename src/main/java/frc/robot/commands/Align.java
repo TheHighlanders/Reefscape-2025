@@ -1,7 +1,6 @@
 package frc.robot.commands;
 
-import static edu.wpi.first.units.Units.Meters;
-import static edu.wpi.first.units.Units.MetersPerSecond;
+import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
@@ -15,12 +14,12 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants;
 import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
-import java.util.function.BooleanSupplier;
 
 @Logged
 public class Align extends Command {
@@ -156,8 +155,7 @@ public class Align extends Command {
     // vibrate.accept(0.5);
 
     leds.runPattern(
-        LEDPattern.rainbow(255, 128)
-            .scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d / 120d)));
+       LEDPattern.solid(Color.kGoldenrod)); //one hundred yellow
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
     // Set tolerances for velocity-based completion
