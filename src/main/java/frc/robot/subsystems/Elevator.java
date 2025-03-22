@@ -96,7 +96,7 @@ public class Elevator extends SubsystemBase {
   private double maxV = ElevatorConstants.maxVelocity;
   private double maxA = ElevatorConstants.maxAccel;
 
-  public Supplier<ElevatorState> nextScoreHeight = () -> ElevatorState.L4_POSITION;
+  private Supplier<ElevatorState> nextScoreHeight = () -> ElevatorState.L4_POSITION;
 
   public Elevator() { // Creates a new Elevator.
     SparkMaxConfig elevatorMotorConfig = new SparkMaxConfig();
@@ -121,7 +121,7 @@ public class Elevator extends SubsystemBase {
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
-    elevatorMotorConfig.closedLoop.outputRange(-0.35, 0.85);
+    elevatorMotorConfig.closedLoop.outputRange(-0.4, 0.85);
 
     elevatorMotorConfig.closedLoopRampRate(0.05);
 
@@ -225,8 +225,10 @@ public class Elevator extends SubsystemBase {
                   targetPosition = ElevatorConstants.homeTarget;
                   break;
               }
-              elevatorController.setReference(
-                  targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
+              if (!(position == ElevatorState.HOME && isAtHome(ElevatorConstants.homeTarget))) {
+                elevatorController.setReference(
+                    targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
+              }
             },
             this)
         .withName("Set Elevator Position to " + position);
@@ -383,5 +385,13 @@ public class Elevator extends SubsystemBase {
   public Command runToNextHeight() {
     return Commands.defer(() -> elevatorAuto(nextScoreHeight.get()), Set.of(this));
     // return elevatorAuto(nextScoreHeight.get());
+  }
+
+  public boolean nextHeightIsHome() {
+    return nextScoreHeight.get().equals(ElevatorState.HOME);
+  }
+
+  public ElevatorState getSetpoint() {
+    return setpoint;
   }
 }

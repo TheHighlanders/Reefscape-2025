@@ -13,6 +13,9 @@ import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.Elevator.ElevatorState;
+import java.util.HashMap;
+import java.util.Map;
 
 final class CoralScorerConstants {
 
@@ -20,6 +23,15 @@ final class CoralScorerConstants {
   static final int motorID = 51;
   static final int currentLimit = 40;
   static final boolean inverted = false;
+
+  static final Map<ElevatorState, Double> heightToSpeedMap = new HashMap<>();
+
+  static {
+    heightToSpeedMap.put(ElevatorState.HOME, 0.3);
+    heightToSpeedMap.put(ElevatorState.L2_POSITION, 0.7);
+    heightToSpeedMap.put(ElevatorState.L3_POSITION, 0.7);
+    heightToSpeedMap.put(ElevatorState.L4_POSITION, 0.7);
+  }
 }
 
 public class CoralScorer extends SubsystemBase {
@@ -70,6 +82,10 @@ public class CoralScorer extends SubsystemBase {
     effector.set(0.3);
   }
 
+  public void effectorSpeedByHeight(ElevatorState height) {
+    effector.set(CoralScorerConstants.heightToSpeedMap.get(height));
+  }
+
   public void effectorReverse() {
     effector.set(-1.0);
   }
@@ -104,5 +120,9 @@ public class CoralScorer extends SubsystemBase {
     return Commands.run(this::effectorSlowForward, this)
         .finallyDo(this::effectorStop)
         .withName("Slow Deposit Coral");
+  }
+
+  public Command depositByHeightCMD(ElevatorState height) {
+    return Commands.run(() -> this.effectorSpeedByHeight(height), this);
   }
 }

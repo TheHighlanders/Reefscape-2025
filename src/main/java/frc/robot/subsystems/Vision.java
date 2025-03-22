@@ -4,6 +4,7 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.Nat;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -38,10 +39,10 @@ final class VisionConstants {
 
   static final Transform3d reefRight =
       new Transform3d(
-          new Translation3d(0.20446, -0.12066 , 0.40855),
+          new Translation3d(0.20446, -0.12066, 0.40855),
           new Rotation3d(
-              Units.degreesToRadians(0), 
-              Units.degreesToRadians(-25.3517097711), 
+              Units.degreesToRadians(0),
+              Units.degreesToRadians(25.3517097711),
               Units.degreesToRadians(20)));
 
   static final Transform3d reefLeft =
@@ -70,7 +71,7 @@ final class VisionConstants {
   static final Matrix<N3, N3> CAMERA_INTRINSICS = new Matrix<>(Nat.N3(), Nat.N3());
   static final Matrix<N8, N1> CAMERA_DISTORTION = new Matrix<>(Nat.N8(), Nat.N1());
 
-  public static final double FRAME_LEEWAY_CONFIDENCE_THRESHOLD = 0.5;
+  public static final double FRAME_LEEWAY_CONFIDENCE_THRESHOLD = 8;
 
   // Initialize camera intrinsics and distortion with typical values
   static {
@@ -91,7 +92,7 @@ public class Vision extends SubsystemBase {
   // Internal camera management
   private final PhotonCamera[] cameras;
   private final PhotonPoseEstimator[] poseEstimators;
-  private final Pose3d[] cameraPoses;
+  private List<Optional<EstimatedRobotPose>> cameraPoses;
   private final String[] cameraNames;
 
   private double prevBestConfidence;
@@ -99,6 +100,7 @@ public class Vision extends SubsystemBase {
 
   private final AprilTagFieldLayout aprilTagFieldLayout;
   private Matrix<N3, N1> stdDev = VisionHelper.INFINITE_STD_DEVS;
+  private List<Matrix<N3, N1>> stdDevs;
   private final List<Pose2d> reefTagPoses = new ArrayList<>();
   private boolean hasTarget = false;
   private int frameCounter = 0;
@@ -123,8 +125,16 @@ public class Vision extends SubsystemBase {
     // Initialize camera arrays
     cameras = new PhotonCamera[CAMERA_COUNT];
     poseEstimators = new PhotonPoseEstimator[CAMERA_COUNT];
-    cameraPoses = new Pose3d[CAMERA_COUNT];
+    cameraPoses = new ArrayList<>();
     cameraNames = new String[CAMERA_COUNT];
+    stdDevs = new ArrayList<>();
+    for (int i = 0; i < CAMERA_COUNT; i++) {
+      stdDevs.add(VecBuilder.fill(0, 0, 0));
+      cameraPoses.add(
+          Optional.of(
+              new EstimatedRobotPose(
+                  new Pose3d(), 0, new ArrayList<>(), VisionConstants.POSE_STRATEGY)));
+    }
 
     prevBestConfidence = 0;
     prevBestCamera = 0;
@@ -138,8 +148,6 @@ public class Vision extends SubsystemBase {
           new PhotonPoseEstimator(
               aprilTagFieldLayout, VisionConstants.POSE_STRATEGY, CAMERA_CONFIGS[i].transform);
       poseEstimators[i].setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
-
-      cameraPoses[i] = new Pose3d();
 
       camPoses.add(
           NetworkTableInstance.getDefault()
@@ -221,8 +229,8 @@ public class Vision extends SubsystemBase {
           bestConfidence = confidence;
           stdDev = camStdDev;
           bestCamera = i;
-          cameraPoses[i] = camEstimate.get().estimatedPose;
         }
+        stdDevs.set(i, camStdDev);
         // Log individual camera data
         SmartDashboard.putNumber(
             "Vision/" + cameraNames[i] + "/Target Count", camEstimate.get().targetsUsed.size());
@@ -230,6 +238,7 @@ public class Vision extends SubsystemBase {
       } else {
         confidences[i] = -1;
       }
+      cameraPoses.set(i, camEstimate);
     }
 
     if (!MathUtil.isNear(
@@ -270,21 +279,11 @@ public class Vision extends SubsystemBase {
    */
   public Optional<EstimatedRobotPose> getEstimatedRobotPose(int cameraIndex) {
     // Check if the index is valid
-    if (cameraIndex < 0 || cameraIndex >= cameraPoses.length) {
+    if (cameraIndex < 0 || cameraIndex >= cameraPoses.size()) {
       return Optional.empty();
     }
 
-    // If this camera has a valid pose stored
-    if (!cameraPoses[cameraIndex].equals(new Pose3d())) {
-      return Optional.of(
-          new EstimatedRobotPose(
-              cameraPoses[cameraIndex],
-              Timer.getFPGATimestamp(),
-              new ArrayList<>(), // Ideally, we'd store the actual targets
-              VisionConstants.POSE_STRATEGY));
-    }
-
-    return Optional.empty();
+    return cameraPoses.get(cameraIndex);
   }
 
   /**
@@ -360,6 +359,15 @@ public class Vision extends SubsystemBase {
    */
   public Matrix<N3, N1> getEstimationStdDev() {
     return stdDev;
+  }
+
+  /**
+   * Get the standard deviation matrix for the current vision estimate
+   *
+   * @return 3x1 matrix with standard deviations for x, y, and theta
+   */
+  public Matrix<N3, N1> getEstimationStdDev(int i) {
+    return stdDevs.get(i);
   }
 
   /**

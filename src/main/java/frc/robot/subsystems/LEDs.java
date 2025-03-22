@@ -33,7 +33,8 @@ public class LEDs extends SubsystemBase {
   // LEDPattern pattern = blink.blink(Seconds.of(.1));
   public LEDs(Trigger canAlign) {
 
-    if (DriverStation.getAlliance().get() == Alliance.Blue) {
+    if (DriverStation.getAlliance().isPresent()
+        && DriverStation.getAlliance().get() == Alliance.Blue) {
       allianceLED = LEDPattern.solid(Color.kBlue);
     }
 

@@ -24,6 +24,8 @@ import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.CommandXboxControllerSubsystem;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -47,23 +49,25 @@ public class RobotContainer {
 
   public Trigger canAlign = new Trigger(() -> Align.canAlign(drive, cameras));
 
+  public Trigger joystickZeroed =
+      new Trigger(
+          () -> {
+            return Math.abs(driver.getLeftX()) < 0.25 && Math.abs(driver.getLeftY()) < 0.25;
+          });
+
   LEDs leds = new LEDs(canAlign);
 
   @Logged(name = "Align Command")
-  Align alignCommand =
-      new Align(
-          drive,
-          cameras,
-          driver.rightBumper(),
-          driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-          leds);
+  Align alignCommand;
 
   Autos autos =
       new Autos(
           drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
-  public Command joystickZeroTracker = new RunCommand(()->{}).until(()-> Math.abs(driver.getLeftX())<=0.25 && Math.abs(driver.getLeftY())<=0.25);
+  public Command joystickZeroTracker =
+      new RunCommand(() -> {})
+          .until(() -> Math.abs(driver.getLeftX()) <= 0.25 && Math.abs(driver.getLeftY()) <= 0.25);
 
   @Logged(name = "nextScoreHeight")
   ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
@@ -119,7 +123,9 @@ public class RobotContainer {
 
     driver.x().onTrue(drive.pointWheelsInXPattern().withName("X Pattern Wheels"));
 
-    driver.y().onTrue(scoreL1().withName("L1 Macro"));
+    driver.y().onTrue(scoreL1(() -> true).withName("L1 Macro"));
+
+    driver.b().whileTrue(drive.driveOrbit(driver::getLeftX, driver::getLeftY));
 
     driver.leftTrigger().onTrue(drive.enableSlowMode().withName("Enable Slow Mode"));
     driver.leftTrigger().onFalse(drive.disableSlowMode().withName("Disable Slow Mode"));
@@ -183,6 +189,7 @@ public class RobotContainer {
 
     // operator.povUp().whileTrue(elevator.jogElevator(2));
     // operator.povDown().whileTrue(elevator.jogElevator(-2));
+
   }
 
   private void configureAutonomous() {
@@ -230,9 +237,11 @@ public class RobotContainer {
         .withName("Align to Right Coral");
   }
 
-  public Command scoreL1() {
+  public Command scoreL1(BooleanSupplier goRight) {
     return Commands.parallel(
-            coralScorer.slowDepositCMD(), drive.driveRobotRelativeCMD(() -> 0, () -> 0.5, () -> 0))
+            coralScorer.slowDepositCMD(),
+            drive.driveRobotRelativeCMD(
+                () -> 0, () -> goRight.getAsBoolean() ? 0.5 : -0.5, () -> 0))
         .withTimeout(1.5);
   }
 
@@ -298,32 +307,12 @@ public class RobotContainer {
   }
 
   private Command fullAutoAlignAndScore() {
-    Command align =
-        new Align(
-            drive,
-            cameras,
-            driver.rightBumper(),
-            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-            leds);
-
     return Commands.sequence(
-        align
-            .alongWith(drive.enableSlowMode().withName("Enable Slow Mode"),joystickZeroTracker)
-            .until(
-                driver
-                    .rightTrigger()
-                    .or(driver.leftTrigger())
-                    .or(isTryingToDrive().and(hasJoystickZeroed()))),
-        drive
-            .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
-            .withName("Default Drive Command")
-            .until(driver.rightTrigger().or(driver.leftTrigger())),
+        slowModeAndWait(),
+        driveUntilTrigger(),
         elevator.runToNextHeight(),
-        coralScorer
-            .slowDepositCMD()
-            .until(driver.rightTrigger().negate().and(driver.leftTrigger().negate())),
-        removeAlgae(ElevatorState.HOME)
-            .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")));
+        depositUntilTrigger(),
+        removeAlgaeAndSlowMode());
   }
 
   public Trigger isTryingToDrive() {
@@ -333,7 +322,34 @@ public class RobotContainer {
         .or(driver.axisMagnitudeGreaterThan(4, 0.05));
   }
 
-  public Trigger hasJoystickZeroed(){
-    return new Trigger(()->!joystickZeroTracker.isScheduled());
+  public Command slowModeAndWait() {
+    alignCommand =
+        new Align(
+            drive,
+            cameras,
+            driver.rightBumper(),
+            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
+            leds);
+    return alignCommand
+        .alongWith(drive.enableSlowMode().withName("Enable Slow Mode"))
+        .until(driver.rightTrigger().or(driver.leftTrigger()));
+  }
+
+  public Command driveUntilTrigger() {
+    return drive
+        .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
+        .withName("Default Drive Command")
+        .until(driver.rightTrigger().or(driver.leftTrigger()));
+  }
+
+  public Command depositUntilTrigger() {
+    return Commands.defer(
+            () -> coralScorer.depositByHeightCMD(elevator.getSetpoint()), Set.of(coralScorer))
+        .until(driver.rightTrigger().negate().and(driver.leftTrigger().negate()));
+  }
+
+  public Command removeAlgaeAndSlowMode() {
+    return removeAlgae(ElevatorState.HOME)
+        .alongWith(drive.disableSlowMode().withName("Disable Slow Mode"));
   }
 }

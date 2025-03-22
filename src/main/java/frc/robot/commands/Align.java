@@ -155,10 +155,6 @@ public class Align extends Command {
     Pose2d currentPose = swerve.getPose();
     // vibrate.accept(0.5);
 
-    if (!Align.canAlign(swerve, vision)) {
-      this.cancel();
-    }
-
     leds.runPattern(
         LEDPattern.rainbow(255, 128)
             .scrollAtAbsoluteSpeed(MetersPerSecond.of(1), Meters.of(1d / 120d)));
@@ -270,7 +266,7 @@ public class Align extends Command {
     }
 
     // Check if velocity is close to zero rather than position at setpoint
-    return xController.atGoal() && yController.atGoal() && rotController.atGoal();
+    return (xController.atGoal() && yController.atGoal() && rotController.atGoal());
     // && rotController.getVelocityError() < AlignConstants.rotationVelocityTolerance;
   }
 
