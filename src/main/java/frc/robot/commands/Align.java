@@ -1,7 +1,5 @@
 package frc.robot.commands;
 
-import java.util.function.BooleanSupplier;
-
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -20,6 +18,7 @@ import frc.robot.Constants;
 import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
+import java.util.function.BooleanSupplier;
 
 @Logged
 public class Align extends Command {
@@ -154,8 +153,7 @@ public class Align extends Command {
     Pose2d currentPose = swerve.getPose();
     // vibrate.accept(0.5);
 
-    leds.runPattern(
-       LEDPattern.solid(Color.kGoldenrod)); //one hundred yellow
+    leds.runPattern(LEDPattern.solid(Color.kGoldenrod)); // one hundred yellow
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
     // Set tolerances for velocity-based completion

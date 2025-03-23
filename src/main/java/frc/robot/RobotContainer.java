@@ -13,7 +13,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.Align;
 import frc.robot.subsystems.Climber;
@@ -65,9 +64,13 @@ public class RobotContainer {
           drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
   AutoChooser chooser;
 
-  public Command joystickZeroTracker =
-      new RunCommand(() -> {})
-          .until(() -> Math.abs(driver.getLeftX()) <= 0.25 && Math.abs(driver.getLeftY()) <= 0.25);
+  @Logged(name = "lastAlignedPose")
+  private Pose2d lastAlignedPose = new Pose2d();
+
+  @Logged(name = "isAligned")
+  private boolean isAligned = false;
+
+  static final double ALIGN_THRESH = 1.0; // Meters till invalid realignment
 
   @Logged(name = "nextScoreHeight")
   ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
@@ -118,33 +121,24 @@ public class RobotContainer {
     operator
         .x()
         .and(manual)
-        .onTrue(
-            elevator.setPosition(ElevatorState.L2_POSITION).withName("Set Elevator L2"));
+        .onTrue(elevator.setPosition(ElevatorState.L2_POSITION).withName("Set Elevator L2"));
     operator
         .y()
         .and(manual)
-        .onTrue(
-            elevator.setPosition(ElevatorState.L3_POSITION).withName("Set Elevator L3"));
+        .onTrue(elevator.setPosition(ElevatorState.L3_POSITION).withName("Set Elevator L3"));
     operator
         .b()
         .and(manual)
-        .onTrue(
-            elevator.setPosition(ElevatorState.L4_POSITION).withName("Set Elevator L4"));
+        .onTrue(elevator.setPosition(ElevatorState.L4_POSITION).withName("Set Elevator L4"));
 
     operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY).withName("Algae Control"));
     operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator().withName("Offset Elevator"));
 
-    // operator.leftBumper().whileTrue(elevator.offsetElevator());
     operator.leftStick().whileTrue(coralScorer.manualIntakeCMD().withName("Manual Intake"));
 
     driver.start().whileTrue(elevator.zeroElevator().withName("Zero Elevator"));
     driver.povRight().onTrue(drive.resetGyro().withName("Reset Gyro"));
 
-    // driver
-    //     .rightTrigger(0.5)
-    //     .and(driver.leftBumper().negate())
-    //     .and(driver.rightBumper().negate())
-    //     .whileTrue(coralScorer.depositCMD().withName("Deposit Coral"));
     driver.a().whileTrue(coralScorer.reverseCommand().withName("Reverse Coral"));
 
     driver.x().onTrue(drive.pointWheelsInXPattern().withName("X Pattern Wheels"));
@@ -156,9 +150,7 @@ public class RobotContainer {
     driver.leftTrigger().onTrue(drive.enableSlowMode().withName("Enable Slow Mode"));
     driver.leftTrigger().onFalse(drive.disableSlowMode().withName("Disable Slow Mode"));
 
-    // driver.leftBumper().whileTrue(alignCMD.withName("Align Command"));
-    // driver.rightBumper().whileTrue(alignCMD.withName("Align Command"));]\[]
-    driver.rightBumper().and(manual.negate()).whileTrue(fullAutoAlignAndScore());
+    driver.rightBumper().and(manual.negate()).whileTrue(alignAndSetFlag());
     driver.rightBumper().and(manual).whileTrue(alignToRightCoral());
 
     driver.rightTrigger().onTrue(autoScore());
@@ -170,7 +162,7 @@ public class RobotContainer {
                 .setPosition(ElevatorState.HOME)
                 .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")));
 
-    driver.leftBumper().and(manual.negate()).whileTrue(fullAutoAlignAndScore());
+    driver.leftBumper().and(manual.negate()).whileTrue(alignAndSetFlag());
     driver.leftBumper().and(manual).whileTrue(alignToLeftCoral());
 
     driver
@@ -193,12 +185,9 @@ public class RobotContainer {
         .whileTrue(climber.createClimbInCommand().withName("Climb In"));
     operator.povRight().onTrue(climber.holdClimbPosition().withName("Hold Climb Position"));
 
-    // operator.start().toggleOnTrue(drive.pointWheelsForward());
-    // operator.back().whileTrue(drive.pidTuningJogAngle());
     operator
         .rightBumper()
         .onTrue(coralScorer.depositCMD().withTimeout(0.1).withName("Quick Deposit"));
-    // operator.rightBumper().whileTrue(coralScorer.depositCMD());
 
     operator.rightTrigger(0.5).whileTrue(removeAlgaeLow());
 
@@ -218,22 +207,12 @@ public class RobotContainer {
                 .andThen(
                     elevator.setPosition(ElevatorState.CURRENT).withName("Set Current Position"))
                 .withName("Trim and Set Elevator"));
-
-    // operator.povUp().whileTrue(elevator.jogElevator(2));
-    // operator.povDown().whileTrue(elevator.jogElevator(-2));
-
   }
 
   private void configureAutonomous() {
     chooser.addRoutine("Left 2 Piece", autos::LeftTwoPiece);
     chooser.addRoutine("Right 2 Piece", autos::RightTwoPiece);
     chooser.addRoutine("Center 1 Piece", autos::CenterOnePiece);
-    // chooser.addCmd("TimeBased 1 piece", autos::simple1Piece);
-    // chooser.addRoutine("Center 1 & Left", autos::CenterOnePieceAndLeftStation);
-    // chooser.addRoutine("Center 1 & Right", autos::CenterOnePieceAndRightStation);
-    // chooser.addRoutine("Center 1 & dingus", autos::CenterOnePieceAndDislodge);
-    // chooser.addRoutine("Three piece left", autos::ThreePieceLeft);
-    // chooser.addRoutine("Three piece right", autos::ThreePieceRight);
     if (Constants.devMode) {
       chooser.addCmd("SYSID", drive::sysId);
       chooser.addCmd(
@@ -338,18 +317,35 @@ public class RobotContainer {
     return removeAlgae(ElevatorState.ALGAEHIGH);
   }
 
-  private Command fullAutoAlignAndScore() {
-    return Commands.sequence(
-        slowModeAndWait(),
-        driveUntilTrigger());
+  public void updateAlignmentStatus() {
+    if (isAligned
+        && drive.getPose().getTranslation().getDistance(lastAlignedPose.getTranslation())
+            > ALIGN_THRESH) {
+      isAligned = false;
+    }
   }
 
-  private Command autoScore(){
+  public Command alignAndSetFlag() {
     return Commands.sequence(
-      elevator.runToNextHeight(),
-      depositUntilTrigger(),
-      removeAlgaeAndSlowMode()
-    );
+        fullAutoAlignAndScore(),
+        Commands.runOnce(
+            () -> {
+              lastAlignedPose = drive.getPose();
+              isAligned = true;
+            }));
+  }
+
+  public Command scoreBasedOnAlignment() {
+    return Commands.either(autoScore(), alignAndSetFlag(), () -> isAligned);
+  }
+
+  private Command fullAutoAlignAndScore() {
+    return Commands.sequence(slowModeAndWait(), driveUntilTrigger());
+  }
+
+  private Command autoScore() {
+    return Commands.sequence(
+        elevator.runToNextHeight(), depositUntilTrigger(), removeAlgaeAndSlowMode());
   }
 
   public Trigger isTryingToDrive() {
