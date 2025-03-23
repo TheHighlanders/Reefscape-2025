@@ -1,6 +1,7 @@
-// Copyrght (c) FIRST and other WPILib contributors.
+// Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
+
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Meters;
@@ -10,9 +11,20 @@ import static edu.wpi.first.units.Units.Volt;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.subsystems.ElevatorConstants.forwardSoftLimit;
 
-import choreo.trajectory.SwerveSample;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
+
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
@@ -49,16 +61,10 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+
 import frc.robot.Constants;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-import org.photonvision.EstimatedRobotPose;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+
+import choreo.trajectory.SwerveSample;
 
 final class SwerveConstants {
 

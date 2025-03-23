@@ -1,9 +1,17 @@
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
+
 package frc.robot;
 
-import choreo.auto.AutoChooser;
+import java.util.Set;
+import java.util.function.BooleanSupplier;
+
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
@@ -14,6 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+
 import frc.robot.commands.Align;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
@@ -23,12 +32,8 @@ import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.CommandXboxControllerSubsystem;
-import java.util.Set;
-import java.util.function.BooleanSupplier;
-import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
+
+import choreo.auto.AutoChooser;
 
 public class RobotContainer {
 

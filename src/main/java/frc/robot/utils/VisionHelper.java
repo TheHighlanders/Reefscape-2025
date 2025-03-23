@@ -1,4 +1,19 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
 package frc.robot.utils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.photonvision.EstimatedRobotPose;
+import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.estimation.TargetModel;
+import org.photonvision.estimation.VisionEstimation;
+import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -8,16 +23,8 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.numbers.N8;
 import edu.wpi.first.wpilibj.DriverStation;
+
 import frc.robot.Constants;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import org.photonvision.EstimatedRobotPose;
-import org.photonvision.PhotonPoseEstimator.PoseStrategy;
-import org.photonvision.estimation.TargetModel;
-import org.photonvision.estimation.VisionEstimation;
-import org.photonvision.targeting.PhotonPipelineResult;
-import org.photonvision.targeting.PhotonTrackedTarget;
 
 /** Utility class for vision processing and pose estimation */
 public class VisionHelper {
