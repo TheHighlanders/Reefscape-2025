@@ -4,6 +4,7 @@
 
 package frc.robot.commands;
 
+import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.epilogue.Logged;
@@ -32,6 +33,7 @@ public class Align extends Command {
   /** Constants for the Reef Coral alignment */
   private static final class AlignConstants {
     // Distance from robot center to front bumper (meters)
+
     static final double robotCenterToFrontDistance = -0.39;
 
     // Lateral offset from tag to coral (meters)
@@ -72,6 +74,7 @@ public class Align extends Command {
   private final LEDs leds;
   private final Swerve swerve;
   private final BooleanSupplier targetRightCoralSupplier; // true = right
+  private final BiConsumer<Double, Double> errorCallback;
 
   private final ProfiledPIDController xController =
       new ProfiledPIDController(
@@ -108,8 +111,6 @@ public class Align extends Command {
           .getStructTopic("Vision/AlignTarget", Pose2d.struct)
           .publish();
 
-  private final Command vibrate;
-
   @Logged(name = "xError", importance = Importance.INFO)
   private double xError = -1;
 
@@ -128,6 +129,12 @@ public class Align extends Command {
   @Logged(name = "rotSpeed", importance = Importance.INFO)
   private double rotSpeed = -1;
 
+  @Logged(name = "finalXError", importance = Importance.INFO)
+  private double finalXError = 0;
+
+  @Logged(name = "finalYError", importance = Importance.INFO)
+  private double finalYError = 0;
+
   /**
    * Creates a command to align with coral of a reef tag.
    *
@@ -140,14 +147,13 @@ public class Align extends Command {
       Swerve swerve,
       Vision vision,
       BooleanSupplier targetRightCoralSupplier,
-      Command vibrate,
+      BiConsumer<Double, Double> errorCallback,
       LEDs leds) {
     this.swerve = swerve;
     this.vision = vision;
     this.leds = leds;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
-    this.vibrate = vibrate;
-    this.vision = vision;
+    this.errorCallback = errorCallback;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
 
@@ -157,7 +163,6 @@ public class Align extends Command {
   @Override
   public void initialize() {
     Pose2d currentPose = swerve.getPose();
-    // vibrate.accept(0.5);
 
     leds.runPattern(LEDPattern.solid(Color.kGoldenrod)); // one hundred yellow
 
@@ -174,7 +179,6 @@ public class Align extends Command {
     targetPosePublisher.set(targetPose);
 
     // Get current robot pose
-
     ChassisSpeeds currentSpeeds =
         ChassisSpeeds.fromRobotRelativeSpeeds(
             swerve.kinematics.toChassisSpeeds(swerve.getModuleStates()),
@@ -251,7 +255,14 @@ public class Align extends Command {
   @Override
   public void end(boolean interrupted) {
     swerve.stopDrive();
-    vibrate.schedule();
+
+    finalXError = targetPose.getX() - swerve.getPose().getX();
+    finalYError = targetPose.getY() - swerve.getPose().getY();
+
+    if (interrupted || Math.abs(finalXError) > 0.05 || Math.abs(finalYError) > 0.05) {
+      errorCallback.accept(finalXError, finalYError);
+    }
+
     leds.runPattern(leds.getAllianceLed());
   }
 

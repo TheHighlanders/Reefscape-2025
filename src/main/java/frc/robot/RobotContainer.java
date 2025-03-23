@@ -5,6 +5,7 @@
 package frc.robot;
 
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 
 import org.opencv.core.Mat;
@@ -52,12 +53,6 @@ public class RobotContainer {
   Swerve drive = new Swerve(cameras, elevator::getElevatorPosition);
 
   public Trigger canAlign = new Trigger(() -> Align.canAlign(drive, cameras));
-
-  public Trigger joystickZeroed =
-      new Trigger(
-          () -> {
-            return Math.abs(driver.getLeftX()) < 0.25 && Math.abs(driver.getLeftY()) < 0.25;
-          });
 
   LEDs leds = new LEDs(canAlign);
 
@@ -244,12 +239,7 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    return new Align(
-            drive,
-            cameras,
-            () -> true,
-            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-            leds)
+    return new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds)
         .withName("Align to Right Coral");
   }
 
@@ -262,13 +252,30 @@ public class RobotContainer {
   }
 
   public Command alignToLeftCoral() {
-    return new Align(
-            drive,
-            cameras,
-            () -> false,
-            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-            leds)
+    return new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds)
         .withName("Align to Left Coral");
+  }
+
+  private BiConsumer<Double, Double> createDirectionalRumbleCallback() {
+    return (xError, yError) -> {
+      double leftIntensity = 0;
+      double rightIntensity = 0;
+
+      // Max rumble at 5 cm
+      double errorMagnitude = Math.min(1.0, Math.abs(xError) / 0.05);
+
+      if (xError > 0) {
+        rightIntensity = errorMagnitude;
+      } else if (xError < 0) {
+        leftIntensity = errorMagnitude;
+      }
+
+      driver
+          .rumbleCmd(leftIntensity, rightIntensity)
+          .withTimeout(0.5)
+          .withName("Rumble Command")
+          .schedule();
+    };
   }
 
   private void cameraSetUp() {
@@ -362,12 +369,7 @@ public class RobotContainer {
 
   public Command slowModeAndWait() {
     alignCommand =
-        new Align(
-            drive,
-            cameras,
-            driver.rightBumper(),
-            driver.rumbleCmd(0.5, 0.5).withTimeout(0.5).withName("Driver Rumble"),
-            leds);
+        new Align(drive, cameras, driver.rightBumper(), createDirectionalRumbleCallback(), leds);
     return alignCommand
         .alongWith(drive.enableSlowMode().withName("Enable Slow Mode"))
         .until(driver.rightTrigger().or(driver.leftTrigger()));
