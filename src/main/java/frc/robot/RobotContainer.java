@@ -249,18 +249,22 @@ public class RobotContainer {
         .withName("Align to Left Coral");
   }
 
-  private BiConsumer<Double, Double> createDirectionalRumbleCallback() {
-    return (xError, yError) -> {
+  private BiConsumer<Double, Boolean> createDirectionalRumbleCallback() {
+    return (xError, rumbleBoth) -> {
       double leftIntensity = 0;
       double rightIntensity = 0;
-
       // Max rumble at 5 cm
       double errorMagnitude = Math.min(1.0, Math.abs(xError) / 0.05);
 
-      if (xError > 0) {
-        rightIntensity = errorMagnitude;
-      } else if (xError < 0) {
-        leftIntensity = errorMagnitude;
+      if (rumbleBoth) {
+        rightIntensity = xError;
+        leftIntensity = xError;
+      } else {
+        if (xError > 0) {
+          rightIntensity = errorMagnitude;
+        } else if (xError < 0) {
+          leftIntensity = errorMagnitude;
+        }
       }
 
       driver

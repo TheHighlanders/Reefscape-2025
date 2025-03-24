@@ -74,7 +74,7 @@ public class Align extends Command {
   private final LEDs leds;
   private final Swerve swerve;
   private final BooleanSupplier targetRightCoralSupplier; // true = right
-  private final BiConsumer<Double, Double> errorCallback;
+  private final BiConsumer<Double, Boolean> errorCallback;
 
   private final ProfiledPIDController xController =
       new ProfiledPIDController(
@@ -147,7 +147,7 @@ public class Align extends Command {
       Swerve swerve,
       Vision vision,
       BooleanSupplier targetRightCoralSupplier,
-      BiConsumer<Double, Double> errorCallback,
+      BiConsumer<Double, Boolean> errorCallback,
       LEDs leds) {
     this.swerve = swerve;
     this.vision = vision;
@@ -257,11 +257,10 @@ public class Align extends Command {
     swerve.stopDrive();
 
     finalXError = targetPose.getX() - swerve.getPose().getX();
-    finalYError = targetPose.getY() - swerve.getPose().getY();
 
-    if (interrupted || Math.abs(finalXError) > 0.05 || Math.abs(finalYError) > 0.05) {
-      errorCallback.accept(finalXError, finalYError);
-    }
+    if (interrupted || Math.abs(finalXError) > 0.05) {
+      errorCallback.accept(finalXError, false);
+    } else errorCallback.accept(1d, true);
 
     leds.runPattern(leds.getAllianceLed());
   }
