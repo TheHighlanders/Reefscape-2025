@@ -159,7 +159,7 @@ public class RobotContainer {
 
     driver.leftBumper().whileTrue(alignToLeftCoral());
 
-    driver.rightTrigger().onTrue(selectScoreRoutine());
+    driver.rightTrigger().whileTrue(selectScoreRoutine());
 
     driver
         .leftBumper()

@@ -101,6 +101,15 @@ final class SwerveConstants {
 
   static Pose2d redReefCenter = new Pose2d(13.0514923438, 4.0259, new Rotation2d());
   static Pose2d blueReefCenter = new Pose2d(4.49673265625, 4.0259, new Rotation2d());
+
+  static final StructPublisher<Pose2d> REEF_POSE_PUBLISHER =
+      NetworkTableInstance.getDefault()
+          .getStructTopic("Swerve/OrbitTarget", Pose2d.struct)
+          .publish();
+
+  static {
+    REEF_POSE_PUBLISHER.accept(blueReefCenter);
+  }
 }
 
 public class Swerve extends SubsystemBase {
@@ -158,9 +167,11 @@ public class Swerve extends SubsystemBase {
   SwerveState current = SwerveState.NORMAL;
 
   private final Vision vision;
-  private EstimatedRobotPose lastEstimatedPoses;
   private Pose3d cameraPose;
   private double lastEstTimestamp = 0.0;
+
+  @Logged(name = "rotationTarget")
+  Translation2d rotationTarget = new Translation2d();
 
   /** Creates a new Swerve. */
   public Swerve(Vision vision, DoubleSupplier elevatorHeight) {
@@ -305,7 +316,6 @@ public class Swerve extends SubsystemBase {
       if (estPose.isPresent()) {
         // Store the camera pose for debugging
         cameraPose = estPose.get().estimatedPose;
-        lastEstimatedPoses = estPose.get();
 
         // Get standard deviations from the camera
         Matrix<N3, N1> stdDev = vision.getEstimationStdDev(i);
@@ -426,7 +436,7 @@ public class Swerve extends SubsystemBase {
   public Command driveOrbit(DoubleSupplier x, DoubleSupplier y) {
     return Commands.run(
             () -> {
-              Translation2d rotationTarget = reefPose().minus(getPose()).getTranslation();
+              rotationTarget = reefPose().minus(getPose()).getTranslation();
               orbitPosePublisher.accept(
                   new Pose2d(getPose().getX(), getPose().getY(), rotationTarget.getAngle()));
               drive(
