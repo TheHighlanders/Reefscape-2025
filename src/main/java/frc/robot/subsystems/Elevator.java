@@ -63,6 +63,9 @@ class ElevatorConstants {
   static final double maxVelocity = 80 * 60.0d;
   static final double maxAccel = 3600;
   static final double maxClosedLoopError = 5;
+
+  static final double maximumNegatieOutput = -0.4;
+  static final double maximumPositiveOutput = 0.85;
 }
 
 public class Elevator extends SubsystemBase {
@@ -85,6 +88,9 @@ public class Elevator extends SubsystemBase {
 
   double targetPosition;
   double positionOffset;
+
+  double downwardOutput = ElevatorConstants.maximumNegatieOutput;
+  double upwardOutput = ElevatorConstants.maximumPositiveOutput;
 
   @Logged double trim;
 
@@ -125,7 +131,7 @@ public class Elevator extends SubsystemBase {
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
-    elevatorMotorConfig.closedLoop.outputRange(-0.4, 0.85);
+    elevatorMotorConfig.closedLoop.outputRange(downwardOutput, upwardOutput);
 
     elevatorMotorConfig.closedLoopRampRate(0.05);
 
@@ -245,6 +251,9 @@ public class Elevator extends SubsystemBase {
     SmartDashboard.putNumber("Tuning/Elevator/Elevator D", config.getD());
     SmartDashboard.putNumber("Tuning/Elevator/Elevator F", arbFF);
 
+    SmartDashboard.putNumber("Tuning/Elevator/Maximum Downward Output", downwardOutput);
+    SmartDashboard.putNumber("Tuning/Elevator/Maximum Upward Output", upwardOutput);
+
     SmartDashboard.putNumber("Tuning/Elevator/Anti Slam Voltage", antiSlamVoltageOffset);
 
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
@@ -267,11 +276,20 @@ public class Elevator extends SubsystemBase {
     double mV = SmartDashboard.getNumber("Tuning/Elevator/Max V", maxV);
     double mA = SmartDashboard.getNumber("Tuning/Elevator/Max A", maxA);
 
+    double down =
+        SmartDashboard.getNumber(
+            "Tuning/Elevator/Maximum Downward Output", ElevatorConstants.maximumNegatieOutput);
+    double up =
+        SmartDashboard.getNumber(
+            "Tuning/Elevator/Maximum Upward Output", ElevatorConstants.maximumPositiveOutput);
+
     antiSlamVoltageOffset =
         SmartDashboard.getNumber(
             "Tuning/Elevator/Anti Slam Voltage", ElevatorConstants.antiSlamVoltageOffset);
 
     SparkMaxConfig config = new SparkMaxConfig();
+    config.closedLoop.outputRange(down, up);
+
     config.closedLoop.pid(p, i, d);
     arbFF = f;
     config.closedLoop.maxMotion.maxAcceleration(mA);
