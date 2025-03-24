@@ -7,6 +7,7 @@ package frc.robot;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -160,6 +161,7 @@ public class RobotContainer {
     driver.leftBumper().whileTrue(alignToLeftCoral());
 
     driver.rightTrigger().whileTrue(selectScoreRoutine());
+    driver.rightTrigger().onFalse(removeAlgaeAndSlowMode());
 
     driver
         .leftBumper()
@@ -238,9 +240,10 @@ public class RobotContainer {
   }
 
   public Command scoreL1(boolean goRight) {
+    DoubleSupplier direction = () -> goRight ? 0.5 : -0.5;
+    SmartDashboard.putNumber("L1 direction", direction.getAsDouble());
     return Commands.parallel(
-            coralScorer.slowDepositCMD(),
-            drive.driveRobotRelativeCMD(() -> 0, () -> goRight ? 0.5 : -0.5, () -> 0))
+            coralScorer.slowDepositCMD(), drive.driveRobotRelativeCMD(() -> 0, direction, () -> 0))
         .withTimeout(1.5);
   }
 
@@ -335,8 +338,7 @@ public class RobotContainer {
   }
 
   private Command autoScore() {
-    return Commands.sequence(
-        elevator.runToNextHeight(), depositUntilTrigger(), removeAlgaeAndSlowMode());
+    return Commands.sequence(elevator.runToNextHeight(), deposit());
   }
 
   public Trigger isTryingToDrive() {
@@ -346,26 +348,9 @@ public class RobotContainer {
         .or(driver.axisMagnitudeGreaterThan(4, 0.05));
   }
 
-  public Command slowModeAndWait() {
-    alignCommand =
-        new Align(drive, cameras, driver.rightBumper(), createDirectionalRumbleCallback(), leds);
-    return alignCommand
-        .alongWith(drive.enableSlowMode().withName("Enable Slow Mode"))
-        .alongWith(allocateAlignSide(driver.rightBumper()))
-        .until(driver.rightTrigger().or(driver.leftTrigger()));
-  }
-
-  public Command driveUntilTrigger() {
-    return drive
-        .driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)
-        .withName("Default Drive Command")
-        .until(driver.rightTrigger());
-  }
-
-  public Command depositUntilTrigger() {
+  public Command deposit() {
     return Commands.defer(
-            () -> coralScorer.depositByHeightCMD(elevator.getSetpoint()), Set.of(coralScorer))
-        .until(driver.rightTrigger().negate().and(driver.leftTrigger().negate()));
+        () -> coralScorer.depositByHeightCMD(elevator.getSetpoint()), Set.of(coralScorer));
   }
 
   public Command removeAlgaeAndSlowMode() {

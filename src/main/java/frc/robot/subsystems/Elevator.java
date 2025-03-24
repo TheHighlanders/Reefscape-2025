@@ -413,6 +413,7 @@ public class Elevator extends SubsystemBase {
     return nextScoreHeight.get().equals(ElevatorState.HOME);
   }
 
+  @Logged(name = "ElevatorSetpoint")
   public ElevatorState getSetpoint() {
     return setpoint;
   }
