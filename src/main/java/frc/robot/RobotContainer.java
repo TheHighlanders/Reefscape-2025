@@ -57,9 +57,6 @@ public class RobotContainer {
 
   LEDs leds = new LEDs(canAlign);
 
-  @Logged(name = "Align Command")
-  Align alignCommand;
-
   Autos autos =
       new Autos(
           drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
@@ -193,6 +190,8 @@ public class RobotContainer {
             Commands.runOnce(() -> drive.resetOdometry(new Pose2d()))
                 .ignoringDisable(true)
                 .withName("Reset Odometry"));
+
+    operator.back().and(manual).onTrue(Commands.runOnce(() -> cameraSetUp()));
 
     operator
         .rightStick()
