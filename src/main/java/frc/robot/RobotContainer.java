@@ -67,8 +67,8 @@ public class RobotContainer {
   @Logged(name = "lastAlignedPose")
   private Pose2d lastAlignedPose = new Pose2d();
 
-  @Logged(name = "isAligned")
-  private boolean isAligned = false;
+  @Logged(name = "lastAlignSide")
+  private boolean lastAlignSide = true; // RIght -> true
 
   static final double ALIGN_THRESH = 1.0; // Meters till invalid realignment
 
@@ -143,17 +143,12 @@ public class RobotContainer {
 
     driver.x().onTrue(drive.pointWheelsInXPattern().withName("X Pattern Wheels"));
 
-    driver.y().onTrue(scoreL1(() -> true).withName("L1 Macro"));
-
     driver.b().whileTrue(drive.driveOrbit(driver::getLeftX, driver::getLeftY));
 
     driver.leftTrigger().onTrue(drive.enableSlowMode().withName("Enable Slow Mode"));
     driver.leftTrigger().onFalse(drive.disableSlowMode().withName("Disable Slow Mode"));
 
-    driver.rightBumper().and(manual.negate()).whileTrue(alignAndSetFlag());
-    driver.rightBumper().and(manual).whileTrue(alignToRightCoral());
-
-    driver.rightTrigger().onTrue(autoScore());
+    driver.rightBumper().whileTrue(alignToRightCoral());
 
     driver
         .rightBumper()
@@ -162,8 +157,9 @@ public class RobotContainer {
                 .setPosition(ElevatorState.HOME)
                 .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")));
 
-    driver.leftBumper().and(manual.negate()).whileTrue(alignAndSetFlag());
-    driver.leftBumper().and(manual).whileTrue(alignToLeftCoral());
+    driver.leftBumper().whileTrue(alignToLeftCoral());
+
+    driver.rightTrigger().onTrue(selectScoreRoutine());
 
     driver
         .leftBumper()
@@ -188,8 +184,6 @@ public class RobotContainer {
     operator
         .rightBumper()
         .onTrue(coralScorer.depositCMD().withTimeout(0.1).withName("Quick Deposit"));
-
-    operator.rightTrigger(0.5).whileTrue(removeAlgaeLow());
 
     operator
         .start()
@@ -243,11 +237,10 @@ public class RobotContainer {
         .withName("Align to Right Coral");
   }
 
-  public Command scoreL1(BooleanSupplier goRight) {
+  public Command scoreL1(boolean goRight) {
     return Commands.parallel(
             coralScorer.slowDepositCMD(),
-            drive.driveRobotRelativeCMD(
-                () -> 0, () -> goRight.getAsBoolean() ? 0.5 : -0.5, () -> 0))
+            drive.driveRobotRelativeCMD(() -> 0, () -> goRight ? 0.5 : -0.5, () -> 0))
         .withTimeout(1.5);
   }
 
@@ -329,30 +322,12 @@ public class RobotContainer {
     return removeAlgae(ElevatorState.ALGAEHIGH);
   }
 
-  public void updateAlignmentStatus() {
-    if (isAligned
-        && drive.getPose().getTranslation().getDistance(lastAlignedPose.getTranslation())
-            > ALIGN_THRESH) {
-      isAligned = false;
-    }
+  public Command allocateAlignSide(BooleanSupplier rightSide) {
+    return Commands.runOnce(() -> lastAlignSide = rightSide.getAsBoolean());
   }
 
-  public Command alignAndSetFlag() {
-    return Commands.sequence(
-        fullAutoAlignAndScore(),
-        Commands.runOnce(
-            () -> {
-              lastAlignedPose = drive.getPose();
-              isAligned = true;
-            }));
-  }
-
-  public Command scoreBasedOnAlignment() {
-    return Commands.either(autoScore(), alignAndSetFlag(), () -> isAligned);
-  }
-
-  private Command fullAutoAlignAndScore() {
-    return Commands.sequence(slowModeAndWait(), driveUntilTrigger());
+  public Command selectScoreRoutine() {
+    return Commands.either(scoreL1(lastAlignSide), autoScore(), elevator::nextHeightIsHome);
   }
 
   private Command autoScore() {
@@ -372,6 +347,7 @@ public class RobotContainer {
         new Align(drive, cameras, driver.rightBumper(), createDirectionalRumbleCallback(), leds);
     return alignCommand
         .alongWith(drive.enableSlowMode().withName("Enable Slow Mode"))
+        .alongWith(allocateAlignSide(driver.rightBumper()))
         .until(driver.rightTrigger().or(driver.leftTrigger()));
   }
 
