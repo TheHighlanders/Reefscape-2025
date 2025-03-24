@@ -239,8 +239,9 @@ public class RobotContainer {
         .withName("Align to Right Coral");
   }
 
-  public Command scoreL1(boolean goRight) {
+  public Command scoreL1(boolean goRight, BiConsumer<Double, Boolean> rumble) {
     DoubleSupplier direction = () -> goRight ? 0.5 : -0.5;
+    rumble.accept(direction.getAsDouble(), false);
     SmartDashboard.putNumber("L1 direction", direction.getAsDouble());
     return Commands.parallel(
             coralScorer.slowDepositCMD(), drive.driveRobotRelativeCMD(() -> 0, direction, () -> 0))
@@ -334,7 +335,10 @@ public class RobotContainer {
   }
 
   public Command selectScoreRoutine() {
-    return Commands.either(scoreL1(lastAlignSide), autoScore(), elevator::nextHeightIsHome);
+    return Commands.either(
+        scoreL1(lastAlignSide, createDirectionalRumbleCallback()),
+        autoScore(),
+        elevator::nextHeightIsHome);
   }
 
   private Command autoScore() {
