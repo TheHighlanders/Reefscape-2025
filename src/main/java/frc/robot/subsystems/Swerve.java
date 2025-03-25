@@ -160,6 +160,12 @@ public class Swerve extends SubsystemBase {
   private final PIDController orbitController =
       new PIDController(SwerveConstants.orbitP, SwerveConstants.orbitI, SwerveConstants.orbitD);
 
+  @Logged(name = "orbitX_PID_Out")
+  private double orbitX_PID_Out = 0;
+
+  @Logged(name = "orbitY_PID_Out")
+  private double orbitY_PID_Out = 0;
+
   private final SysIdRoutine sysId;
 
   Field2d field = new Field2d();
@@ -439,9 +445,11 @@ public class Swerve extends SubsystemBase {
               rotationTarget = reefPose().minus(getPose()).getTranslation();
               orbitPosePublisher.accept(
                   new Pose2d(getPose().getX(), getPose().getY(), rotationTarget.getAngle()));
+              orbitX_PID_Out = x.getAsDouble();
+              orbitY_PID_Out = y.getAsDouble();
               drive(
-                  squaredCurve(x.getAsDouble()),
-                  squaredCurve(y.getAsDouble()),
+                  squaredCurve(orbitX_PID_Out),
+                  squaredCurve(orbitY_PID_Out),
                   orbitController.calculate(
                       getPose().getRotation().getRadians(),
                       rotationTarget.getAngle().getRadians()));
