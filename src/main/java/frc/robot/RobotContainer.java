@@ -74,6 +74,8 @@ public class RobotContainer {
   @Logged(name = "nextScoreHeight")
   ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
 
+  public Trigger hasGamePiece = new Trigger(coralScorer::hasGamePiece);
+
   public RobotContainer() {
 
     chooser = new AutoChooser();
