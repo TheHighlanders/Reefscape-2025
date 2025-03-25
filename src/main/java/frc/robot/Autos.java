@@ -61,7 +61,11 @@ public class Autos {
         .withName("Elevator Up")
         .andThen(coral.slowDepositCMD().withTimeout(1).withName("Slow Deposit"))
         .withName("Deposit")
-        .andThen(elevator.elevatorAuto(ElevatorState.HOME).withName("Return Elevator Home"))
+        .andThen(
+            elevator
+                .elevatorAuto(ElevatorState.HOME)
+                .deadlineFor(coral.reverseCommand())
+                .withName("Return Elevator Home"))
         .withName("Elevator Down");
   }
 

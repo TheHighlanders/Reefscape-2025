@@ -66,7 +66,7 @@ public class RobotContainer {
   private Pose2d lastAlignedPose = new Pose2d();
 
   @Logged(name = "lastAlignSide")
-  private boolean lastAlignSide = true; // RIght -> true
+  private BooleanSupplier lastAlignSide = () -> true; // RIght -> true
 
   static final double ALIGN_THRESH = 1.0; // Meters till invalid realignment
 
@@ -318,7 +318,7 @@ public class RobotContainer {
   }
 
   public Command removeAlgae(ElevatorState height) {
-    return Commands.parallel(elevator.elevatorAuto(height), coralScorer.reverseCommand());
+    return Commands.deadline(elevator.elevatorAuto(height), coralScorer.reverseCommand());
   }
 
   public Command removeAlgaeLow() {
@@ -330,12 +330,15 @@ public class RobotContainer {
   }
 
   public Command allocateAlignSide(BooleanSupplier rightSide) {
-    return Commands.runOnce(() -> lastAlignSide = rightSide.getAsBoolean());
+    return Commands.runOnce(() -> lastAlignSide = rightSide);
   }
 
   public Command selectScoreRoutine() {
+    SmartDashboard.putBoolean("L1 last align side", lastAlignSide.getAsBoolean());
     return Commands.either(
-        scoreL1(lastAlignSide, createDirectionalRumbleCallback()),
+        Commands.defer(
+            () -> scoreL1(lastAlignSide.getAsBoolean(), createDirectionalRumbleCallback()),
+            Set.of(drive, coralScorer)),
         autoScore(),
         elevator::nextHeightIsHome);
   }

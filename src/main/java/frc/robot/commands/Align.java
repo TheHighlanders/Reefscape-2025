@@ -164,7 +164,7 @@ public class Align extends Command {
   public void initialize() {
     Pose2d currentPose = swerve.getPose();
 
-    leds.runPattern(LEDPattern.solid(Color.kGoldenrod)); // one hundred yellow
+    leds.runPattern(LEDPattern.solid(Color.kYellow)); // one hundred yellow
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
     // Set tolerances for velocity-based completion
