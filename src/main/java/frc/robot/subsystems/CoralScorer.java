@@ -24,7 +24,7 @@ import frc.robot.subsystems.Elevator.ElevatorState;
 
 final class CoralScorerConstants {
 
-  static final int intakePhotoSensorDIOPin = 9;
+  static final int intakeBeamBreakDIOPin = 9;
   static final int motorID = 51;
   static final int currentLimit = 40;
   static final boolean inverted = false;
@@ -43,10 +43,10 @@ public class CoralScorer extends SubsystemBase {
 
   SparkMax effector;
 
-  private final DigitalInput photoSensor;
+  private final DigitalInput beamBreak;
 
   public CoralScorer() {
-    photoSensor = new DigitalInput(CoralScorerConstants.intakePhotoSensorDIOPin);
+    beamBreak = new DigitalInput(CoralScorerConstants.intakeBeamBreakDIOPin);
     effector = new SparkMax(CoralScorerConstants.motorID, MotorType.kBrushless);
 
     SparkMaxConfig effectorConfig = effectorConfig();
@@ -72,7 +72,7 @@ public class CoralScorer extends SubsystemBase {
   public void periodic() {}
 
   public boolean hasGamePiece() {
-    return !photoSensor.get();
+    return !beamBreak.get();
   }
 
   public void effectorStop() {
