@@ -76,6 +76,10 @@ public class RobotContainer {
 
   public Trigger hasGamePiece = new Trigger(coralScorer::hasGamePiece);
 
+  @Logged(name = "Align")
+  Command alignLogging =
+      new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds);
+
   public RobotContainer() {
 
     chooser = new AutoChooser();
@@ -239,8 +243,10 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    return new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds)
-        .withName("Align to Right Coral");
+    alignLogging =
+        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds)
+            .withName("Align to Right Coral");
+    return alignLogging;
   }
 
   public Command scoreL1(boolean goRight, BiConsumer<Double, Boolean> rumble) {
@@ -249,12 +255,14 @@ public class RobotContainer {
     SmartDashboard.putNumber("L1 direction", direction.getAsDouble());
     return Commands.parallel(
             coralScorer.slowDepositCMD(), drive.driveRobotRelativeCMD(() -> 0, direction, () -> 0))
-        .withTimeout(1.5);
+        .until(hasGamePiece.negate());
   }
 
   public Command alignToLeftCoral() {
-    return new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds)
-        .withName("Align to Left Coral");
+    alignLogging =
+        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds)
+            .withName("Align to Left Coral");
+    return alignLogging;
   }
 
   private BiConsumer<Double, Boolean> createDirectionalRumbleCallback() {
@@ -368,7 +376,8 @@ public class RobotContainer {
 
   public Command deposit() {
     return Commands.defer(
-        () -> coralScorer.depositByHeightCMD(elevator.getSetpoint()), Set.of(coralScorer));
+            () -> coralScorer.depositByHeightCMD(elevator.getSetpoint()), Set.of(coralScorer))
+        .until(hasGamePiece.negate());
   }
 
   public Command removeAlgaeAndSlowMode() {
