@@ -46,6 +46,8 @@ public class RobotContainer {
   CoralScorer coralScorer = new CoralScorer();
   Climber climber = new Climber();
 
+  Thread m_visionThread;
+
   @Logged(name = "Elevator")
   Elevator elevator = new Elevator();
 
@@ -194,7 +196,7 @@ public class RobotContainer {
                 .ignoringDisable(true)
                 .withName("Reset Odometry"));
 
-    operator.back().and(manual).onTrue(Commands.runOnce(() -> cameraSetUp()));
+    operator.back().and(manual).onTrue(Commands.runOnce(() -> m_visionThread.run()));
 
     operator
         .rightStick()
@@ -289,9 +291,6 @@ public class RobotContainer {
   }
 
   private void cameraSetUp() {
-
-    Thread m_visionThread;
-
     m_visionThread =
         new Thread(
             () -> {
