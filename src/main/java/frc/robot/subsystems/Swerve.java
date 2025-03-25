@@ -121,7 +121,7 @@ public class Swerve extends SubsystemBase {
 
   StructPublisher<Pose2d> orbitPosePublisher =
       NetworkTableInstance.getDefault()
-          .getStructTopic("Swerve/OrbitTarget", Pose2d.struct)
+          .getStructTopic("Swerve/OrbitTargetRotation", Pose2d.struct)
           .publish();
 
   private static final double MAX_SLOW_MODE = 0.3;
