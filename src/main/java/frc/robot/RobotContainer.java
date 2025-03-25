@@ -148,6 +148,7 @@ public class RobotContainer {
     driver.leftTrigger().onFalse(drive.disableSlowMode().withName("Disable Slow Mode"));
 
     driver.rightBumper().whileTrue(alignToRightCoral());
+    driver.rightBumper().onTrue(allocateAlignSide(() -> true));
 
     driver
         .rightBumper()
@@ -157,6 +158,7 @@ public class RobotContainer {
                 .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")));
 
     driver.leftBumper().whileTrue(alignToLeftCoral());
+    driver.leftBumper().onTrue(allocateAlignSide(() -> false));
 
     driver.rightTrigger().whileTrue(selectScoreRoutine());
     driver.rightTrigger().onFalse(removeAlgaeAndSlowMode());
