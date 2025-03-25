@@ -20,6 +20,7 @@ import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -254,19 +255,26 @@ public class RobotContainer {
 
   private BiConsumer<Double, Boolean> createDirectionalRumbleCallback() {
     return (xError, rumbleBoth) -> {
-      double leftIntensity = 0;
-      double rightIntensity = 0;
+      DoubleSupplier leftIntensity;
+      DoubleSupplier rightIntensity;
       // Max rumble at 5 cm
       double errorMagnitude = Math.min(1.0, Math.abs(xError) / 0.05);
 
+      // If rumble both is true then xError is just the value of the rumble
       if (rumbleBoth) {
-        rightIntensity = xError;
-        leftIntensity = xError;
+        rightIntensity = () -> xError;
+        leftIntensity = () -> xError;
       } else {
         if (xError > 0) {
-          rightIntensity = errorMagnitude;
-        } else if (xError < 0) {
-          leftIntensity = errorMagnitude;
+          rightIntensity = () -> errorMagnitude;
+          leftIntensity = () -> 0;
+        } else if (xError <= 0) {
+          rightIntensity = () -> 0;
+          leftIntensity = () -> errorMagnitude;
+        } else {
+          DriverStation.reportError("Driver rumble may be null", true);
+          rightIntensity = () -> errorMagnitude;
+          leftIntensity = () -> errorMagnitude;
         }
       }
 
