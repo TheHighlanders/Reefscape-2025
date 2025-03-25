@@ -9,13 +9,12 @@ import java.util.Map;
 
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
-import com.revrobotics.spark.SparkLimitSwitch;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
-import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -25,6 +24,7 @@ import frc.robot.subsystems.Elevator.ElevatorState;
 
 final class CoralScorerConstants {
 
+  static final int intakePhotoSensorDIOPin = 9;
   static final int motorID = 51;
   static final int currentLimit = 40;
   static final boolean inverted = false;
@@ -35,7 +35,7 @@ final class CoralScorerConstants {
     heightToSpeedMap.put(ElevatorState.HOME, 0.3);
     heightToSpeedMap.put(ElevatorState.L2_POSITION, 0.7);
     heightToSpeedMap.put(ElevatorState.L3_POSITION, 0.7);
-    heightToSpeedMap.put(ElevatorState.L4_POSITION, 0.3);
+    heightToSpeedMap.put(ElevatorState.L4_POSITION, 0.7);
   }
 }
 
@@ -43,17 +43,16 @@ public class CoralScorer extends SubsystemBase {
 
   SparkMax effector;
 
-  SparkLimitSwitch hasGamePiece;
+  private final DigitalInput photoSensor;
 
   public CoralScorer() {
+    photoSensor = new DigitalInput(CoralScorerConstants.intakePhotoSensorDIOPin);
     effector = new SparkMax(CoralScorerConstants.motorID, MotorType.kBrushless);
 
     SparkMaxConfig effectorConfig = effectorConfig();
 
     effector.configure(
         effectorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-    hasGamePiece = effector.getForwardLimitSwitch();
 
     this.setName("Coral");
   }
@@ -66,13 +65,15 @@ public class CoralScorer extends SubsystemBase {
 
     effectorConfig.smartCurrentLimit(CoralScorerConstants.currentLimit).idleMode(IdleMode.kCoast);
 
-    effectorConfig.limitSwitch.forwardLimitSwitchEnabled(false).reverseLimitSwitchEnabled(false);
-
     return effectorConfig;
   }
 
   @Override
   public void periodic() {}
+
+  public boolean hasGamePiece() {
+    return !photoSensor.get();
+  }
 
   public void effectorStop() {
     effector.set(0);
@@ -130,10 +131,5 @@ public class CoralScorer extends SubsystemBase {
     SmartDashboard.putNumber(
         "Coral/Deposit speed", CoralScorerConstants.heightToSpeedMap.get(height));
     return Commands.run(() -> this.effectorSpeedByHeight(height), this);
-  }
-
-  @Logged(name = "Has Game Piece")
-  public boolean hasGamePiece() {
-    return hasGamePiece.isPressed();
   }
 }
