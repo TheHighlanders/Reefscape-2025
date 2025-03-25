@@ -256,6 +256,8 @@ public class Align extends Command {
   public void end(boolean interrupted) {
     swerve.stopDrive();
 
+    SmartDashboard.putBoolean("Align/Has Tag on Finish", vision.hasTarget());
+
     finalXError = targetPose.getX() - swerve.getPose().getX();
 
     if (interrupted || Math.abs(finalXError) > 0.05) {
