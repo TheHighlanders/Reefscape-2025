@@ -30,16 +30,15 @@ import frc.robot.subsystems.Elevator.ElevatorState;
 
 final class CoralScorerConstants {
 
-  static final int intakeBeamBreakDIOPin = 9;
+  static final int intakeBeamBreakDIOPin = 0;
   static final int motorID = 51;
   static final int currentLimit = 40;
   static final boolean inverted = false;
 
-  static final double bitePosition = 2.0;
-  static final double coralLengh = 3;
-  static final double endThreshold = 2.5; // how far from the end to start going at specified speed
-
-  static final double effectorPCF = 1;
+  static final double bitePosition = 4;
+  static final double coralLengh = 12;
+  static final double endThreshold = 10; // how far from the end to start going at specified speed
+  static final double effectorPCF = 10 * 3 * Math.PI;
 
   static final double kP = 0.1;
   static final double kI = 0.0;
@@ -77,6 +76,7 @@ public class CoralScorer extends SubsystemBase {
         effectorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     encoder = effector.getEncoder();
+    coralController = effector.getClosedLoopController();
 
     hasCoral = new Trigger(this::hasGamePiece);
 
@@ -114,6 +114,7 @@ public class CoralScorer extends SubsystemBase {
   @Override
   public void periodic() {
     SmartDashboard.putNumber("Coral/EncoderPosition", encoder.getPosition());
+    SmartDashboard.putBoolean("Coral/Has Piece", hasGamePiece());
   }
 
   public void resetEncoder() {
@@ -150,8 +151,8 @@ public class CoralScorer extends SubsystemBase {
     coralController.setReference(dutyCycle, SparkBase.ControlType.kDutyCycle);
   }
 
-  public void setFullDutyCycle() {
-    setDutyCycle(1);
+  public void setBiteDutyCycle() {
+    setDutyCycle(0.5);
   }
 
   public void effectorSpeedByHeight(ElevatorState height) {
@@ -163,15 +164,13 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public boolean doesNotHaveGamePiece() {
-    return beamBreak.get();
+    return !hasGamePiece();
   }
 
-  public void effectorReverse() {
-    effector.set(-1.0);
-  }
+
 
   private Command runUntilGamePiece() {
-    return Commands.run(this::setFullDutyCycle, this)
+    return Commands.run(this::setBiteDutyCycle, this)
         .until(this::hasGamePiece)
         .withName("Run Until Game Piece");
   }
@@ -184,8 +183,9 @@ public class CoralScorer extends SubsystemBase {
     return Commands.sequence(
         runUntilGamePiece(),
         resetEncoderCMD(),
-        runToBitePosition(),
-        Commands.waitUntil(this::atBitePosition));
+        Commands.runOnce(this::effectorStop));
+        // runToBitePosition(),
+        // Commands.waitUntil(this::atBitePosition));
   }
 
   private Command runToEndThresh() {
@@ -198,7 +198,7 @@ public class CoralScorer extends SubsystemBase {
   }
 
   private Command deferDeposit(ElevatorState height) {
-    return Commands.sequence(runToEndThresh(), runAtElevatorHeight(height));
+    return Commands.sequence(/*runToEndThresh(),*/ runAtElevatorHeight(height));
   }
 
   public Command depositCMD(ElevatorState height) {
@@ -230,12 +230,20 @@ public class CoralScorer extends SubsystemBase {
         .withName("Slow Deposit Coral");
   }
 
+  public Command intakeCMD() {
+    return Commands.runOnce(this::effectorReverse);
+  }
+
   public void effectorStop() {
-    effector.set(0);
+    setPosition(encoder.getPosition());
   }
 
   public void effectorForward() {
     effector.set(1.0);
+  }
+
+  public void effectorReverse() {
+    effector.set(-1.0);
   }
 
   public void effectorSlowForward() {
