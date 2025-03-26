@@ -261,7 +261,7 @@ public class RobotContainer {
     return Commands.parallel(
             coralScorer.slowDepositCMD(),
             drive.driveRobotRelativeCMD(() -> 0, () -> direction, () -> 0))
-        .until(coralScorer::hasGamePiece);
+        .until(coralScorer::doesNotHaveGamePiece);
   }
 
   public Command alignToLeftCoral() {
