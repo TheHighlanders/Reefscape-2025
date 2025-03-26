@@ -207,6 +207,8 @@ public class RobotContainer {
 
     operator.back().and(manual).onTrue(Commands.runOnce(() -> cameraSetUp()));
 
+    operator.start().onTrue(drive.resetPoseToVision());
+
     operator
         .rightStick()
         .whileTrue(
