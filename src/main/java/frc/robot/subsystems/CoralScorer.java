@@ -82,7 +82,7 @@ public class CoralScorer extends SubsystemBase {
 
     this.setName("Coral");
 
-    hasCoral.onTrue(biteCMD());
+    // hasCoral.onTrue(biteCMD());
   }
 
   private SparkMaxConfig effectorConfig() {
@@ -144,7 +144,7 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public void setVelocity(double velocity) {
-    coralController.setReference(velocity, SparkBase.ControlType.kVelocity);
+    coralController.setReference(-velocity, SparkBase.ControlType.kVelocity);
   }
 
   public void setDutyCycle(double dutyCycle) {
@@ -156,7 +156,7 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public void effectorSpeedByHeight(ElevatorState height) {
-    this.setVelocity(CoralScorerConstants.heightToSpeedMap.get(height));
+    this.setDutyCycle(CoralScorerConstants.heightToSpeedMap.get(height));
   }
 
   public boolean hasGamePiece() {
@@ -166,8 +166,6 @@ public class CoralScorer extends SubsystemBase {
   public boolean doesNotHaveGamePiece() {
     return !hasGamePiece();
   }
-
-
 
   private Command runUntilGamePiece() {
     return Commands.run(this::setBiteDutyCycle, this)
@@ -202,7 +200,7 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public Command depositCMD(ElevatorState height) {
-    return Commands.defer(() -> deferDeposit(height), Set.of(this));
+    return Commands.defer(() -> deferDeposit(height).until(hasCoral.negate()).andThen(Commands.waitSeconds(0.1)), Set.of(this));
   }
 
   // Manual stuff

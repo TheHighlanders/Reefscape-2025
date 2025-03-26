@@ -189,7 +189,7 @@ public class Align extends Command {
     SmartDashboard.putNumber("Align/InitSpeedRot", currentSpeeds.omegaRadiansPerSecond);
 
     // Reset controllers with the current error and target of 0 (no error)
-    xController.reset(currentPose.getX(), currentSpeeds.vxMetersPerSecond);
+    xController.reset(currentPose.getX(), -currentSpeeds.vxMetersPerSecond);
     yController.reset(currentPose.getY(), -currentSpeeds.vyMetersPerSecond);
     rotController.reset(
         currentPose.getRotation().getRadians(), -currentSpeeds.omegaRadiansPerSecond);
