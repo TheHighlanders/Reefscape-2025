@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -74,8 +73,6 @@ public class RobotContainer {
   @Logged(name = "nextScoreHeight")
   ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
 
-  public Trigger hasGamePiece = new Trigger(coralScorer::hasGamePiece);
-
   @Logged(name = "Align")
   Command alignLogging =
       new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds);
@@ -139,7 +136,14 @@ public class RobotContainer {
     operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY).withName("Algae Control"));
     operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator().withName("Offset Elevator"));
 
-    operator.leftStick().whileTrue(coralScorer.manualIntakeCMD().withName("Manual Intake"));
+    operator
+        .leftStick()
+        .and(manual.negate())
+        .whileTrue(coralScorer.biteCMD().withName("Bite Coral"));
+    operator
+        .leftStick()
+        .and(manual)
+        .whileTrue(coralScorer.manualIntakeCMD().withName("Manual Intake"));
 
     driver.start().whileTrue(elevator.zeroElevator().withName("Zero Elevator"));
     driver.povRight().onTrue(drive.resetGyro().withName("Reset Gyro"));
@@ -191,7 +195,8 @@ public class RobotContainer {
 
     operator
         .rightBumper()
-        .onTrue(coralScorer.depositCMD().withTimeout(0.1).withName("Quick Deposit"));
+        .and(manual)
+        .onTrue(Commands.runOnce(coralScorer::effectorForward).withName("Quick Deposit"));
 
     operator
         .start()
@@ -256,7 +261,7 @@ public class RobotContainer {
     return Commands.parallel(
             coralScorer.slowDepositCMD(),
             drive.driveRobotRelativeCMD(() -> 0, () -> direction, () -> 0))
-        .until(hasGamePiece.negate());
+        .until(coralScorer::hasGamePiece);
   }
 
   public Command alignToLeftCoral() {
@@ -363,7 +368,8 @@ public class RobotContainer {
   }
 
   private Command autoScore() {
-    return Commands.sequence(elevator.runToNextHeight(), deposit());
+    return Commands.sequence(
+        elevator.runToNextHeight(), coralScorer.depositCMD(elevator.getSetpoint()));
   }
 
   public Trigger isTryingToDrive() {
@@ -371,12 +377,6 @@ public class RobotContainer {
         .axisMagnitudeGreaterThan(0, 0.05)
         .or(driver.axisMagnitudeGreaterThan(1, 0.05))
         .or(driver.axisMagnitudeGreaterThan(4, 0.05));
-  }
-
-  public Command deposit() {
-    return Commands.defer(
-            () -> coralScorer.depositByHeightCMD(elevator.getSetpoint()), Set.of(coralScorer))
-        .until(hasGamePiece.negate());
   }
 
   public Command removeAlgaeAndSlowMode() {
