@@ -120,9 +120,7 @@ public class Swerve extends SubsystemBase {
   }
 
   StructPublisher<Pose2d> orbitPosePublisher =
-      NetworkTableInstance.getDefault()
-          .getStructTopic("Swerve/Orbit", Pose2d.struct)
-          .publish();
+      NetworkTableInstance.getDefault().getStructTopic("Swerve/Orbit", Pose2d.struct).publish();
 
   private static final double MAX_SLOW_MODE = 0.3;
   private static final double MICROS_SECONDS_CONVERSION = Math.pow(10, -6);
@@ -376,6 +374,15 @@ public class Swerve extends SubsystemBase {
 
   public SwerveModulePosition[] getModulePostions() {
     return Stream.of(modules).map(Module::getPosition).toArray(SwerveModulePosition[]::new);
+  }
+
+  public Command resetPoseToVision() {
+    return Commands.runOnce(
+        () -> {
+          if (vision.getEstimatedRobotPose().isPresent()) {
+            poseEst.resetPose(vision.getEstimatedRobotPose().get().estimatedPose.toPose2d());
+          }
+        });
   }
 
   @Logged(name = "Swerve Module States", importance = Importance.INFO)

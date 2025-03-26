@@ -57,7 +57,7 @@ final class VisionConstants {
           new Translation3d(0.1708, 0.30731, 0.2307),
           new Rotation3d(
               Units.degreesToRadians(0),
-              Units.degreesToRadians(-11.5), //Corrected using CAD 2025-03-26 AH
+              Units.degreesToRadians(-11.5), // Corrected using CAD 2025-03-26 AH
               Units.degreesToRadians(30)));
 
   static final int[] reefTagIds = {
