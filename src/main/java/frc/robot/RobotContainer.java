@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -74,6 +73,10 @@ public class RobotContainer {
   @Logged(name = "nextScoreHeight")
   ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
 
+  @Logged(name = "Align")
+  Command alignLogging =
+      new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds);
+
   public RobotContainer() {
 
     chooser = new AutoChooser();
@@ -133,7 +136,14 @@ public class RobotContainer {
     operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY).withName("Algae Control"));
     operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator().withName("Offset Elevator"));
 
-    operator.leftStick().whileTrue(coralScorer.manualIntakeCMD().withName("Manual Intake"));
+    operator
+        .leftStick()
+        .and(manual.negate())
+        .whileTrue(coralScorer.biteCMD().withName("Bite Coral"));
+    operator
+        .leftStick()
+        .and(manual)
+        .whileTrue(coralScorer.manualIntakeCMD().withName("Manual Intake"));
 
     driver.start().whileTrue(elevator.zeroElevator().withName("Zero Elevator"));
     driver.povRight().onTrue(drive.resetGyro().withName("Reset Gyro"));
@@ -185,7 +195,8 @@ public class RobotContainer {
 
     operator
         .rightBumper()
-        .onTrue(coralScorer.depositCMD().withTimeout(0.1).withName("Quick Deposit"));
+        .and(manual)
+        .onTrue(Commands.runOnce(coralScorer::effectorForward).withName("Quick Deposit"));
 
     operator
         .start()
@@ -237,22 +248,27 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    return new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds)
-        .withName("Align to Right Coral");
+    alignLogging =
+        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds)
+            .withName("Align to Right Coral");
+    return alignLogging;
   }
 
-  public Command scoreL1(boolean goRight, BiConsumer<Double, Boolean> rumble) {
-    DoubleSupplier direction = () -> goRight ? 0.5 : -0.5;
-    rumble.accept(direction.getAsDouble(), false);
-    SmartDashboard.putNumber("L1 direction", direction.getAsDouble());
+  public Command scoreL1(BooleanSupplier goRight, BiConsumer<Double, Boolean> rumble) {
+    double direction = goRight.getAsBoolean() ? 0.5 : -0.5;
+    rumble.accept(direction, false);
+    SmartDashboard.putNumber("L1 direction", direction);
     return Commands.parallel(
-            coralScorer.slowDepositCMD(), drive.driveRobotRelativeCMD(() -> 0, direction, () -> 0))
-        .withTimeout(1.5);
+            coralScorer.slowDepositCMD(),
+            drive.driveRobotRelativeCMD(() -> 0, () -> direction, () -> 0))
+        .until(coralScorer::doesNotHaveGamePiece);
   }
 
   public Command alignToLeftCoral() {
-    return new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds)
-        .withName("Align to Left Coral");
+    alignLogging =
+        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds)
+            .withName("Align to Left Coral");
+    return alignLogging;
   }
 
   private BiConsumer<Double, Boolean> createDirectionalRumbleCallback() {
@@ -346,15 +362,14 @@ public class RobotContainer {
   public Command selectScoreRoutine() {
     SmartDashboard.putBoolean("L1 last align side", lastAlignSide.getAsBoolean());
     return Commands.either(
-        Commands.defer(
-            () -> scoreL1(lastAlignSide.getAsBoolean(), createDirectionalRumbleCallback()),
-            Set.of(drive, coralScorer)),
+        scoreL1(lastAlignSide, createDirectionalRumbleCallback()),
         autoScore(),
         elevator::nextHeightIsHome);
   }
 
   private Command autoScore() {
-    return Commands.sequence(elevator.runToNextHeight(), deposit());
+    return Commands.sequence(
+        elevator.runToNextHeight(), coralScorer.depositCMD(elevator.getSetpoint()));
   }
 
   public Trigger isTryingToDrive() {
@@ -362,11 +377,6 @@ public class RobotContainer {
         .axisMagnitudeGreaterThan(0, 0.05)
         .or(driver.axisMagnitudeGreaterThan(1, 0.05))
         .or(driver.axisMagnitudeGreaterThan(4, 0.05));
-  }
-
-  public Command deposit() {
-    return Commands.defer(
-        () -> coralScorer.depositByHeightCMD(elevator.getSetpoint()), Set.of(coralScorer));
   }
 
   public Command removeAlgaeAndSlowMode() {
