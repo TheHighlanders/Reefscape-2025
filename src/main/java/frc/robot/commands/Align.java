@@ -184,6 +184,10 @@ public class Align extends Command {
             swerve.kinematics.toChassisSpeeds(swerve.getModuleStates()),
             swerve.getPose().getRotation());
 
+    SmartDashboard.putNumber("Align/InitSpeedX", currentSpeeds.vxMetersPerSecond);
+    SmartDashboard.putNumber("Align/InitSpeedY", currentSpeeds.vyMetersPerSecond);
+    SmartDashboard.putNumber("Align/InitSpeedRot", currentSpeeds.omegaRadiansPerSecond);
+
     // Reset controllers with the current error and target of 0 (no error)
     xController.reset(currentPose.getX(), currentSpeeds.vxMetersPerSecond);
     yController.reset(currentPose.getY(), -currentSpeeds.vyMetersPerSecond);
@@ -233,7 +237,7 @@ public class Align extends Command {
         rotController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
-    if (Constants.devMode) {
+    if (Constants.alignDevMode) {
       SmartDashboard.putNumber("ReefAlign/XError", xError);
       SmartDashboard.putNumber("ReefAlign/YError", yError);
       SmartDashboard.putNumber("ReefAlign/RotError", rotError);

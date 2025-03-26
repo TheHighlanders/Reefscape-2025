@@ -93,9 +93,9 @@ final class SwerveConstants {
   static double rotateI = 0;
   static double rotateD = 0.6;
 
-  static double orbitP = 0;
+  static double orbitP = 1.5;
   static double orbitI = 0;
-  static double orbitD = 0;
+  static double orbitD = 0.6;
 
   static double preAutoWheelTolerance = 2.5; // deg
 
@@ -121,7 +121,7 @@ public class Swerve extends SubsystemBase {
 
   StructPublisher<Pose2d> orbitPosePublisher =
       NetworkTableInstance.getDefault()
-          .getStructTopic("Swerve/OrbitTargetRotation", Pose2d.struct)
+          .getStructTopic("Swerve/Orbit", Pose2d.struct)
           .publish();
 
   private static final double MAX_SLOW_MODE = 0.3;
@@ -455,7 +455,7 @@ public class Swerve extends SubsystemBase {
                       rotationTarget.getAngle().getRadians()));
             },
             this)
-        .withName("Swerve Drive Command");
+        .withName("Orbit Drive Command");
   }
 
   public Command readAngleEncoders() {
