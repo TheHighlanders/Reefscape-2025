@@ -380,7 +380,7 @@ public class Swerve extends SubsystemBase {
     return Commands.runOnce(
         () -> {
           if (vision.getEstimatedRobotPose().isPresent()) {
-            poseEst.resetPose(vision.getEstimatedRobotPose().get().estimatedPose.toPose2d());
+            poseEst.resetPosition(getGyroAngle(), getModulePostions(), vision.getEstimatedRobotPose().get().estimatedPose.toPose2d());
           }
         });
   }
