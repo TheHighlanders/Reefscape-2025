@@ -73,8 +73,11 @@ public class RobotContainer {
   ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
 
   @Logged(name = "Align")
-  Command alignLogging =
-      new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds);
+  Command alignFinal =
+      new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds, false);
+
+  Command alignApproach =
+      new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds, false);
 
   public RobotContainer() {
 
@@ -246,10 +249,15 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    alignLogging =
-        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds)
-            .withName("Align to Right Coral");
-    return alignLogging;
+    alignFinal =
+        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds, true)
+            .withName("Align to Right Coral Final");
+
+    alignApproach =
+        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds, false)
+            .withName("Align to Right Coral Approach");
+
+    return Commands.sequence(alignApproach, alignFinal);
   }
 
   public Command scoreL1() {
@@ -264,10 +272,14 @@ public class RobotContainer {
   }
 
   public Command alignToLeftCoral() {
-    alignLogging =
-        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds)
-            .withName("Align to Left Coral");
-    return alignLogging;
+    alignFinal =
+        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds, true)
+            .withName("Align to Left Coral Final");
+    alignApproach =
+        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds, false)
+            .withName("Align to Left Coral Approach");
+
+    return Commands.sequence(alignApproach, alignFinal);
   }
 
   private BiConsumer<Double, Boolean> createDirectionalRumbleCallback() {

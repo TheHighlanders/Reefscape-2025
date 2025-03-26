@@ -170,6 +170,7 @@ public class CoralScorer extends SubsystemBase {
   private Command runUntilGamePiece() {
     return Commands.run(this::setBiteDutyCycle, this)
         .until(this::hasGamePiece)
+        .andThen(() -> effectorStop())
         .withName("Run Until Game Piece");
   }
 
@@ -178,8 +179,7 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public Command biteCMD() {
-    return Commands.sequence(
-        runUntilGamePiece(), resetEncoderCMD(), Commands.runOnce(this::effectorStop));
+    return Commands.sequence(runUntilGamePiece());
     // runToBitePosition(),
     // Commands.waitUntil(this::atBitePosition));
   }

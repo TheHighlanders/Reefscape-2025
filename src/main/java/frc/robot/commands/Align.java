@@ -15,9 +15,11 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.LEDPattern;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -49,22 +51,22 @@ public class Align extends Command {
     static final double velocityTolerance = 0.1;
 
     // Rotation tolerance (radians)
-    static final double rotationTolerance = 0.03;
+    static final double rotationTolerance = Units.degreesToRadians(5);
 
     // Rotation velocity tolerance (rad/s)
     static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
-    static final double maxApproachSpeed = 2.5;
-    static final double maxApproachAccel = 5;
+    static final double maxApproachSpeed = 1;
+    static final double maxApproachAccel = 2;
 
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 5;
     static final double maxRotationAccel = 5;
 
-    static final double translateP = 5;
-    static final double translateI = 0.1;
-    static final double translateD = 0;
+    static double translateP = 8;
+    static double translateI = 0.01;
+    static double translateD = 0;
 
     static final double rotateP = 3;
     static final double rotateI = 0;
@@ -106,6 +108,8 @@ public class Align extends Command {
 
   Vision vision;
 
+  Timer timer = new Timer();
+
   StructPublisher<Pose2d> targetPosePublisher =
       NetworkTableInstance.getDefault()
           .getStructTopic("Vision/AlignTarget", Pose2d.struct)
@@ -135,6 +139,8 @@ public class Align extends Command {
   @Logged(name = "finalYError", importance = Importance.INFO)
   private double finalYError = 0;
 
+  private boolean onReef = false;
+
   /**
    * Creates a command to align with coral of a reef tag.
    *
@@ -148,34 +154,52 @@ public class Align extends Command {
       Vision vision,
       BooleanSupplier targetRightCoralSupplier,
       BiConsumer<Double, Boolean> errorCallback,
-      LEDs leds) {
+      LEDs leds,
+      boolean onReef) {
     this.swerve = swerve;
     this.vision = vision;
     this.leds = leds;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
     this.errorCallback = errorCallback;
+    this.onReef = onReef;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
 
     addRequirements(swerve);
+
+    SmartDashboard.putNumber("Align/TranslateP", AlignConstants.translateP);
   }
 
   @Override
   public void initialize() {
     Pose2d currentPose = swerve.getPose();
 
+    if (Align.canAlign(swerve, vision)) {
+      this.cancel();
+    }
+
+    AlignConstants.translateP =
+        SmartDashboard.getNumber("Align/Translate P", AlignConstants.translateP);
+
     leds.runPattern(LEDPattern.solid(Color.kYellow)); // one hundred yellow
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
+
     // Set tolerances for velocity-based completion
-    xController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
-    yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
-    rotController.setTolerance(
-        AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
+    if (onReef) {
+      xController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
+      yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
+      rotController.setTolerance(
+          AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
+    } else {
+      xController.setTolerance(0.1, 0.1);
+      yController.setTolerance(0.1, 0.1);
+      rotController.setTolerance(Units.degreesToRadians(5), Units.degreesToRadians(10));
+    }
 
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
 
-    calculateTargetPose();
+    calculateTargetPose(onReef);
     targetPosePublisher.set(targetPose);
 
     // Get current robot pose
@@ -195,7 +219,7 @@ public class Align extends Command {
         currentPose.getRotation().getRadians(), -currentSpeeds.omegaRadiansPerSecond);
   }
 
-  private void calculateTargetPose() {
+  private void calculateTargetPose(boolean onReef) {
     double lateralOffset =
         targetRightCoral ? AlignConstants.coralRightOffset : AlignConstants.coralLeftOffset;
 
@@ -203,8 +227,14 @@ public class Align extends Command {
         new Translation2d(0, lateralOffset + AlignConstants.ejectOffset);
     lateralOffsetTranslation = lateralOffsetTranslation.rotateBy(closestReefTagPose.getRotation());
 
+    Translation2d approachOffset = new Translation2d(0.65, 0);
+
+    if (onReef) {
+      approachOffset = new Translation2d(-AlignConstants.robotCenterToFrontDistance, 0);
+    }
+
     // Calculate the position that places the front bumper at the tag face
-    Translation2d approachOffset = new Translation2d(-AlignConstants.robotCenterToFrontDistance, 0);
+
     approachOffset = approachOffset.rotateBy(closestReefTagPose.getRotation());
 
     // Final target pose: tag + lateral offset + approach offset, facing the tag
@@ -283,9 +313,15 @@ public class Align extends Command {
       SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
     }
 
+    if ((!xController.atGoal() || !yController.atGoal() || !rotController.atGoal())
+        || !vision.hasTarget()) {
+      timer.restart();
+    }
+
     // Check if velocity is close to zero rather than position at setpoint
-    return (xController.atGoal() && yController.atGoal() && rotController.atGoal());
-    // && rotController.getVelocityError() < AlignConstants.rotationVelocityTolerance;
+    return (timer.hasElapsed(0.5));
+    // && rotController.getVelocityError() <
+    // AlignConstants.rotationVelocityTolerance;
   }
 
   public static boolean canAlign(Swerve swerve, Vision vision) {
