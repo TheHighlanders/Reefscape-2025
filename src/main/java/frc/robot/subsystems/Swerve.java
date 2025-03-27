@@ -223,7 +223,7 @@ public class Swerve extends SubsystemBase {
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     orbitController.enableContinuousInput(-Math.PI, Math.PI);
 
-    orbitController.setTolerance(Units.degreesToRadians(10));
+    orbitController.setTolerance(Units.degreesToRadians(5));
 
     if (Constants.devMode) {
       // Only send lots of data via NT if in devMode
