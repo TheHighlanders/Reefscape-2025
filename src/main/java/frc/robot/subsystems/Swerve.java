@@ -93,7 +93,7 @@ final class SwerveConstants {
   static double rotateI = 0;
   static double rotateD = 0.6;
 
-  static double orbitP = 0.2;
+  static double orbitP = 0.75;
   static double orbitI = 0;
   static double orbitD = 0;
 
@@ -223,7 +223,7 @@ public class Swerve extends SubsystemBase {
     headingController.enableContinuousInput(-Math.PI, Math.PI);
     orbitController.enableContinuousInput(-Math.PI, Math.PI);
 
-    // orbitController.setTolerance(Units.degreesToRadians(60));
+    orbitController.setTolerance(Units.degreesToRadians(10));
 
     if (Constants.devMode) {
       // Only send lots of data via NT if in devMode
@@ -454,9 +454,10 @@ public class Swerve extends SubsystemBase {
             () -> {
               rotationTarget =
                   new Rotation2d(
-                      Math.atan2(
-                          reefPose().getY() - getPose().getY(),
-                          reefPose().getX() - getPose().getX()));
+                          Math.atan2(
+                              reefPose().getY() - getPose().getY(),
+                              reefPose().getX() - getPose().getX()))
+                      .plus(Rotation2d.fromDegrees(-15));
 
               orbitPosePublisher.accept(
                   new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
