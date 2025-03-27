@@ -136,10 +136,7 @@ public class RobotContainer {
     operator.leftBumper().onTrue(elevator.algaeCMD(operator::getRightY).withName("Algae Control"));
     operator.leftTrigger(0.5).whileTrue(elevator.offsetElevator().withName("Offset Elevator"));
 
-    operator
-        .leftStick()
-        .and(manual.negate())
-        .whileTrue(coralScorer.biteCMD().withName("Bite Coral"));
+    operator.leftStick().and(manual.negate()).onTrue(coralScorer.biteCMD().withName("Bite Coral"));
     operator
         .leftStick()
         .and(manual)

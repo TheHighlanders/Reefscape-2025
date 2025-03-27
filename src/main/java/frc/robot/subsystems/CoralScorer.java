@@ -179,11 +179,9 @@ public class CoralScorer extends SubsystemBase {
 
   public Command biteCMD() {
     return Commands.sequence(
-        runUntilGamePiece(),
-        resetEncoderCMD(),
-        Commands.runOnce(this::effectorStop));
-        // runToBitePosition(),
-        // Commands.waitUntil(this::atBitePosition));
+        runUntilGamePiece(), resetEncoderCMD(), Commands.runOnce(this::effectorStop));
+    // runToBitePosition(),
+    // Commands.waitUntil(this::atBitePosition));
   }
 
   private Command runToEndThresh() {
@@ -200,7 +198,9 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public Command depositCMD(ElevatorState height) {
-    return Commands.defer(() -> deferDeposit(height).until(hasCoral.negate()).andThen(Commands.waitSeconds(0.1)), Set.of(this));
+    return Commands.defer(
+        () -> deferDeposit(height).until(hasCoral.negate()).andThen(Commands.waitSeconds(0.1)),
+        Set.of(this));
   }
 
   // Manual stuff

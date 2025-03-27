@@ -40,12 +40,12 @@ class ElevatorConstants {
 
   // 2 for carriage movement relative to 1st stage, also includes DP, and gear
   // ratio
-  static final double elevPCF = 2 * 1.751 / 9.0d * Math.PI;
+  static final double elevPCF = 2 * 1.685 / 9.0d * Math.PI;
 
   static final double homeTarget = 5; // Position before autolanding
   static final double l2Target = 11.5;
   static final double l3Target = 28;
-  static final double l4Target = 52.125;
+  static final double l4Target = 53.125;
   static final double algaeLow = 7;
   static final double algaeHigh = 25;
 

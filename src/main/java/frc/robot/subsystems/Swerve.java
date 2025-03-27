@@ -93,9 +93,9 @@ final class SwerveConstants {
   static double rotateI = 0;
   static double rotateD = 0.6;
 
-  static double orbitP = 1.5;
+  static double orbitP = 0.05;
   static double orbitI = 0;
-  static double orbitD = 0.6;
+  static double orbitD = 0;
 
   static double preAutoWheelTolerance = 2.5; // deg
 
@@ -164,6 +164,9 @@ public class Swerve extends SubsystemBase {
   @Logged(name = "orbitY_PID_Out")
   private double orbitY_PID_Out = 0;
 
+  @Logged(name = "orbitTheta_PID_Out")
+  private double orbitControllerOutput;
+
   private final SysIdRoutine sysId;
 
   Field2d field = new Field2d();
@@ -175,7 +178,7 @@ public class Swerve extends SubsystemBase {
   private double lastEstTimestamp = 0.0;
 
   @Logged(name = "rotationTarget")
-  Translation2d rotationTarget = new Translation2d();
+  Rotation2d rotationTarget = new Rotation2d();
 
   /** Creates a new Swerve. */
   public Swerve(Vision vision, DoubleSupplier elevatorHeight) {
@@ -218,7 +221,9 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putData("Swerve/Field", field);
 
     headingController.enableContinuousInput(-Math.PI, Math.PI);
-    orbitController.enableContinuousInput(-Math.PI, Math.PI);
+    orbitController.enableContinuousInput(0, Math.PI * 2);
+
+    // orbitController.setTolerance(Units.degreesToRadians(60));
 
     if (Constants.devMode) {
       // Only send lots of data via NT if in devMode
@@ -251,8 +256,6 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "ElevatorSlowCoefficient", getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble()));
     }
-
-    headingController.enableContinuousInput(-Math.PI, Math.PI);
 
     sysId =
         new SysIdRoutine(
@@ -449,17 +452,35 @@ public class Swerve extends SubsystemBase {
   public Command driveOrbit(DoubleSupplier x, DoubleSupplier y) {
     return Commands.run(
             () -> {
-              rotationTarget = reefPose().minus(getPose()).getTranslation();
+              rotationTarget =
+                  new Rotation2d(
+                      Math.atan2(
+                          reefPose().getY() - getPose().getY(),
+                          reefPose().getX() - getPose().getX()));
+
               orbitPosePublisher.accept(
-                  new Pose2d(getPose().getX(), getPose().getY(), rotationTarget.getAngle()));
+                  new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
               orbitX_PID_Out = x.getAsDouble();
               orbitY_PID_Out = y.getAsDouble();
+
+              if (orbitController.atSetpoint()) {
+                orbitControllerOutput = 0;
+              } else {
+                orbitControllerOutput =
+                    orbitController.calculate(
+                        getPose().getRotation().plus(Rotation2d.k180deg).getRadians(),
+                        rotationTarget.getRadians());
+              }
+
+              SmartDashboard.putNumber("Orbit/Error", orbitController.getError());
+              SmartDashboard.putNumber(
+                  "Orbit/State", getPose().getRotation().plus(Rotation2d.k180deg).getRadians());
+              SmartDashboard.putNumber("Orbit/Setpoint", rotationTarget.getRadians());
+
               drive(
                   squaredCurve(orbitX_PID_Out),
                   squaredCurve(orbitY_PID_Out),
-                  orbitController.calculate(
-                      getPose().getRotation().getRadians(),
-                      rotationTarget.getAngle().getRadians()));
+                  orbitControllerOutput);
             },
             this)
         .withName("Orbit Drive Command");
