@@ -319,7 +319,7 @@ public class Align extends Command {
     }
 
     // Check if velocity is close to zero rather than position at setpoint
-    return (timer.hasElapsed(0.5));
+    return timer.advanceIfElapsed(0.1);
     // && rotController.getVelocityError() <
     // AlignConstants.rotationVelocityTolerance;
   }
