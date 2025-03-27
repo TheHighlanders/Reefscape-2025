@@ -5,7 +5,6 @@
 package frc.robot;
 
 import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import org.opencv.core.Mat;
@@ -66,7 +65,7 @@ public class RobotContainer {
   private Pose2d lastAlignedPose = new Pose2d();
 
   @Logged(name = "lastAlignSide")
-  private BooleanSupplier lastAlignSide = () -> true; // RIght -> true
+  private boolean lastAlignSide = true; // RIght -> true
 
   static final double ALIGN_THRESH = 1.0; // Meters till invalid realignment
 
@@ -155,7 +154,7 @@ public class RobotContainer {
     driver.leftTrigger().onFalse(drive.disableSlowMode().withName("Disable Slow Mode"));
 
     driver.rightBumper().whileTrue(alignToRightCoral());
-    driver.rightBumper().onTrue(allocateAlignSide(() -> true));
+    driver.rightBumper().onTrue(Commands.runOnce(() -> this.lastAlignSide = true));
 
     driver
         .rightBumper()
@@ -165,7 +164,7 @@ public class RobotContainer {
                 .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")));
 
     driver.leftBumper().whileTrue(alignToLeftCoral());
-    driver.leftBumper().onTrue(allocateAlignSide(() -> false));
+    driver.leftBumper().onTrue(Commands.runOnce(() -> this.lastAlignSide = false));
 
     driver.rightTrigger().whileTrue(selectScoreRoutine());
     driver.rightTrigger().onFalse(removeAlgaeAndSlowMode());
@@ -253,14 +252,15 @@ public class RobotContainer {
     return alignLogging;
   }
 
-  public Command scoreL1(BooleanSupplier goRight, BiConsumer<Double, Boolean> rumble) {
-    double direction = goRight.getAsBoolean() ? 0.5 : -0.5;
-    rumble.accept(direction, false);
-    SmartDashboard.putNumber("L1 direction", direction);
+  public Command scoreL1() {
     return Commands.parallel(
             coralScorer.slowDepositCMD(),
-            drive.driveRobotRelativeCMD(() -> 0, () -> direction, () -> 0))
+            drive.driveRobotRelativeCMD(() -> 0, () -> getL1Direction(), () -> 0))
         .until(coralScorer::doesNotHaveGamePiece);
+  }
+
+  public double getL1Direction() {
+    return lastAlignSide ? 0.5 : 0.5;
   }
 
   public Command alignToLeftCoral() {
@@ -354,16 +354,9 @@ public class RobotContainer {
     return removeAlgae(ElevatorState.ALGAEHIGH);
   }
 
-  public Command allocateAlignSide(BooleanSupplier rightSide) {
-    return Commands.runOnce(() -> lastAlignSide = rightSide);
-  }
-
   public Command selectScoreRoutine() {
-    SmartDashboard.putBoolean("L1 last align side", lastAlignSide.getAsBoolean());
-    return Commands.either(
-        scoreL1(lastAlignSide, createDirectionalRumbleCallback()),
-        autoScore(),
-        elevator::nextHeightIsHome);
+    SmartDashboard.putBoolean("L1 last align side", lastAlignSide);
+    return Commands.either(scoreL1(), autoScore(), elevator::nextHeightIsHome);
   }
 
   private Command autoScore() {

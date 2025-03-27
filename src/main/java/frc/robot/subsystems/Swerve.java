@@ -93,7 +93,7 @@ final class SwerveConstants {
   static double rotateI = 0;
   static double rotateD = 0.6;
 
-  static double orbitP = 0.05;
+  static double orbitP = 0.2;
   static double orbitI = 0;
   static double orbitD = 0;
 
@@ -221,7 +221,7 @@ public class Swerve extends SubsystemBase {
     SmartDashboard.putData("Swerve/Field", field);
 
     headingController.enableContinuousInput(-Math.PI, Math.PI);
-    orbitController.enableContinuousInput(0, Math.PI * 2);
+    orbitController.enableContinuousInput(-Math.PI, Math.PI);
 
     // orbitController.setTolerance(Units.degreesToRadians(60));
 
@@ -463,24 +463,16 @@ public class Swerve extends SubsystemBase {
               orbitX_PID_Out = x.getAsDouble();
               orbitY_PID_Out = y.getAsDouble();
 
-              if (orbitController.atSetpoint()) {
-                orbitControllerOutput = 0;
-              } else {
-                orbitControllerOutput =
-                    orbitController.calculate(
-                        getPose().getRotation().plus(Rotation2d.k180deg).getRadians(),
-                        rotationTarget.getRadians());
-              }
+              double radiansOff =
+                  getPose().getRotation().getRadians() - rotationTarget.getRadians();
 
-              SmartDashboard.putNumber("Orbit/Error", orbitController.getError());
-              SmartDashboard.putNumber(
-                  "Orbit/State", getPose().getRotation().plus(Rotation2d.k180deg).getRadians());
-              SmartDashboard.putNumber("Orbit/Setpoint", rotationTarget.getRadians());
+              orbitControllerOutput = orbitController.calculate(radiansOff, 0);
+              SmartDashboard.putNumber("Orbit/Error", radiansOff);
 
               drive(
                   squaredCurve(orbitX_PID_Out),
                   squaredCurve(orbitY_PID_Out),
-                  orbitControllerOutput);
+                  -orbitControllerOutput);
             },
             this)
         .withName("Orbit Drive Command");
