@@ -19,7 +19,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.LEDPattern;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -111,7 +110,7 @@ public class Align extends Command {
 
   Vision vision;
 
-  Timer timer = new Timer();
+  // Timer timer = new Timer();
 
   StructPublisher<Pose2d> targetPosePublisher =
       NetworkTableInstance.getDefault()
@@ -320,10 +319,10 @@ public class Align extends Command {
       SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
     }
 
-    if ((!xController.atGoal() || !yController.atGoal() || !rotController.atGoal())
-        || !vision.hasTarget()) {
-      timer.restart();
-    }
+    // if ((!xController.atGoal() || !yController.atGoal() || !rotController.atGoal())
+    //     || !vision.hasTarget()) {
+    //   timer.restart();
+    // }
 
     // Check if velocity is close to zero rather than position at setpoint
     return xController.atGoal() && yController.atGoal() && rotController.atGoal();

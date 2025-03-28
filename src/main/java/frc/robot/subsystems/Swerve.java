@@ -891,6 +891,11 @@ public class Swerve extends SubsystemBase {
     return Commands.runOnce(() -> current = SwerveState.LINEUP).withName("Enable Slow Mode");
   }
 
+  public Command toggleSlowMode() {
+    return Commands.startEnd(() -> current = SwerveState.LINEUP, () -> current = SwerveState.NORMAL)
+        .withName("Enable Slow Mode");
+  }
+
   public Command disableSlowMode() {
     return Commands.runOnce(() -> current = SwerveState.NORMAL).withName("Disable Slow Mode");
   }
