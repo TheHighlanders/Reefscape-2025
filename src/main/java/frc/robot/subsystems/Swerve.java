@@ -93,7 +93,7 @@ final class SwerveConstants {
   static double rotateI = 0;
   static double rotateD = 0.6;
 
-  static double orbitP = 0.75;
+  static double orbitP = 0.9; // 0.75
   static double orbitI = 0;
   static double orbitD = 0;
 
