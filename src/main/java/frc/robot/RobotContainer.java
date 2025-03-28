@@ -264,7 +264,7 @@ public class RobotContainer {
   }
 
   @Logged(name = "L1 timer")
-  public static double getL1TimeElapsed() {
+  public double getL1TimeElapsed() {
     return l1Timer.get();
   }
 
