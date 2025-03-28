@@ -45,7 +45,7 @@ public class Align extends Command {
     static final double ejectOffset = 0.27;
 
     // Position tolerance (meters)
-    static final double positionTolerance = 0.05;
+    static final double positionTolerance = 0.025;
 
     // Velocity tolerance (meters/s)
     static final double velocityTolerance = 0.1;
@@ -58,18 +58,18 @@ public class Align extends Command {
 
     // Maximum approach speed (m/s)
     static final double maxApproachSpeed = 1;
-    static final double maxApproachAccel = 2;
+    static final double maxApproachAccel = 1;
 
     // Maximum rotation speed (rad/s)
-    static final double maxRotationSpeed = 5;
-    static final double maxRotationAccel = 5;
+    static final double maxRotationSpeed = 1;
+    static final double maxRotationAccel = 2;
 
-    static double translateP = 8;
-    static double translateI = 0.01;
-    static double translateD = 0;
+    static double translateP = 5;
+    static double translateI = 0;
+    static double translateD = 0; // 0
 
     static final double rotateP = 3;
-    static final double rotateI = 0;
+    static final double rotateI = 0.01; // 0
     static final double rotateD = 0;
   }
 
@@ -164,6 +164,7 @@ public class Align extends Command {
     this.onReef = onReef;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
+    rotController.setIZone(5);
 
     addRequirements(swerve);
 
@@ -192,9 +193,9 @@ public class Align extends Command {
       rotController.setTolerance(
           AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
     } else {
-      xController.setTolerance(0.1, 0.1);
-      yController.setTolerance(0.1, 0.1);
-      rotController.setTolerance(Units.degreesToRadians(5), Units.degreesToRadians(10));
+      xController.setTolerance(0.4, 0.1);
+      yController.setTolerance(0.4, 0.1);
+      rotController.setTolerance(Units.degreesToRadians(10), Units.degreesToRadians(10));
     }
 
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
@@ -319,7 +320,7 @@ public class Align extends Command {
     }
 
     // Check if velocity is close to zero rather than position at setpoint
-    return timer.advanceIfElapsed(0.1);
+    return xController.atGoal() && yController.atGoal() && rotController.atGoal();
     // && rotController.getVelocityError() <
     // AlignConstants.rotationVelocityTolerance;
   }
