@@ -46,12 +46,15 @@ public class Align extends Command {
 
     // Position tolerance (meters)
     static final double positionTolerance = 0.025;
+    static final double preAlignPositionTolerance = 0.4;
 
     // Velocity tolerance (meters/s)
     static final double velocityTolerance = 0.1;
+    static final double preAlignVelocityTolerance = 0.1;
 
     // Rotation tolerance (radians)
     static final double rotationTolerance = Units.degreesToRadians(5);
+    static final double preAlignRotationTolerance = Units.degreesToRadians(5);
 
     // Rotation velocity tolerance (rad/s)
     static final double rotationVelocityTolerance = 0.05;
@@ -193,9 +196,12 @@ public class Align extends Command {
       rotController.setTolerance(
           AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
     } else {
-      xController.setTolerance(0.4, 0.1);
-      yController.setTolerance(0.4, 0.1);
-      rotController.setTolerance(Units.degreesToRadians(10), Units.degreesToRadians(10));
+      xController.setTolerance(
+          AlignConstants.preAlignPositionTolerance, AlignConstants.preAlignVelocityTolerance);
+      yController.setTolerance(
+          AlignConstants.preAlignPositionTolerance, AlignConstants.preAlignVelocityTolerance);
+      rotController.setTolerance(
+          AlignConstants.preAlignRotationTolerance, Units.degreesToRadians(10));
     }
 
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
