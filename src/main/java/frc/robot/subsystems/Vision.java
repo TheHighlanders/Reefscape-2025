@@ -48,17 +48,15 @@ final class VisionConstants {
       new Transform3d(
           new Translation3d(0.20446, -0.12066, 0.40855),
           new Rotation3d(
-              Units.degreesToRadians(0),
-              Units.degreesToRadians(25.3517097711),
-              Units.degreesToRadians(20)));
+              Units.degreesToRadians(0), Units.degreesToRadians(20), Units.degreesToRadians(35)));
 
   static final Transform3d reefLeft =
       new Transform3d(
-          new Translation3d(0.1708, 0.30731, 0.2307),
+          new Translation3d(0.17166, 0.30565, 0.2561),
           new Rotation3d(
               Units.degreesToRadians(0),
-              Units.degreesToRadians(-11.5), // Corrected using CAD 2025-03-26 AH
-              Units.degreesToRadians(30)));
+              Units.degreesToRadians(-8), // Corrected using CAD 2025-03-26 AH
+              Units.degreesToRadians(15)));
 
   static final int[] reefTagIds = {
     6, 7, 8, 9, 10, 11, // RED

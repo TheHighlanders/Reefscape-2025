@@ -164,7 +164,7 @@ public class Align extends Command {
     this.onReef = onReef;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
-    rotController.setIZone(5);
+    rotController.setIntegratorRange(0, 5);
 
     addRequirements(swerve);
 
