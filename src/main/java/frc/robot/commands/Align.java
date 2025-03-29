@@ -35,7 +35,7 @@ public class Align extends Command {
   private static final class AlignConstants {
     // Distance from robot center to front bumper (meters)
 
-    static final double robotCenterToFrontDistance = -0.39;
+    static final double robotCenterToFrontDistance = 0.39 + 0.025;
 
     // Lateral offset from tag to coral (meters)
     static final double coralLeftOffset = -0.165; // Left coral Y offset (negative = left)
@@ -217,7 +217,7 @@ public class Align extends Command {
         new Translation2d(0, lateralOffset + AlignConstants.ejectOffset);
     lateralOffsetTranslation = lateralOffsetTranslation.rotateBy(closestReefTagPose.getRotation());
 
-    Translation2d approachOffset = new Translation2d(-AlignConstants.robotCenterToFrontDistance, 0);
+    Translation2d approachOffset = new Translation2d(AlignConstants.robotCenterToFrontDistance, 0);
 
     // Calculate the position that places the front bumper at the tag face
 
