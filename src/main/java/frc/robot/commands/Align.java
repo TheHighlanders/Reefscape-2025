@@ -192,6 +192,7 @@ public class Align extends Command {
 
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
 
+    calculateTargetPose();
     targetPosePublisher.set(targetPose);
 
     // Get current robot pose
