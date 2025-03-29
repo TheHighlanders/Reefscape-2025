@@ -9,6 +9,7 @@ import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -252,6 +253,10 @@ public class Align extends Command {
     rotSpeed =
         rotController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
+
+    xSpeed = MathUtil.clamp(xSpeed, -0.7, 0.7);
+    ySpeed = MathUtil.clamp(ySpeed, -0.7, 0.7);
+    rotSpeed = MathUtil.clamp(rotSpeed, -0.7, 0.7);
 
     if (Constants.alignDevMode) {
       SmartDashboard.putNumber("ReefAlign/XError", xError);
