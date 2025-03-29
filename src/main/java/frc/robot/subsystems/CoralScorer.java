@@ -83,7 +83,7 @@ public class CoralScorer extends SubsystemBase {
 
     this.setName("Coral");
 
-    hasCoral.onTrue(RobotContainer.restartL1Timer());
+    hasCoral.onFalse(RobotContainer.restartL1Timer());
   }
 
   private SparkMaxConfig effectorConfig() {
