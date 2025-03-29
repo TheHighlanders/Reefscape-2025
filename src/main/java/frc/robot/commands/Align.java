@@ -141,8 +141,6 @@ public class Align extends Command {
   @Logged(name = "finalYError", importance = Importance.INFO)
   private double finalYError = 0;
 
-  private boolean onReef = false;
-
   /**
    * Creates a command to align with coral of a reef tag.
    *
@@ -156,14 +154,12 @@ public class Align extends Command {
       Vision vision,
       BooleanSupplier targetRightCoralSupplier,
       BiConsumer<Double, Boolean> errorCallback,
-      LEDs leds,
-      boolean onReef) {
+      LEDs leds) {
     this.swerve = swerve;
     this.vision = vision;
     this.leds = leds;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
     this.errorCallback = errorCallback;
-    this.onReef = onReef;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
     rotController.setIntegratorRange(0, 5);
@@ -189,23 +185,13 @@ public class Align extends Command {
     closestReefTagPose = vision.findClosestReefTag(currentPose);
 
     // Set tolerances for velocity-based completion
-    if (onReef) {
-      xController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
-      yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
-      rotController.setTolerance(
-          AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
-    } else {
-      xController.setTolerance(
-          AlignConstants.preAlignPositionTolerance, AlignConstants.preAlignVelocityTolerance);
-      yController.setTolerance(
-          AlignConstants.preAlignPositionTolerance, AlignConstants.preAlignVelocityTolerance);
-      rotController.setTolerance(
-          AlignConstants.preAlignRotationTolerance, Units.degreesToRadians(10));
-    }
+    xController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
+    yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
+    rotController.setTolerance(
+        AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
 
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
 
-    calculateTargetPose(onReef);
     targetPosePublisher.set(targetPose);
 
     // Get current robot pose
@@ -225,7 +211,7 @@ public class Align extends Command {
         currentPose.getRotation().getRadians(), -currentSpeeds.omegaRadiansPerSecond);
   }
 
-  private void calculateTargetPose(boolean onReef) {
+  private void calculateTargetPose() {
     double lateralOffset =
         targetRightCoral ? AlignConstants.coralRightOffset : AlignConstants.coralLeftOffset;
 
@@ -234,10 +220,6 @@ public class Align extends Command {
     lateralOffsetTranslation = lateralOffsetTranslation.rotateBy(closestReefTagPose.getRotation());
 
     Translation2d approachOffset = new Translation2d(0.65, 0);
-
-    if (onReef) {
-      approachOffset = new Translation2d(-AlignConstants.robotCenterToFrontDistance, 0);
-    }
 
     // Calculate the position that places the front bumper at the tag face
 
