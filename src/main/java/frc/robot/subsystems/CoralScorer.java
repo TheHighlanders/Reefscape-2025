@@ -50,10 +50,10 @@ final class CoralScorerConstants {
   static final EnumMap<ElevatorState, Double> heightToSpeedMap = new EnumMap<>(ElevatorState.class);
 
   static {
-    heightToSpeedMap.put(ElevatorState.HOME, 0.3);
-    heightToSpeedMap.put(ElevatorState.L2_POSITION, 0.7);
-    heightToSpeedMap.put(ElevatorState.L3_POSITION, 0.7);
-    heightToSpeedMap.put(ElevatorState.L4_POSITION, 0.7);
+    heightToSpeedMap.put(ElevatorState.HOME, 0.3d);
+    heightToSpeedMap.put(ElevatorState.L2_POSITION, 1d);
+    heightToSpeedMap.put(ElevatorState.L3_POSITION, 1d);
+    heightToSpeedMap.put(ElevatorState.L4_POSITION, 0.7d);
   }
 }
 
