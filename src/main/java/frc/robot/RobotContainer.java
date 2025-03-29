@@ -241,7 +241,8 @@ public class RobotContainer {
         new Align(drive, cameras, () -> true, createDirectionalRumbleCallback())
             .withName("Align to Right Coral Final");
 
-    return align;
+    return Commands.sequence(
+        align, drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
   public Command scoreL1() {
@@ -269,7 +270,8 @@ public class RobotContainer {
         new Align(drive, cameras, () -> false, createDirectionalRumbleCallback())
             .withName("Align to Left Coral Final");
 
-    return align;
+    return Commands.sequence(
+        align, drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
   private BiConsumer<Double, Boolean> createDirectionalRumbleCallback() {
