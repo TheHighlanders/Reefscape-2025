@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
+import com.revrobotics.spark.SparkBase.ControlType;
 import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
@@ -313,6 +314,13 @@ public class Swerve extends SubsystemBase {
     // Display alignment mode status
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
 
+    for (Module module : modules) {
+      if (MathUtil.isNear(
+          module.getAnglePosition().getDegrees(), module.getSetpoint().angle.getDegrees(), 2)) {
+        module.angleController.setReference(
+            module.getAnglePosition().getDegrees(), ControlType.kPosition);
+      }
+    }
     // Send diagnostic information
     // sendDiagnostics();
   }
