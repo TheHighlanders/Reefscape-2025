@@ -188,7 +188,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledInit() {
-
+    m_robotContainer.leds.disabledInit();
     if (Constants.devMode) {
       m_robotContainer.elevator.sendTuningConstants();
     }
@@ -216,7 +216,9 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledExit() {}
+  public void disabledExit() {
+    m_robotContainer.leds.disabledExit();
+  }
 
   @Override
   public void autonomousInit() {

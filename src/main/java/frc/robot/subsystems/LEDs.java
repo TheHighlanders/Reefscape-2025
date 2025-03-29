@@ -4,8 +4,13 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Hertz;
 import static edu.wpi.first.units.Units.Percent;
+import static edu.wpi.first.units.Units.Seconds;
 
+import java.util.function.BooleanSupplier;
+
+import edu.wpi.first.units.measure.Frequency;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLED.ColorOrder;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
@@ -20,64 +25,45 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 public class LEDs extends SubsystemBase {
 
   Trigger canAlign;
+  Trigger isAligning;
 
   /** Creates a new LEDs. */
   private static final int kPort = 9;
 
-  public static final double ledBrightness = 100;
+  public static final double kledBrightness = 100;
 
   private static final int kLength = 120;
 
   private final AddressableLED m_led;
   private final AddressableLEDBuffer m_buffer;
 
-  public static final LEDPattern alignOk =
-      LEDPattern.solid(Color.kGreen).atBrightness(Percent.of(ledBrightness));
-  LEDPattern allianceLED = LEDPattern.solid(Color.kRed).atBrightness(Percent.of(ledBrightness));
+  public static final LEDPattern alignOk = LEDPattern.solid(Color.kGreen);
+  LEDPattern allianceLED = LEDPattern.solid(Color.kRed);
   LEDPattern allianceColor;
 
   // LEDPattern pattern = blink.blink(Seconds.of(.1));
-  public LEDs(Trigger canAlign) {
-
+  public LEDs(Trigger canAlign, Trigger isAligning) {
     if (DriverStation.getAlliance().isPresent()
         && DriverStation.getAlliance().get() == Alliance.Blue) {
-      allianceLED = LEDPattern.solid(Color.kBlue).atBrightness(Percent.of(ledBrightness));
+      allianceLED = LEDPattern.solid(Color.kBlue);
     }
 
     this.canAlign = canAlign;
+    this.isAligning = isAligning;
 
     canAlign
+        .and(isAligning.negate())
         .onTrue(runPatternCommand(alignOk).withName("Alignment OK Pattern"))
-        .onFalse(runPatternCommand(allianceLED).withName("Alignment NOT OK Pattern"));
+        .onFalse(breathingPattern(getAllianceLed(), 1d).withName("Alignment NOT OK Pattern"));
+
+    isAligning.onTrue(runPatternCommand(LEDPattern.solid(Color.kYellow)));
+    isAligning.onFalse(breathingPattern(getAllianceLed(), 1d)); // one hundred yellow
 
     m_led = new AddressableLED(kPort);
     m_buffer = new AddressableLEDBuffer(kLength);
     m_led.setLength(kLength);
     m_led.start();
     m_led.setColorOrder(ColorOrder.kRGB);
-
-    // Set the default command to turn the strip off, otherwise the last colors
-    // written by
-    // the last command to run will continue to be displayed.
-    // Note: Other default patterns could be used instead!
-    if (DriverStation.getAlliance().isPresent()) {
-      // if (DriverStation.getAlliance().get() == Alliance.Red) {
-      //   // setDefaultCommand(
-      //   //     runPattern(LEDPattern.solid(Color.kRed))
-      //   //         .withName("Red Alliance Pattern")
-      //   //         .ignoringDisable(true));
-      //   allianceLED
-      // }
-
-    }
-    // else {
-    //   setDefaultCommand(
-    //       runPattern(
-    //               LEDPattern.gradient(
-    //                   LEDPattern.GradientType.kDiscontinuous, Color.kRed, Color.kBlue))
-    //           .withName("Red-Blue Gradient Pattern")
-    //           .ignoringDisable(true));
-    // }
 
     runPatternCommand(allianceColor);
 
@@ -86,14 +72,15 @@ public class LEDs extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Periodically send the latest LED color data to the LED strip for it to
-    // display
     m_led.setData(m_buffer);
+  }
 
-    // LEDPattern gradient =
-    // LEDPattern.gradient(LEDPattern.GradientType.kDiscontinuous, Color.kRed,
-    // Color.kBlue);
-    // runPattern(gradient);
+  public void disabledInit() {
+    scrollingPattern(Color.kBlueViolet, 0.5d).schedule();
+  }
+
+  public void disabledExit() {
+    breathingPattern(getAllianceLed(), 1d).schedule();
   }
 
   /**
@@ -106,10 +93,76 @@ public class LEDs extends SubsystemBase {
   }
 
   public void runPattern(LEDPattern pattern) {
-    pattern.applyTo(m_buffer);
+    runPattern(pattern, kledBrightness);
+  }
+
+  public void runPattern(LEDPattern pattern, double ledBrightness) {
+    pattern.atBrightness(Percent.of(ledBrightness)).applyTo(m_buffer);
   }
 
   public LEDPattern getAllianceLed() {
     return allianceLED;
+  }
+
+  /**
+   * Creates a blinking pattern with the specified color and timing
+   *
+   * @param color The color to blink
+   * @param onTimeSeconds On time in seconds
+   * @param offTimeSeconds Off time in seconds
+   * @return Command to run the blinking pattern
+   */
+  public Command blinkPattern(Color color, double onTimeSeconds, double offTimeSeconds) {
+    LEDPattern pattern =
+        LEDPattern.solid(color).blink(Seconds.of(onTimeSeconds), Seconds.of(offTimeSeconds));
+    return runPatternCommand(pattern);
+  }
+
+  public Command blinkPattern(LEDPattern initPattern, double onTimeSeconds, double offTimeSeconds) {
+    LEDPattern pattern = initPattern.blink(Seconds.of(onTimeSeconds), Seconds.of(offTimeSeconds));
+    return runPatternCommand(pattern);
+  }
+
+  /**
+   * Creates a breathing pattern with the specified color
+   *
+   * @param color The color to breathe
+   * @param periodSeconds Breathing period in seconds
+   * @return Command to run the breathing pattern
+   */
+  public Command breathingPattern(Color color, double periodSeconds) {
+    LEDPattern pattern = LEDPattern.solid(color).breathe(Seconds.of(periodSeconds));
+    return runPatternCommand(pattern);
+  }
+
+  public Command breathingPattern(LEDPattern initPattern, double periodSeconds) {
+    LEDPattern pattern = initPattern.breathe(Seconds.of(periodSeconds));
+    return runPatternCommand(pattern);
+  }
+
+  /**
+   * Creates a pattern that synchronizes with a boolean signal
+   *
+   * @param color The color to display when signal is true
+   * @param signal The boolean signal to synchronize with
+   * @return Command to run the synchronized pattern
+   */
+  public Command synchronizedPattern(Color color, BooleanSupplier signal) {
+    LEDPattern pattern = LEDPattern.solid(color).synchronizedBlink(signal);
+    return runPatternCommand(pattern);
+  }
+
+  /**
+   * Creates a scrolling pattern with the specified color
+   *
+   * @param color The color to scroll
+   * @param scrollFrequency How fast to scroll (cycles per second)
+   * @return Command to run the scrolling pattern
+   */
+  public Command scrollingPattern(Color color, double scrollFrequency) {
+    LEDPattern pattern =
+        LEDPattern.solid(color)
+            .scrollAtRelativeSpeed(Frequency.ofBaseUnits(scrollFrequency, Hertz.getBaseUnit()));
+    return runPatternCommand(pattern);
   }
 }
