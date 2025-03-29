@@ -314,6 +314,7 @@ public class Swerve extends SubsystemBase {
     // Display alignment mode status
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
 
+    // "module" - progamming lead Miles
     for (Module module : modules) {
       if (MathUtil.isNear(
           module.getAnglePosition().getDegrees(), module.getSetpoint().angle.getDegrees(), 2)) {

@@ -19,13 +19,10 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 
 import frc.robot.Constants;
-import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 
@@ -73,7 +70,6 @@ public class Align extends Command {
     static final double rotateD = 0;
   }
 
-  private final LEDs leds;
   private final Swerve swerve;
   private final BooleanSupplier targetRightCoralSupplier; // true = right
   private final BiConsumer<Double, Boolean> errorCallback;
@@ -142,7 +138,6 @@ public class Align extends Command {
   /**
    * Creates a command to align with coral of a reef tag.
    *
-   * @param leds
    * @param swerve The swerve drive subsystem
    * @param targetRightCoralSupplier Supplies whether to target right coral (true) or left coral
    *     (false)
@@ -151,11 +146,9 @@ public class Align extends Command {
       Swerve swerve,
       Vision vision,
       BooleanSupplier targetRightCoralSupplier,
-      BiConsumer<Double, Boolean> errorCallback,
-      LEDs leds) {
+      BiConsumer<Double, Boolean> errorCallback) {
     this.swerve = swerve;
     this.vision = vision;
-    this.leds = leds;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
     this.errorCallback = errorCallback;
 
@@ -177,8 +170,6 @@ public class Align extends Command {
 
     AlignConstants.translateP =
         SmartDashboard.getNumber("Align/Translate P", AlignConstants.translateP);
-
-    leds.runPattern(LEDPattern.solid(Color.kYellow)); // one hundred yellow
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
 
@@ -288,8 +279,6 @@ public class Align extends Command {
     if (interrupted || Math.abs(finalXError) > 0.05) {
       errorCallback.accept(finalXError, false);
     } else errorCallback.accept(1d, true);
-
-    leds.runPattern(leds.getAllianceLed());
   }
 
   @Override
@@ -310,7 +299,10 @@ public class Align extends Command {
     // }
 
     // Check if velocity is close to zero rather than position at setpoint
-    return xController.atGoal() && yController.atGoal() && rotController.atGoal();
+    return xController.atGoal()
+        && yController.atGoal()
+        && rotController.atGoal()
+        && vision.hasTarget();
     // && rotController.getVelocityError() <
     // AlignConstants.rotationVelocityTolerance;
   }

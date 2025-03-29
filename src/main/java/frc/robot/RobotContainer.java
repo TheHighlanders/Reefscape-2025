@@ -55,7 +55,7 @@ public class RobotContainer {
 
   public Trigger canAlign = new Trigger(() -> Align.canAlign(drive, cameras));
 
-  public LEDs leds = new LEDs(canAlign);
+  public LEDs leds = new LEDs(canAlign, driver.leftBumper().or(driver.rightBumper()));
 
   Autos autos =
       new Autos(
@@ -74,7 +74,7 @@ public class RobotContainer {
   ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
 
   @Logged(name = "Align")
-  Command align = new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds);
+  Command align = new Align(drive, cameras, canAlign, createDirectionalRumbleCallback());
 
   public static final Timer l1Timer = new Timer();
 
@@ -238,7 +238,7 @@ public class RobotContainer {
 
   public Command alignToRightCoral() {
     align =
-        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds)
+        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback())
             .withName("Align to Right Coral Final");
 
     return align;
@@ -266,7 +266,7 @@ public class RobotContainer {
 
   public Command alignToLeftCoral() {
     align =
-        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds)
+        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback())
             .withName("Align to Left Coral Final");
 
     return align;
