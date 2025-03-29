@@ -242,9 +242,9 @@ public class Align extends Command {
     Pose2d currentPose = swerve.getPose();
 
     // Calculate errors
-    xError = Math.abs(targetPose.getX() - currentPose.getX());
-    yError = Math.abs(targetPose.getY() - currentPose.getY());
-    rotError = Math.abs(targetPose.getRotation().minus(currentPose.getRotation()).getRadians());
+    xError = targetPose.getX() - currentPose.getX();
+    yError = targetPose.getY() - currentPose.getY();
+    rotError = targetPose.getRotation().minus(currentPose.getRotation()).getRadians();
 
     // Calculate outputs by setting goal to 0 (we want zero error)
     xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());
