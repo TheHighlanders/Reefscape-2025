@@ -55,7 +55,7 @@ public class RobotContainer {
 
   public Trigger canAlign = new Trigger(() -> Align.canAlign(drive, cameras));
 
-  LEDs leds = new LEDs(canAlign);
+  public LEDs leds = new LEDs(canAlign);
 
   Autos autos =
       new Autos(

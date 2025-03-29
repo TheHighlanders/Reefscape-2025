@@ -469,10 +469,10 @@ public class Swerve extends SubsystemBase {
                   new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
               orbitX_PID_Out =
                   (x.getAsDouble() * SwerveConstants.orbitCosScalar)
-                      + (y.getAsDouble() * SwerveConstants.orbitSinScalar);
+                      - (y.getAsDouble() * SwerveConstants.orbitSinScalar);
               orbitY_PID_Out =
                   (y.getAsDouble() * SwerveConstants.orbitCosScalar)
-                      - (x.getAsDouble() * SwerveConstants.orbitSinScalar);
+                      + (x.getAsDouble() * SwerveConstants.orbitSinScalar);
 
               double radiansOff =
                   getPose().getRotation().getRadians() - rotationTarget.getRadians();
