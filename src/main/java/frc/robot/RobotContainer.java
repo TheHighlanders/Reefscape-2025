@@ -154,12 +154,12 @@ public class RobotContainer {
 
     driver.leftTrigger().whileTrue(drive.toggleSlowMode().withName("Enable Slow Mode"));
 
-    driver.rightBumper().whileTrue(alignToRightCoral().alongWith(drive.toggleSlowMode()));
+    driver.rightBumper().whileTrue(alignToRightCoralManual().alongWith(drive.toggleSlowMode()));
     driver.rightBumper().onTrue(Commands.runOnce(() -> this.lastAlignSide = true));
 
     driver.rightBumper().onFalse(elevator.setPosition(ElevatorState.HOME));
 
-    driver.leftBumper().whileTrue(alignToLeftCoral().alongWith(drive.toggleSlowMode()));
+    driver.leftBumper().whileTrue(alignToLeftCoralManual().alongWith(drive.toggleSlowMode()));
     driver.leftBumper().onTrue(Commands.runOnce(() -> this.lastAlignSide = false));
 
     driver.rightTrigger().whileTrue(selectScoreRoutine());
@@ -236,13 +236,21 @@ public class RobotContainer {
     return chooser.selectedCommand();
   }
 
-  public Command alignToRightCoral() {
+  public Command alignToRightCoralManual() {
     align =
         new Align(drive, cameras, () -> true, createDirectionalRumbleCallback())
             .withName("Align to Right Coral Final");
 
     return Commands.sequence(
         align, drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
+  }
+
+  public Command alignToRightCoral() {
+    align =
+        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback())
+            .withName("Align to Right Coral Final");
+
+    return align;
   }
 
   public Command scoreL1() {
@@ -265,13 +273,21 @@ public class RobotContainer {
     return lastAlignSide ? 0.5 : -0.5;
   }
 
-  public Command alignToLeftCoral() {
+  public Command alignToLeftCoralManual() {
     align =
         new Align(drive, cameras, () -> false, createDirectionalRumbleCallback())
             .withName("Align to Left Coral Final");
 
     return Commands.sequence(
         align, drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
+  }
+
+  public Command alignToLeftCoral() {
+    align =
+        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback())
+            .withName("Align to Left Coral Final");
+
+    return align;
   }
 
   private BiConsumer<Double, Boolean> createDirectionalRumbleCallback() {
