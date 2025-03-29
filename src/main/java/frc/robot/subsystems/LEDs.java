@@ -31,7 +31,8 @@ public class LEDs extends SubsystemBase {
   private final AddressableLED m_led;
   private final AddressableLEDBuffer m_buffer;
 
-  public static final LEDPattern alignOk = LEDPattern.solid(Color.kGreen).atBrightness(Percent.of(ledBrightness));
+  public static final LEDPattern alignOk =
+      LEDPattern.solid(Color.kGreen).atBrightness(Percent.of(ledBrightness));
   LEDPattern allianceLED = LEDPattern.solid(Color.kRed).atBrightness(Percent.of(ledBrightness));
   LEDPattern allianceColor;
 
@@ -54,7 +55,6 @@ public class LEDs extends SubsystemBase {
     m_led.setLength(kLength);
     m_led.start();
     m_led.setColorOrder(ColorOrder.kRGB);
-    
 
     // Set the default command to turn the strip off, otherwise the last colors
     // written by

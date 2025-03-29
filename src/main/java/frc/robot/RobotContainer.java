@@ -55,7 +55,7 @@ public class RobotContainer {
 
   public Trigger canAlign = new Trigger(() -> Align.canAlign(drive, cameras));
 
-  LEDs leds = new LEDs(canAlign);
+  public LEDs leds = new LEDs(canAlign);
 
   Autos autos =
       new Autos(
@@ -74,11 +74,7 @@ public class RobotContainer {
   ElevatorState nextScoreHeight = ElevatorState.L4_POSITION;
 
   @Logged(name = "Align")
-  Command alignFinal =
-      new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds, false);
-
-  Command alignApproach =
-      new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds, false);
+  Command align = new Align(drive, cameras, canAlign, createDirectionalRumbleCallback(), leds);
 
   public static final Timer l1Timer = new Timer();
 
@@ -241,15 +237,11 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoral() {
-    alignFinal =
-        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds, true)
+    align =
+        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds)
             .withName("Align to Right Coral Final");
 
-    alignApproach =
-        new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds, false)
-            .withName("Align to Right Coral Approach");
-
-    return Commands.sequence(alignApproach, alignFinal);
+    return align;
   }
 
   public Command scoreL1() {
@@ -273,14 +265,11 @@ public class RobotContainer {
   }
 
   public Command alignToLeftCoral() {
-    alignFinal =
-        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds, true)
+    align =
+        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds)
             .withName("Align to Left Coral Final");
-    alignApproach =
-        new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds, false)
-            .withName("Align to Left Coral Approach");
 
-    return Commands.sequence(alignApproach, alignFinal);
+    return align;
   }
 
   private BiConsumer<Double, Boolean> createDirectionalRumbleCallback() {

@@ -64,8 +64,8 @@ class ElevatorConstants {
   static final double maxAccel = 3600;
   static final double maxClosedLoopError = 5;
 
-  static final double maximumNegatieOutput = -0.4;
-  static final double maximumPositiveOutput = 0.85;
+  static final double maximumNegatieOutput = -1;
+  static final double maximumPositiveOutput = 1;
 }
 
 public class Elevator extends SubsystemBase {

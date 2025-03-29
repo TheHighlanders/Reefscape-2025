@@ -9,6 +9,7 @@ import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -35,7 +36,7 @@ public class Align extends Command {
   private static final class AlignConstants {
     // Distance from robot center to front bumper (meters)
 
-    static final double robotCenterToFrontDistance = -0.39;
+    static final double robotCenterToFrontDistance = 0.39 + 0.025;
 
     // Lateral offset from tag to coral (meters)
     static final double coralLeftOffset = -0.165; // Left coral Y offset (negative = left)
@@ -45,28 +46,25 @@ public class Align extends Command {
 
     // Position tolerance (meters)
     static final double positionTolerance = 0.025;
-    static final double preAlignPositionTolerance = 0.4;
 
     // Velocity tolerance (meters/s)
     static final double velocityTolerance = 0.1;
-    static final double preAlignVelocityTolerance = 0.1;
 
     // Rotation tolerance (radians)
     static final double rotationTolerance = Units.degreesToRadians(5);
-    static final double preAlignRotationTolerance = Units.degreesToRadians(5);
 
     // Rotation velocity tolerance (rad/s)
     static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
-    static final double maxApproachSpeed = 1;
-    static final double maxApproachAccel = 1;
+    static final double maxApproachSpeed = 5;
+    static final double maxApproachAccel = 5;
 
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 1;
     static final double maxRotationAccel = 2;
 
-    static double translateP = 5;
+    static double translateP = 7;
     static double translateI = 0;
     static double translateD = 0; // 0
 
@@ -141,8 +139,6 @@ public class Align extends Command {
   @Logged(name = "finalYError", importance = Importance.INFO)
   private double finalYError = 0;
 
-  private boolean onReef = false;
-
   /**
    * Creates a command to align with coral of a reef tag.
    *
@@ -156,14 +152,12 @@ public class Align extends Command {
       Vision vision,
       BooleanSupplier targetRightCoralSupplier,
       BiConsumer<Double, Boolean> errorCallback,
-      LEDs leds,
-      boolean onReef) {
+      LEDs leds) {
     this.swerve = swerve;
     this.vision = vision;
     this.leds = leds;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
     this.errorCallback = errorCallback;
-    this.onReef = onReef;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
     rotController.setIntegratorRange(0, 5);
@@ -189,23 +183,14 @@ public class Align extends Command {
     closestReefTagPose = vision.findClosestReefTag(currentPose);
 
     // Set tolerances for velocity-based completion
-    if (onReef) {
-      xController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
-      yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
-      rotController.setTolerance(
-          AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
-    } else {
-      xController.setTolerance(
-          AlignConstants.preAlignPositionTolerance, AlignConstants.preAlignVelocityTolerance);
-      yController.setTolerance(
-          AlignConstants.preAlignPositionTolerance, AlignConstants.preAlignVelocityTolerance);
-      rotController.setTolerance(
-          AlignConstants.preAlignRotationTolerance, Units.degreesToRadians(10));
-    }
+    xController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
+    yController.setTolerance(AlignConstants.positionTolerance, AlignConstants.velocityTolerance);
+    rotController.setTolerance(
+        AlignConstants.rotationTolerance, AlignConstants.rotationVelocityTolerance);
 
     targetRightCoral = targetRightCoralSupplier.getAsBoolean();
 
-    calculateTargetPose(onReef);
+    calculateTargetPose();
     targetPosePublisher.set(targetPose);
 
     // Get current robot pose
@@ -225,7 +210,7 @@ public class Align extends Command {
         currentPose.getRotation().getRadians(), -currentSpeeds.omegaRadiansPerSecond);
   }
 
-  private void calculateTargetPose(boolean onReef) {
+  private void calculateTargetPose() {
     double lateralOffset =
         targetRightCoral ? AlignConstants.coralRightOffset : AlignConstants.coralLeftOffset;
 
@@ -233,11 +218,7 @@ public class Align extends Command {
         new Translation2d(0, lateralOffset + AlignConstants.ejectOffset);
     lateralOffsetTranslation = lateralOffsetTranslation.rotateBy(closestReefTagPose.getRotation());
 
-    Translation2d approachOffset = new Translation2d(0.65, 0);
-
-    if (onReef) {
-      approachOffset = new Translation2d(-AlignConstants.robotCenterToFrontDistance, 0);
-    }
+    Translation2d approachOffset = new Translation2d(AlignConstants.robotCenterToFrontDistance, 0);
 
     // Calculate the position that places the front bumper at the tag face
 
@@ -262,9 +243,9 @@ public class Align extends Command {
     Pose2d currentPose = swerve.getPose();
 
     // Calculate errors
-    xError = Math.abs(targetPose.getX() - currentPose.getX());
-    yError = Math.abs(targetPose.getY() - currentPose.getY());
-    rotError = Math.abs(targetPose.getRotation().minus(currentPose.getRotation()).getRadians());
+    xError = targetPose.getX() - currentPose.getX();
+    yError = targetPose.getY() - currentPose.getY();
+    rotError = targetPose.getRotation().minus(currentPose.getRotation()).getRadians();
 
     // Calculate outputs by setting goal to 0 (we want zero error)
     xSpeed = xController.calculate(currentPose.getX(), targetPose.getX());
@@ -272,6 +253,10 @@ public class Align extends Command {
     rotSpeed =
         rotController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
+
+    xSpeed = MathUtil.clamp(xSpeed, -0.7, 0.7);
+    ySpeed = MathUtil.clamp(ySpeed, -0.7, 0.7);
+    rotSpeed = MathUtil.clamp(rotSpeed, -0.7, 0.7);
 
     if (Constants.alignDevMode) {
       SmartDashboard.putNumber("ReefAlign/XError", xError);
