@@ -220,7 +220,7 @@ public class Align extends Command {
         new Translation2d(0, lateralOffset + AlignConstants.ejectOffset);
     lateralOffsetTranslation = lateralOffsetTranslation.rotateBy(closestReefTagPose.getRotation());
 
-    Translation2d approachOffset = new Translation2d(0.65, 0);
+    Translation2d approachOffset = new Translation2d(-AlignConstants.robotCenterToFrontDistance, 0);
 
     // Calculate the position that places the front bumper at the tag face
 
