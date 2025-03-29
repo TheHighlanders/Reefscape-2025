@@ -76,7 +76,7 @@ public class LEDs extends SubsystemBase {
   }
 
   public void disabledInit() {
-    scrollingPattern(Color.kBlueViolet, 0.5d).schedule();
+    runPattern(LEDPattern.solid(Color.kBlack));
   }
 
   public void disabledExit() {
