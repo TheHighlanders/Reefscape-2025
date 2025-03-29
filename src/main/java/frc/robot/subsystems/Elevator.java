@@ -25,7 +25,6 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -139,7 +138,7 @@ public class Elevator extends SubsystemBase {
     elevatorMotorConfig
         .closedLoop // pid loop to control elevator elevating rate
         .p(ElevatorConstants.elevP)
-        .i(ElevatorConstants.elevI) // TODO find these desirerd values
+        .i(ElevatorConstants.elevI)
         .d(ElevatorConstants.elevD);
 
     elevatorMotor.configure(
@@ -168,16 +167,16 @@ public class Elevator extends SubsystemBase {
 
   @Override
   public void periodic() {
-    if (setpoint == ElevatorState.HOME) {
-      if (MathUtil.isNear(ElevatorConstants.homeTarget, elevatorEncoder.getPosition(), 0.5)
-          && !reverseLimitSwitch.isPressed()) {
-        // elevatorMotor.setVoltage(antiSlamVoltageOffset);
-        elevatorController.setReference(
-            antiSlamVoltageOffset, ControlType.kVoltage, ClosedLoopSlot.kSlot0, 0);
+    // if (setpoint == ElevatorState.HOME) {
+    //   if (MathUtil.isNear(ElevatorConstants.homeTarget, elevatorEncoder.getPosition(), 0.5)
+    //       && !reverseLimitSwitch.isPressed()) {
+    //     // elevatorMotor.setVoltage(antiSlamVoltageOffset);
+    //     elevatorController.setReference(
+    //         antiSlamVoltageOffset, ControlType.kVoltage, ClosedLoopSlot.kSlot0, 0);
 
-        DriverStation.reportWarning("IN AUTOLAND", false);
-      }
-    }
+    //     DriverStation.reportWarning("IN AUTOLAND", false);
+    //   }
+    // }
 
     if (elevatorEncoder.getPosition() < 0) {
       elevatorEncoder.setPosition(0);
@@ -212,29 +211,16 @@ public class Elevator extends SubsystemBase {
               if (position != ElevatorState.CURRENT) {
                 setpoint = position;
               }
-              switch (setpoint) {
-                case HOME:
-                  targetPosition = ElevatorConstants.homeTarget;
-                  break;
-                case L2_POSITION:
-                  targetPosition = ElevatorConstants.l2Target + trim + positionOffset;
-                  break;
-                case L3_POSITION:
-                  targetPosition = ElevatorConstants.l3Target + trim + positionOffset;
-                  break;
-                case L4_POSITION:
-                  targetPosition = ElevatorConstants.l4Target + trim + positionOffset;
-                  break;
-                case ALGAELOW:
-                  targetPosition = ElevatorConstants.algaeLow + trim;
-                  break;
-                case ALGAEHIGH:
-                  targetPosition = ElevatorConstants.algaeHigh + trim;
-                  break;
-                default:
-                  targetPosition = ElevatorConstants.homeTarget;
-                  break;
-              }
+              targetPosition =
+                  switch (setpoint) {
+                    case HOME -> ElevatorConstants.homeTarget;
+                    case L2_POSITION -> ElevatorConstants.l2Target + trim + positionOffset;
+                    case L3_POSITION -> ElevatorConstants.l3Target + trim + positionOffset;
+                    case L4_POSITION -> ElevatorConstants.l4Target + trim + positionOffset;
+                    case ALGAELOW -> ElevatorConstants.algaeLow + trim;
+                    case ALGAEHIGH -> ElevatorConstants.algaeHigh + trim;
+                    default -> ElevatorConstants.homeTarget;
+                  };
               if (!(position == ElevatorState.HOME && isAtHome(ElevatorConstants.homeTarget))) {
                 elevatorController.setReference(
                     targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
@@ -406,11 +392,14 @@ public class Elevator extends SubsystemBase {
 
   public Command runToNextHeight() {
     return Commands.defer(() -> elevatorAuto(nextScoreHeight.get()), Set.of(this));
-    // return elevatorAuto(nextScoreHeight.get());
   }
 
   public boolean nextHeightIsHome() {
     return nextScoreHeight.get().equals(ElevatorState.HOME);
+  }
+
+  public ElevatorState nextSetpoint() {
+    return nextScoreHeight.get();
   }
 
   @Logged(name = "ElevatorSetpoint")
