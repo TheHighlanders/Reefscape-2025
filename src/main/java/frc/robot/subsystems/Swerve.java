@@ -97,6 +97,9 @@ final class SwerveConstants {
   static double orbitI = 0;
   static double orbitD = 0;
 
+  static double orbitCosScalar = Math.cos(Units.degreesToRadians(-15));
+  static double orbitSinScalar = Math.sin(Units.degreesToRadians(-15));
+
   static double preAutoWheelTolerance = 2.5; // deg
 
   static Pose2d redReefCenter = new Pose2d(13.0514923438, 4.0259, new Rotation2d());
@@ -464,8 +467,12 @@ public class Swerve extends SubsystemBase {
 
               orbitPosePublisher.accept(
                   new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
-              orbitX_PID_Out = x.getAsDouble();
-              orbitY_PID_Out = y.getAsDouble();
+              orbitX_PID_Out =
+                  (x.getAsDouble() * SwerveConstants.orbitCosScalar)
+                      + (y.getAsDouble() * SwerveConstants.orbitSinScalar);
+              orbitY_PID_Out =
+                  (y.getAsDouble() * SwerveConstants.orbitCosScalar)
+                      - (x.getAsDouble() * SwerveConstants.orbitSinScalar);
 
               double radiansOff =
                   getPose().getRotation().getRadians() - rotationTarget.getRadians();
