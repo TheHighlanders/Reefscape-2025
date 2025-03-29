@@ -4,6 +4,8 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Percent;
+
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLED.ColorOrder;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
@@ -22,13 +24,15 @@ public class LEDs extends SubsystemBase {
   /** Creates a new LEDs. */
   private static final int kPort = 9;
 
+  public static final double ledBrightness = 100;
+
   private static final int kLength = 120;
 
   private final AddressableLED m_led;
   private final AddressableLEDBuffer m_buffer;
 
-  public static final LEDPattern alignOk = LEDPattern.solid(Color.kGreen);
-  LEDPattern allianceLED = LEDPattern.solid(Color.kRed);
+  public static final LEDPattern alignOk = LEDPattern.solid(Color.kGreen).atBrightness(Percent.of(ledBrightness));
+  LEDPattern allianceLED = LEDPattern.solid(Color.kRed).atBrightness(Percent.of(ledBrightness));
   LEDPattern allianceColor;
 
   // LEDPattern pattern = blink.blink(Seconds.of(.1));
@@ -36,7 +40,7 @@ public class LEDs extends SubsystemBase {
 
     if (DriverStation.getAlliance().isPresent()
         && DriverStation.getAlliance().get() == Alliance.Blue) {
-      allianceLED = LEDPattern.solid(Color.kBlue);
+      allianceLED = LEDPattern.solid(Color.kBlue).atBrightness(Percent.of(ledBrightness));
     }
 
     this.canAlign = canAlign;
@@ -50,6 +54,7 @@ public class LEDs extends SubsystemBase {
     m_led.setLength(kLength);
     m_led.start();
     m_led.setColorOrder(ColorOrder.kRGB);
+    
 
     // Set the default command to turn the strip off, otherwise the last colors
     // written by
