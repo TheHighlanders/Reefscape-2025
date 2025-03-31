@@ -190,3 +190,6 @@ compile_commands.json
 src\main\java\frc\robot\BuildConstants.java
 
 src/main/java/frc/robot/BuildConstants.java
+assets/Robot_Plunk/config.json
+assets/Robot_Plunk/model.glb
+src/main/deploy/choreo/TestRotateAndDrive.traj
