@@ -166,7 +166,7 @@ public class CoralScorer extends SubsystemBase {
   private Command runUntilGamePiece() {
     return Commands.run(this::setBiteDutyCycle, this)
         .until(this::hasGamePiece)
-        .andThen(this::effectorStop)
+        .finallyDo(this::effectorStop)
         .withName("Run Until Game Piece");
   }
 
