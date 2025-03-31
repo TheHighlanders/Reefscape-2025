@@ -246,9 +246,9 @@ public class Align extends Command {
         rotController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
-    xSpeed = MathUtil.clamp(xSpeed, -0.7, 0.7);
-    ySpeed = MathUtil.clamp(ySpeed, -0.7, 0.7);
-    rotSpeed = MathUtil.clamp(rotSpeed, -0.7, 0.7);
+    xSpeed = MathUtil.clamp(xSpeed, -0.9, 0.9);
+    ySpeed = MathUtil.clamp(ySpeed, -0.9, 0.9);
+    rotSpeed = MathUtil.clamp(rotSpeed, -0.9, 0.9);
 
     if (Constants.alignDevMode) {
       SmartDashboard.putNumber("ReefAlign/XError", xError);
