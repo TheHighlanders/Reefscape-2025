@@ -9,7 +9,6 @@ import java.util.function.BooleanSupplier;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.epilogue.Logged.Importance;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -58,8 +57,8 @@ public class Align extends Command {
     static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
-    static final double maxApproachSpeed = 2.5;
-    static final double maxApproachAccel = 2.5;
+    static final double maxApproachSpeed = 2;
+    static final double maxApproachAccel = 1.75;
 
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 1;
@@ -255,9 +254,9 @@ public class Align extends Command {
         rotController.calculate(
             currentPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
 
-    xSpeed = MathUtil.clamp(xSpeed, -0.9, 0.9);
-    ySpeed = MathUtil.clamp(ySpeed, -0.9, 0.9);
-    rotSpeed = MathUtil.clamp(rotSpeed, -0.9, 0.9);
+    // xSpeed = MathUtil.clamp(xSpeed, -0.9, 0.9);
+    // ySpeed = MathUtil.clamp(ySpeed, -0.9, 0.9);
+    // rotSpeed = MathUtil.clamp(rotSpeed, -0.9, 0.9);
 
     if (Constants.alignDevMode) {
       SmartDashboard.putNumber("ReefAlign/XError", xError);
