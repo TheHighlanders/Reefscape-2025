@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.DoubleSupplier;
 
@@ -380,7 +381,9 @@ public class RobotContainer {
 
   private Command autoScore() {
     return Commands.sequence(
-        elevator.runToNextHeight(), coralScorer.depositCMD(elevator.getSetpoint()));
+        elevator.runToNextHeight(),
+        Commands.defer(
+            () -> coralScorer.depositCMD(elevator.nextSetpoint()), Set.of(elevator, coralScorer)));
   }
 
   public Trigger isTryingToDrive() {
