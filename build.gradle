@@ -217,7 +217,7 @@ task(eventDeploy) {
                 exec {
                     workingDir(projectDir)
                     executable 'git'
-                    args 'commit', '-m', commitMessage
+                    args 'commit', '-n', '-m', commitMessage
                     ignoreExitValue = true
                 }
 

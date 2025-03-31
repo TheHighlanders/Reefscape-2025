@@ -69,8 +69,6 @@ import choreo.trajectory.SwerveSample;
 final class SwerveConstants {
 
   static final double fieldWidth = 8.05;
-  static final Rotation2d leftStationRotation = Rotation2d.fromDegrees(54);
-  static final Rotation2d rightStationRotation = Rotation2d.fromDegrees(-54);
 
   public static final double maxRotSpeed = Units.degreesToRadians(360);
   // Implicit /sec
@@ -152,6 +150,9 @@ public class Swerve extends SubsystemBase {
   public SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
 
+  static Rotation2d leftStationRotation;
+  static Rotation2d rightStationRotation;
+
   private final PIDController xController =
       new PIDController(
           SwerveConstants.translateP, SwerveConstants.translateI, SwerveConstants.translateD);
@@ -195,6 +196,15 @@ public class Swerve extends SubsystemBase {
     for (int i = 0; i < modules.length; i++) {
       modules[i] = new Module(i);
       needZeroing.add(modules[i]);
+    }
+
+    leftStationRotation = Rotation2d.fromDegrees(-54);
+    rightStationRotation = leftStationRotation.plus(Rotation2d.kCCW_90deg);
+
+    if (DriverStation.getAlliance().isPresent()
+        && DriverStation.getAlliance().get() == Alliance.Blue) {
+      leftStationRotation = leftStationRotation.rotateBy(Rotation2d.k180deg);
+      rightStationRotation = rightStationRotation.rotateBy(Rotation2d.k180deg);
     }
 
     // Using +X as forward, and +Y as left, as per
@@ -509,8 +519,8 @@ public class Swerve extends SubsystemBase {
             () -> {
               rotationTarget =
                   getPose().getTranslation().getY() > SwerveConstants.fieldWidth / 2
-                      ? SwerveConstants.rightStationRotation
-                      : SwerveConstants.leftStationRotation;
+                      ? rightStationRotation
+                      : leftStationRotation;
 
               orbitPosePublisher.accept(
                   new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
