@@ -844,6 +844,7 @@ public class Swerve extends SubsystemBase {
 
     for (int i = 0; i < modules.length; i++) {
       targetStates[i].optimize(getModulePostions()[i].angle);
+      targetStates[i].cosineScale(getModulePostions()[i].angle);
       modules[i].setModuleState(targetStates[i], false);
     }
   }
