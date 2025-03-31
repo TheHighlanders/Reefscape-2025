@@ -243,9 +243,7 @@ public class RobotContainer {
 
     return Commands.sequence(
         align,
-        Commands.parallel(
-            drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX),
-            periscopeIfApplicable()));
+            drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
   public Command alignToRightCoral() {
@@ -273,9 +271,7 @@ public class RobotContainer {
 
     return Commands.sequence(
         align,
-        Commands.parallel(
-            drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX),
-            periscopeIfApplicable()));
+            drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
   public Command alignToLeftCoral() {

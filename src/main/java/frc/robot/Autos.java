@@ -146,8 +146,6 @@ public class Autos {
             alignToRightCoral
                 .get()
                 .withName("Align1")
-                // .alongWith(
-                //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
                 .andThen(score().withName("Score First Piece"))
                 .andThen(leftFarToleftStation.cmd().withName("Drive to Station"))
                 .withName("Drive to Station"));
