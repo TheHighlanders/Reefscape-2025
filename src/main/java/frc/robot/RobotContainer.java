@@ -148,7 +148,7 @@ public class RobotContainer {
 
     driver.x().onTrue(drive.pointWheelsInXPattern().withName("X Pattern Wheels"));
 
-    driver.b().whileTrue(drive.driveOrbit(driver::getLeftX, driver::getLeftY));
+    driver.b().whileTrue(getOrbitCommand());
 
     driver.y().and(manual.negate()).onTrue(coralScorer.biteCMD().withName("Bite Coral"));
 
