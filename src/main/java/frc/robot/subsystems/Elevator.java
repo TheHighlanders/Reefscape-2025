@@ -206,6 +206,12 @@ public class Elevator extends SubsystemBase {
         .withName("Zero Elevator Encoder");
   }
 
+  // public Command enableSlowDown(){
+  //   return Commands.runOnce(()->{
+
+  //   });
+  // }
+
   public Command setPosition(ElevatorState position) {
     return Commands.runOnce(
             () -> {
