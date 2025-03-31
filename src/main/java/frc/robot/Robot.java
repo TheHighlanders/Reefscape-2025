@@ -235,12 +235,11 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {}
 
   @Override
-  public void autonomousExit() {
-    m_robotContainer.drive.startTele();
-  }
+  public void autonomousExit() {}
 
   @Override
   public void teleopInit() {
+    m_robotContainer.drive.startTele();
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
