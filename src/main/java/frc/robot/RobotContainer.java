@@ -55,8 +55,6 @@ public class RobotContainer {
 
   public Trigger canAlign = new Trigger(() -> Align.canAlign(drive, cameras));
 
-  public LEDs leds = new LEDs(canAlign, driver.leftBumper().or(driver.rightBumper()));
-
   Autos autos =
       new Autos(
           drive, elevator, coralScorer, canAlign, this::alignToLeftCoral, this::alignToRightCoral);
@@ -75,6 +73,8 @@ public class RobotContainer {
 
   @Logged(name = "Align")
   Command align = new Align(drive, cameras, canAlign, createDirectionalRumbleCallback());
+
+  public LEDs leds = new LEDs(canAlign, new Trigger(align::isScheduled));
 
   public RobotContainer() {
 
