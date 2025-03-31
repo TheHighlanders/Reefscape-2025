@@ -512,8 +512,8 @@ public class Swerve extends SubsystemBase {
 
               orbitPosePublisher.accept(
                   new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
-              orbitX_PID_Out = (x.getAsDouble()) - (y.getAsDouble());
-              orbitY_PID_Out = (y.getAsDouble()) + (x.getAsDouble());
+              orbitX_PID_Out = x.getAsDouble();
+              orbitY_PID_Out = y.getAsDouble();
 
               double radiansOff =
                   getPose().getRotation().getRadians() - rotationTarget.getRadians();
