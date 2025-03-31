@@ -35,10 +35,10 @@ final class CoralScorerConstants {
   static final int currentLimit = 40;
   static final boolean inverted = false;
 
-  static final double bitePosition = 4;
+  static final double bitePosition = 4000;
   static final double coralLengh = 12;
   static final double endThreshold = 10; // how far from the end to start going at specified speed
-  static final double effectorPCF = 10 * 3 * Math.PI;
+  static final double effectorPCF = 1 / (10 * 3 * Math.PI);
 
   static final double kP = 0.1;
   static final double kI = 0.0;
@@ -91,13 +91,11 @@ public class CoralScorer extends SubsystemBase {
 
     effectorConfig.smartCurrentLimit(CoralScorerConstants.currentLimit).idleMode(IdleMode.kCoast);
 
-    effectorConfig
-        .encoder
+    effectorConfig.encoder
         .positionConversionFactor(CoralScorerConstants.effectorPCF)
         .velocityConversionFactor(CoralScorerConstants.effectorPCF / 60d);
 
-    effectorConfig
-        .closedLoop // pid loop to control elevator elevating rate
+    effectorConfig.closedLoop // pid loop to control elevator elevating rate
         .pidf(
             CoralScorerConstants.kP,
             CoralScorerConstants.kI,
@@ -177,11 +175,9 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public Command biteCMD() {
-    return runUntilGamePiece()
-        .andThen(
-            Commands.run(this::setBiteDutyCycle, this)
-                .withTimeout(0.1)
-                .finallyDo(this::effectorStop));
+    return runUntilGamePiece();
+        // .andThen(
+        //     runToBitePosition());
   }
 
   private Command runToEndThresh() {
