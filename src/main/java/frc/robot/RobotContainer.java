@@ -352,6 +352,14 @@ public class RobotContainer {
     m_visionThread.start();
   }
 
+  public Command getOrbitCommand() {
+    return Commands.either(
+            drive.driveOrbit(driver::getLeftX, driver::getLeftY),
+            drive.driveStation(driver::getLeftX, driver::getLeftY).alongWith(coralScorer.biteCMD()),
+            coralScorer.hasCoral)
+        .withName("Orbit command");
+  }
+
   public Command removeAlgae(ElevatorState height) {
     return Commands.deadline(elevator.elevatorAuto(height), coralScorer.reverseCommand());
   }

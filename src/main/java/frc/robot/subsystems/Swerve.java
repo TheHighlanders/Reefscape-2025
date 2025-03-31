@@ -69,6 +69,10 @@ import choreo.trajectory.SwerveSample;
 
 final class SwerveConstants {
 
+  static final double fieldWidth = 8.05;
+  static final Rotation2d leftStationRotation = Rotation2d.fromDegrees(54);
+  static final Rotation2d rightStationRotation = Rotation2d.fromDegrees(-54);
+
   public static final double maxRotSpeed = Units.degreesToRadians(360);
   // Implicit /sec
 
@@ -482,6 +486,34 @@ public class Swerve extends SubsystemBase {
               orbitY_PID_Out =
                   (y.getAsDouble() * SwerveConstants.orbitCosScalar)
                       + (x.getAsDouble() * SwerveConstants.orbitSinScalar);
+
+              double radiansOff =
+                  getPose().getRotation().getRadians() - rotationTarget.getRadians();
+
+              orbitControllerOutput = orbitController.calculate(radiansOff, 0);
+              SmartDashboard.putNumber("Orbit/Error", radiansOff);
+
+              drive(
+                  squaredCurve(orbitX_PID_Out),
+                  squaredCurve(orbitY_PID_Out),
+                  -orbitControllerOutput);
+            },
+            this)
+        .withName("Orbit Drive Command");
+  }
+
+  public Command driveStation(DoubleSupplier x, DoubleSupplier y) {
+    return Commands.run(
+            () -> {
+              rotationTarget =
+                  getPose().getTranslation().getX() > SwerveConstants.fieldWidth / 2
+                      ? SwerveConstants.rightStationRotation
+                      : SwerveConstants.leftStationRotation;
+
+              orbitPosePublisher.accept(
+                  new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
+              orbitX_PID_Out = (x.getAsDouble()) - (y.getAsDouble());
+              orbitY_PID_Out = (y.getAsDouble()) + (x.getAsDouble());
 
               double radiansOff =
                   getPose().getRotation().getRadians() - rotationTarget.getRadians();
