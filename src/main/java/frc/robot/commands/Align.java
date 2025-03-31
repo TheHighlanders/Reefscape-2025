@@ -46,7 +46,7 @@ public class Align extends Command {
     static final double positionTolerance = 0.025;
 
     // Velocity tolerance (meters/s)
-    static final double velocityTolerance = 0.1;
+    static final double velocityTolerance = 0.01;
 
     // Rotation tolerance (radians)
     static final double rotationTolerance = Units.degreesToRadians(5);
