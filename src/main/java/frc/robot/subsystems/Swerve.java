@@ -199,7 +199,7 @@ public class Swerve extends SubsystemBase {
     }
 
     leftStationRotation = Rotation2d.fromDegrees(-54);
-    rightStationRotation = leftStationRotation.plus(Rotation2d.kCCW_90deg);
+    rightStationRotation = leftStationRotation.plus(Rotation2d.kCW_90deg);
 
     if (DriverStation.getAlliance().isPresent()
         && DriverStation.getAlliance().get() == Alliance.Red) {
