@@ -58,8 +58,8 @@ public class Align extends Command {
     static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
-    static final double maxApproachSpeed = 2;
-    static final double maxApproachAccel = 1;
+    static final double maxApproachSpeed = 2.5;
+    static final double maxApproachAccel = 2.5;
 
     // Maximum rotation speed (rad/s)
     static final double maxRotationSpeed = 1;
