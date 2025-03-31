@@ -511,7 +511,10 @@ public class Swerve extends SubsystemBase {
                       : SwerveConstants.leftStationRotation;
 
               orbitPosePublisher.accept(
-                  new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
+                  new Pose2d(
+                      getPose().getX(),
+                      getPose().getY(),
+                      rotationTarget.plus(Rotation2d.kCCW_90deg)));
               orbitX_PID_Out = x.getAsDouble();
               orbitY_PID_Out = y.getAsDouble();
 
