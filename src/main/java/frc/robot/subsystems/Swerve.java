@@ -127,6 +127,8 @@ public class Swerve extends SubsystemBase {
     LINEUP
   }
 
+  boolean tele = false;
+
   StructPublisher<Pose2d> orbitPosePublisher =
       NetworkTableInstance.getDefault().getStructTopic("Swerve/Orbit", Pose2d.struct).publish();
 
@@ -175,7 +177,7 @@ public class Swerve extends SubsystemBase {
   @Logged(name = "orbitTheta_PID_Out")
   private double orbitControllerOutput;
 
-  SlewRateLimiter accelLimiter = new SlewRateLimiter(Double.MAX_VALUE, -2, 0);
+  SlewRateLimiter accelLimiter = new SlewRateLimiter(2, Double.NEGATIVE_INFINITY, 0);
 
   private final SysIdRoutine sysId;
 
@@ -330,6 +332,10 @@ public class Swerve extends SubsystemBase {
     }
     // Send diagnostic information
     // sendDiagnostics();
+  }
+
+  public void startTele() {
+    tele = true;
   }
 
   /** Process vision data from all cameras and update pose estimation */
@@ -840,7 +846,9 @@ public class Swerve extends SubsystemBase {
     chassisSpeeds = kinematics.toChassisSpeeds(targetStates);
     chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
 
-    chassisSpeeds.vyMetersPerSecond = accelLimiter.calculate(chassisSpeeds.vyMetersPerSecond);
+    if (tele) {
+      chassisSpeeds.vyMetersPerSecond = accelLimiter.calculate(chassisSpeeds.vyMetersPerSecond);
+    }
 
     // Convert back to States, and desat, again
     targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
