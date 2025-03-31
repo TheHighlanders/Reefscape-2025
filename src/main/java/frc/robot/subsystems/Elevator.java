@@ -43,8 +43,8 @@ class ElevatorConstants {
   static final double elevPCF = 2 * 1.685 / 9.0d * Math.PI;
 
   static final double homeTarget = 2; // Position before autolanding
-  static final double l2Target = 11.5;
-  static final double l3Target = 28;
+  static final double l2Target = 10.5;
+  static final double l3Target = 27;
   static final double l4Target = 52.125;
   static final double algaeLow = 7;
   static final double algaeHigh = 25;

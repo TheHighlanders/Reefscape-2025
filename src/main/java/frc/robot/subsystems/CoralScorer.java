@@ -91,11 +91,13 @@ public class CoralScorer extends SubsystemBase {
 
     effectorConfig.smartCurrentLimit(CoralScorerConstants.currentLimit).idleMode(IdleMode.kCoast);
 
-    effectorConfig.encoder
+    effectorConfig
+        .encoder
         .positionConversionFactor(CoralScorerConstants.effectorPCF)
         .velocityConversionFactor(CoralScorerConstants.effectorPCF / 60d);
 
-    effectorConfig.closedLoop // pid loop to control elevator elevating rate
+    effectorConfig
+        .closedLoop // pid loop to control elevator elevating rate
         .pidf(
             CoralScorerConstants.kP,
             CoralScorerConstants.kI,
@@ -176,8 +178,8 @@ public class CoralScorer extends SubsystemBase {
 
   public Command biteCMD() {
     return runUntilGamePiece();
-        // .andThen(
-        //     runToBitePosition());
+    // .andThen(
+    //     runToBitePosition());
   }
 
   private Command runToEndThresh() {
