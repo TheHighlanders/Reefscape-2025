@@ -67,7 +67,7 @@ public class Align extends Command {
 
     static double translateP = 2;
     static double translateI = 0;
-    static double translateD = 0.1; // 0
+    static double translateD = 0; // 0
 
     static final double rotateP = 3;
     static final double rotateI = 0.01; // 0
