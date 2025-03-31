@@ -33,7 +33,6 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -152,9 +151,6 @@ public class Swerve extends SubsystemBase {
   SwerveDrivePoseEstimator poseEst;
   public SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
-  double accelLim = SwerveConstants.accelLim;
-  SlewRateLimiter xLim = new SlewRateLimiter(SwerveConstants.accelLim);
-  SlewRateLimiter yLim = new SlewRateLimiter(SwerveConstants.accelLim);
 
   private final PIDController xController =
       new PIDController(
@@ -176,8 +172,6 @@ public class Swerve extends SubsystemBase {
 
   @Logged(name = "orbitTheta_PID_Out")
   private double orbitControllerOutput;
-
-  SlewRateLimiter accelLimiter = new SlewRateLimiter(2, Double.NEGATIVE_INFINITY, 0);
 
   private final SysIdRoutine sysId;
 
@@ -845,10 +839,6 @@ public class Swerve extends SubsystemBase {
     // Convert to ChassisSpeeds and discretize
     chassisSpeeds = kinematics.toChassisSpeeds(targetStates);
     chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
-
-    if (tele) {
-      chassisSpeeds.vyMetersPerSecond = accelLimiter.calculate(chassisSpeeds.vyMetersPerSecond);
-    }
 
     // Convert back to States, and desat, again
     targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);

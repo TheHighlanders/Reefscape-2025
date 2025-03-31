@@ -42,22 +42,22 @@ public class LEDs extends SubsystemBase {
   LEDPattern allianceColor;
 
   // LEDPattern pattern = blink.blink(Seconds.of(.1));
-  public LEDs(Trigger canAlign, Trigger isAligning) {
+  public LEDs(Trigger canAlign, BooleanSupplier isAligning) {
     if (DriverStation.getAlliance().isPresent()
         && DriverStation.getAlliance().get() == Alliance.Blue) {
       allianceLED = LEDPattern.solid(Color.kBlue);
     }
 
     this.canAlign = canAlign;
-    this.isAligning = isAligning;
+    this.isAligning = new Trigger(isAligning);
 
-    canAlign
-        .and(isAligning.negate())
+    this.canAlign
+        .and(this.isAligning.negate())
         .onTrue(runPatternCommand(alignOk).withName("Alignment OK Pattern"))
         .onFalse(breathingPattern(getAllianceLed(), 1d).withName("Alignment NOT OK Pattern"));
 
-    isAligning.onTrue(runPatternCommand(LEDPattern.solid(Color.kYellow)));
-    isAligning.onFalse(breathingPattern(getAllianceLed(), 1d)); // one hundred yellow
+    this.isAligning.onTrue(runPatternCommand(LEDPattern.solid(Color.kYellow)));
+    this.isAligning.onFalse(breathingPattern(getAllianceLed(), 1d)); // one hundred yellow
 
     m_led = new AddressableLED(kPort);
     m_buffer = new AddressableLEDBuffer(kLength);

@@ -74,7 +74,7 @@ public class RobotContainer {
   @Logged(name = "Align")
   Command align = new Align(drive, cameras, canAlign, createDirectionalRumbleCallback());
 
-  public LEDs leds = new LEDs(canAlign, new Trigger(align::isScheduled));
+  public LEDs leds = new LEDs(canAlign, align::isScheduled);
 
   public RobotContainer() {
 
