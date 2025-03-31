@@ -20,7 +20,6 @@ import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -76,8 +75,6 @@ public class RobotContainer {
 
   @Logged(name = "Align")
   Command align = new Align(drive, cameras, canAlign, createDirectionalRumbleCallback());
-
-  public static final Timer l1Timer = new Timer();
 
   public RobotContainer() {
 
@@ -258,19 +255,8 @@ public class RobotContainer {
 
   public Command scoreL1() {
     return Commands.parallel(
-            coralScorer.slowDepositCMD(),
-            drive.driveRobotRelativeCMD(() -> 0, () -> getL1Direction(), () -> 0))
-        .until(() -> l1Timer.hasElapsed(0.5));
-  }
-
-  public static Command restartL1Timer() {
-    System.out.println("Reseting timer");
-    return Commands.runOnce(() -> l1Timer.restart());
-  }
-
-  @Logged(name = "L1 timer")
-  public double getL1TimeElapsed() {
-    return l1Timer.get();
+        coralScorer.slowDepositCMD(),
+        drive.driveRobotRelativeCMD(() -> 0, () -> getL1Direction(), () -> 0));
   }
 
   public double getL1Direction() {
