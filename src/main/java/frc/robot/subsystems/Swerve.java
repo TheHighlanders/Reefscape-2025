@@ -175,6 +175,8 @@ public class Swerve extends SubsystemBase {
   @Logged(name = "orbitTheta_PID_Out")
   private double orbitControllerOutput;
 
+  SlewRateLimiter accelLimiter = new SlewRateLimiter(Double.MAX_VALUE, -2, 0);
+
   private final SysIdRoutine sysId;
 
   Field2d field = new Field2d();
@@ -837,6 +839,8 @@ public class Swerve extends SubsystemBase {
     // Convert to ChassisSpeeds and discretize
     chassisSpeeds = kinematics.toChassisSpeeds(targetStates);
     chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
+
+    chassisSpeeds.vyMetersPerSecond = accelLimiter.calculate(chassisSpeeds.vyMetersPerSecond);
 
     // Convert back to States, and desat, again
     targetStates = kinematics.toSwerveModuleStates(chassisSpeeds);
