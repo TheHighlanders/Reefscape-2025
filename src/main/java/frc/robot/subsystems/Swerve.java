@@ -506,15 +506,12 @@ public class Swerve extends SubsystemBase {
     return Commands.run(
             () -> {
               rotationTarget =
-                  getPose().getTranslation().getX() > SwerveConstants.fieldWidth / 2
+                  getPose().getTranslation().getY() > SwerveConstants.fieldWidth / 2
                       ? SwerveConstants.rightStationRotation
                       : SwerveConstants.leftStationRotation;
 
               orbitPosePublisher.accept(
-                  new Pose2d(
-                      getPose().getX(),
-                      getPose().getY(),
-                      rotationTarget.plus(Rotation2d.kCCW_90deg)));
+                  new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
               orbitX_PID_Out = x.getAsDouble();
               orbitY_PID_Out = y.getAsDouble();
 
