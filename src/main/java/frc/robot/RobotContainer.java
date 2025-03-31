@@ -264,6 +264,7 @@ public class RobotContainer {
   }
 
   public static Command restartL1Timer() {
+    System.out.println("Reseting timer");
     return Commands.runOnce(() -> l1Timer.restart());
   }
 
