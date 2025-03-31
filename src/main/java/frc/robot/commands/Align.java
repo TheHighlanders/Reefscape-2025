@@ -19,11 +19,14 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.LEDPattern;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj2.command.Command;
 
 import frc.robot.Constants;
+import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 
@@ -107,6 +110,8 @@ public class Align extends Command {
 
   Timer timer = new Timer();
 
+  LEDs leds;
+
   StructPublisher<Pose2d> targetPosePublisher =
       NetworkTableInstance.getDefault()
           .getStructTopic("Vision/AlignTarget", Pose2d.struct)
@@ -147,11 +152,13 @@ public class Align extends Command {
       Swerve swerve,
       Vision vision,
       BooleanSupplier targetRightCoralSupplier,
-      BiConsumer<Double, Boolean> errorCallback) {
+      BiConsumer<Double, Boolean> errorCallback,
+      LEDs leds) {
     this.swerve = swerve;
     this.vision = vision;
     this.targetRightCoralSupplier = targetRightCoralSupplier;
     this.errorCallback = errorCallback;
+    this.leds = leds;
 
     rotController.enableContinuousInput(-Math.PI, Math.PI);
     rotController.setIntegratorRange(0, 5);
@@ -168,6 +175,8 @@ public class Align extends Command {
     if (Align.canAlign(swerve, vision)) {
       this.cancel();
     }
+
+    leds.runPattern(LEDPattern.solid(Color.kYellow));
 
     AlignConstants.translateP =
         SmartDashboard.getNumber("Align/Translate P", AlignConstants.translateP);
@@ -280,6 +289,7 @@ public class Align extends Command {
     if (interrupted || Math.abs(finalXError) > 0.05) {
       errorCallback.accept(finalXError, false);
     } else errorCallback.accept(1d, true);
+    leds.runAllianceColor();
   }
 
   @Override

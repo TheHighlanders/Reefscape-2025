@@ -25,7 +25,6 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 public class LEDs extends SubsystemBase {
 
   Trigger canAlign;
-  Trigger isAligning;
 
   /** Creates a new LEDs. */
   private static final int kPort = 9;
@@ -42,22 +41,17 @@ public class LEDs extends SubsystemBase {
   LEDPattern allianceColor;
 
   // LEDPattern pattern = blink.blink(Seconds.of(.1));
-  public LEDs(Trigger canAlign, BooleanSupplier isAligning) {
+  public LEDs(Trigger canAlign) {
     if (DriverStation.getAlliance().isPresent()
         && DriverStation.getAlliance().get() == Alliance.Blue) {
       allianceLED = LEDPattern.solid(Color.kBlue);
     }
 
     this.canAlign = canAlign;
-    this.isAligning = new Trigger(isAligning);
 
     this.canAlign
-        .and(this.isAligning.negate())
         .onTrue(runPatternCommand(alignOk).withName("Alignment OK Pattern"))
         .onFalse(breathingPattern(getAllianceLed(), 1d).withName("Alignment NOT OK Pattern"));
-
-    this.isAligning.onTrue(runPatternCommand(LEDPattern.solid(Color.kYellow)));
-    this.isAligning.onFalse(breathingPattern(getAllianceLed(), 1d)); // one hundred yellow
 
     m_led = new AddressableLED(kPort);
     m_buffer = new AddressableLEDBuffer(kLength);
@@ -94,6 +88,10 @@ public class LEDs extends SubsystemBase {
 
   public void runPattern(LEDPattern pattern) {
     runPattern(pattern, kledBrightness);
+  }
+
+  public void runAllianceColor() {
+    runPattern(getAllianceLed());
   }
 
   public void runPattern(LEDPattern pattern, double ledBrightness) {
