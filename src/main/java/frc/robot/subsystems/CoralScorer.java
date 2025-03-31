@@ -180,7 +180,11 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public Command biteCMD() {
-    return runUntilGamePiece().andThen(Commands.run(this::setBiteDutyCycle, this).withTimeout(0.1));
+    return runUntilGamePiece()
+        .andThen(
+            Commands.run(this::setBiteDutyCycle, this)
+                .withTimeout(0.1)
+                .finallyDo(this::effectorStop));
   }
 
   private Command runToEndThresh() {
