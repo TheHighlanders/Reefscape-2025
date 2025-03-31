@@ -260,7 +260,7 @@ public class RobotContainer {
   }
 
   public double getL1Direction() {
-    return lastAlignSide ? 0.5 : -0.5;
+    return lastAlignSide ? -0.5 : 0.5;
   }
 
   public Command alignToLeftCoralManual() {

@@ -62,9 +62,9 @@ public class Align extends Command {
     static final double maxRotationSpeed = 1;
     static final double maxRotationAccel = 2;
 
-    static double translateP = 7;
+    static double translateP = 4;
     static double translateI = 0;
-    static double translateD = 1; // 0
+    static double translateD = 0; // 0
 
     static final double rotateP = 3;
     static final double rotateI = 0.01; // 0
