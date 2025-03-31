@@ -242,7 +242,10 @@ public class RobotContainer {
             .withName("Align to Right Coral Final");
 
     return Commands.sequence(
-        align, Commands.parallel(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)));
+        align,
+        Commands.parallel(
+            drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX),
+            periscopeIfApplicable()));
   }
 
   public Command alignToRightCoral() {
@@ -269,7 +272,10 @@ public class RobotContainer {
             .withName("Align to Left Coral Final");
 
     return Commands.sequence(
-        align, Commands.parallel(drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX)));
+        align,
+        Commands.parallel(
+            drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX),
+            periscopeIfApplicable()));
   }
 
   public Command alignToLeftCoral() {
@@ -377,7 +383,10 @@ public class RobotContainer {
   }
 
   public Command periscopeIfApplicable() {
-    return Commands.either(Commands.none(), elevator.setPosition(ElevatorState.L2_POSITION), elevator::nextHeightIsHome);
+    return Commands.either(
+        Commands.none(),
+        elevator.setPosition(ElevatorState.L2_POSITION),
+        elevator::nextHeightIsHome);
   }
 
   private Command autoScore() {
