@@ -198,7 +198,7 @@ public class CoralScorer extends SubsystemBase {
   public Command depositCMD(ElevatorState height) {
     return Commands.defer(
         () -> deferDeposit(height).until(hasCoral.negate()).andThen(Commands.waitSeconds(0.1)),
-        Set.of(this));
+        Set.of(this)).finallyDo(this::effectorStop);
   }
 
   // Manual stuff

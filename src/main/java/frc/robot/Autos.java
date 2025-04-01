@@ -166,7 +166,7 @@ public class Autos {
                 .withName("Align2")
                 // .alongWith(
                 //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
-                .andThen(Commands.deadline(score().withName("Score Second Piece"), elevator.slowDownElevator()))
+                .andThen(score().withName("Score Second Piece").deadlineFor(elevator.slowDownElevator()))
                 .withName("Align and Score"));
 
     return routine;
@@ -190,10 +190,10 @@ public class Autos {
     canAlign
         .and(rightStart_rightFar.active())
         .onTrue(
-            alignToRightCoral
+            alignToLeftCoral
                 .get()
                 .withName("Align1")
-                .andThen(score().withName("Score First Piece"))
+                .andThen(score().withName("Score First Piece").deadlineFor(elevator.slowDownElevator()))
                 .andThen(rightFar_rightStation.cmd().withName("Drive to Station"))
                 .withName("Drive to Station"));
 
@@ -239,12 +239,13 @@ public class Autos {
         .done()
         .onTrue(
             elevator
-                .elevatorAuto(ElevatorState.L4_POSITION)
-                .withName("Elevator to L4")
-                .andThen(Commands.waitSeconds(0.5).withName("Short Wait"))
-                .andThen(coral.slowDepositCMD().withTimeout(3).withName("Deposit Coral"))
-                .andThen(Commands.deadline(elevator.elevatorAuto(ElevatorState.HOME).withName("Elevator Home")), elevator.slowDownElevator())
-                .withName("Score Sequence"));
+            .elevatorAuto(ElevatorState.L4_POSITION)
+            .withName("Elevator to L4")
+            .andThen(Commands.waitSeconds(0.5).withName("Short Wait"))
+            .andThen(coral.slowDepositCMD().withTimeout(3).withName("Deposit Coral"))
+            .andThen(Commands.deadline(elevator.elevatorAuto(ElevatorState.HOME).withName("Elevator Home")))
+            .withName("Score Sequence").deadlineFor(elevator.slowDownElevator()));
+           
 
     return routine;
   }
