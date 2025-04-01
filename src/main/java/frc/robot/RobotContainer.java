@@ -234,7 +234,6 @@ public class RobotContainer {
 
     return Commands.sequence(
         align,
-        autoScore().until(isTryingToDrive()),
         drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
@@ -261,7 +260,6 @@ public class RobotContainer {
 
     return Commands.sequence(
         align,
-        autoScore().until(isTryingToDrive()),
         drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
@@ -378,7 +376,7 @@ public class RobotContainer {
     return Commands.sequence(
         elevator.runToNextHeight(),
         Commands.defer(
-            () -> coralScorer.depositCMD(elevator.nextSetpoint()), Set.of(elevator, coralScorer)));
+            () -> coralScorer.depositCMDTeleop(elevator.nextSetpoint()), Set.of(elevator, coralScorer)));
   }
 
   public Trigger isTryingToDrive() {
