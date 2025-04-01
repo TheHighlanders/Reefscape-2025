@@ -89,7 +89,7 @@ public class CoralScorer extends SubsystemBase {
     effectorConfig.inverted(CoralScorerConstants.inverted);
     effectorConfig.idleMode(IdleMode.kBrake);
 
-    effectorConfig.smartCurrentLimit(CoralScorerConstants.currentLimit).idleMode(IdleMode.kCoast);
+    effectorConfig.smartCurrentLimit(CoralScorerConstants.currentLimit);
 
     effectorConfig.encoder
         .positionConversionFactor(CoralScorerConstants.effectorPCF)
