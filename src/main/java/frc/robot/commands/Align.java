@@ -298,8 +298,7 @@ public class Align extends Command {
       SmartDashboard.putNumber("ReefAlign/RotError", rotationError);
     }
 
-    if ((!xController.atGoal() || !yController.atGoal() || !rotController.atGoal())
-        || !vision.hasTarget()) {
+    if (!xController.atGoal() || !yController.atGoal() || !rotController.atGoal()) {
       timer.restart();
     }
 
@@ -308,7 +307,7 @@ public class Align extends Command {
     //     && yController.atGoal()
     //     && rotController.atGoal()
     //     && vision.hasTarget();
-    return timer.hasElapsed(0.1);
+    return timer.hasElapsed(0.1) && vision.hasTarget();
   }
 
   public static boolean canAlign(Swerve swerve, Vision vision) {
