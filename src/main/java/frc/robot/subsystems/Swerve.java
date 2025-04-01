@@ -150,8 +150,8 @@ public class Swerve extends SubsystemBase {
   public SwerveDriveKinematics kinematics;
   Pose2d startPose = new Pose2d(0, 0, new Rotation2d());
 
-  static Rotation2d leftStationRotation;
   static Rotation2d rightStationRotation;
+  static Rotation2d leftStationRotation;
 
   private final PIDController xController =
       new PIDController(
@@ -199,14 +199,14 @@ public class Swerve extends SubsystemBase {
       needZeroing.add(modules[i]);
     }
 
-    leftStationRotation =
-        Rotation2d.fromDegrees(54).plus(Rotation2d.kCCW_90deg);
-    rightStationRotation = Rotation2d.fromDegrees(-54).minus(Rotation2d.kCCW_90deg);
+    rightStationRotation =
+        Rotation2d.fromDegrees(54).plus(Rotation2d.kCCW_90deg).plus(Rotation2d.k180deg);
+    leftStationRotation = Rotation2d.fromDegrees(-54).minus(Rotation2d.kCCW_90deg).plus(Rotation2d.k180deg);
 
     if (DriverStation.getAlliance().isPresent()
         && DriverStation.getAlliance().get() == Alliance.Blue) {
-      leftStationRotation = rightStationRotation.rotateBy(Rotation2d.k180deg);
       rightStationRotation = leftStationRotation.rotateBy(Rotation2d.k180deg);
+      leftStationRotation = rightStationRotation.rotateBy(Rotation2d.k180deg);
     }
 
     // Using +X as forward, and +Y as left, as per
@@ -557,8 +557,8 @@ public class Swerve extends SubsystemBase {
             () -> {
               rotationTarget =
                   getPose().getTranslation().getY() > SwerveConstants.fieldWidth / 2
-                      ? rightStationRotation
-                      : leftStationRotation;
+                      ? leftStationRotation
+                      : rightStationRotation;
 
               orbitPosePublisher.accept(
                   new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
