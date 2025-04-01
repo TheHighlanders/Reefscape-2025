@@ -153,7 +153,8 @@ public class Autos {
     leftFarToleftStation
         .done()
         .onTrue(
-            coral.biteCMD()
+            coral
+                .biteCMD()
                 .withName("Bite")
                 .andThen(leftStationToleftClose.cmd().withName("Drive to Close Position"))
                 .withName("Wait and Drive"));
@@ -200,7 +201,8 @@ public class Autos {
     rightFar_rightStation
         .done()
         .onTrue(
-            coral.biteCMD()
+            coral
+                .biteCMD()
                 .withName("Bite")
                 .andThen(rightStation_rightClose.cmd().withName("Drive to Close Position"))
                 .withName("Wait and Drive"));
