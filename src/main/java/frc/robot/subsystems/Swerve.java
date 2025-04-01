@@ -97,7 +97,7 @@ final class SwerveConstants {
 
   static double orbitP = 0.9; // 0.75
   static double orbitI = 0;
-  static double orbitD = 0.1;
+  static double orbitD = 0.01;
 
   static double orbitCosScalar = Math.cos(Units.degreesToRadians(-15));
   static double orbitSinScalar = Math.sin(Units.degreesToRadians(-15));

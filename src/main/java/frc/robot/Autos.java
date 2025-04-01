@@ -243,6 +243,7 @@ public class Autos {
             .withName("Elevator to L4")
             .andThen(Commands.waitSeconds(0.5).withName("Short Wait"))
             .andThen(coral.slowDepositCMD().withTimeout(3).withName("Deposit Coral"))
+            .andThen(elevator.offsetElevator().withTimeout(0.2))
             .andThen(Commands.deadline(elevator.elevatorAuto(ElevatorState.HOME).withName("Elevator Home")))
             .withName("Score Sequence").deadlineFor(elevator.slowDownElevator()));
            
