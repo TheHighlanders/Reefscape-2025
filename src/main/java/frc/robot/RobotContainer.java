@@ -348,7 +348,7 @@ public class RobotContainer {
   public Command getOrbitCommand() {
     return Commands.either(
         drive.driveOrbit(driver::getLeftX, driver::getLeftY),
-        drive.driveStation(driver::getLeftX, driver::getLeftY).alongWith(coralScorer.biteCMD()),
+        drive.driveStation(driver::getLeftX, driver::getLeftY).alongWith(coralScorer.biteCMD()).until(coralScorer.hasCoral),
         coralScorer.hasCoral)
         .withName("Orbit command");
   }
