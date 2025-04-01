@@ -190,10 +190,10 @@ public class Autos {
     canAlign
         .and(rightStart_rightFar.active())
         .onTrue(
-            alignToLeftCoral
+            alignToRightCoral
                 .get()
                 .withName("Align1")
-                .andThen(score().withName("Score First Piece").deadlineFor(elevator.slowDownElevator()))
+                .andThen(score().withName("Score First Piece"))
                 .andThen(rightFar_rightStation.cmd().withName("Drive to Station"))
                 .withName("Drive to Station"));
 
@@ -213,7 +213,7 @@ public class Autos {
                 .withName("Align2")
                 // .alongWith(
                 //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
-                .andThen(score().withName("Score Second Piece"))
+                .andThen(score().withName("Score Second Piece").deadlineFor(elevator.slowDownElevator()))
                 .withName("Align and Score"));
 
     return routine;
