@@ -97,7 +97,7 @@ final class SwerveConstants {
 
   static double orbitP = 0.9; // 0.75
   static double orbitI = 0;
-  static double orbitD = 0;
+  static double orbitD = 0.1;
 
   static double orbitCosScalar = Math.cos(Units.degreesToRadians(-15));
   static double orbitSinScalar = Math.sin(Units.degreesToRadians(-15));
@@ -201,7 +201,7 @@ public class Swerve extends SubsystemBase {
 
     rightStationRotation =
         Rotation2d.fromDegrees(-54).plus(Rotation2d.kCCW_90deg).plus(Rotation2d.k180deg);
-    leftStationRotation = rightStationRotation.plus(Rotation2d.kCCW_90deg);
+    leftStationRotation = rightStationRotation.plus(Rotation2d.kCW_90deg);
 
     if (DriverStation.getAlliance().isPresent()
         && DriverStation.getAlliance().get() == Alliance.Blue) {
