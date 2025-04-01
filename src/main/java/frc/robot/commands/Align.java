@@ -45,7 +45,7 @@ public class Align extends Command {
     static final double ejectOffset = 0.27;
 
     // Position tolerance (meters)
-    static final double positionTolerance = 0.025;
+    static final double positionTolerance = 0.020;
 
     // Velocity tolerance (meters/s)
     static final double velocityTolerance = 0.1;
