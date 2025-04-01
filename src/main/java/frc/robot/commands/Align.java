@@ -36,7 +36,7 @@ public class Align extends Command {
   private static final class AlignConstants {
     // Distance from robot center to front bumper (meters)
 
-    static final double robotCenterToFrontDistance = 0.39 + 0.04;
+    static final double robotCenterToFrontDistance = 0.39;
 
     // Lateral offset from tag to coral (meters)
     static final double coralLeftOffset = -0.165; // Left coral Y offset (negative = left)

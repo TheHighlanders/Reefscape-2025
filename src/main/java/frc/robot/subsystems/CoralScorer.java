@@ -186,7 +186,7 @@ public class CoralScorer extends SubsystemBase {
   }
 
   private Command runAtElevatorHeight(ElevatorState height) {
-    return Commands.runOnce(() -> effectorSpeedByHeight(height));
+    return Commands.run(() -> effectorSpeedByHeight(height));
   }
 
   private Command deferDeposit(ElevatorState height) {
