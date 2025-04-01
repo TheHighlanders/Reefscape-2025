@@ -187,6 +187,8 @@ public class Swerve extends SubsystemBase {
   @Logged(name = "rotationTarget")
   Rotation2d rotationTarget = new Rotation2d();
 
+  private boolean visionEnabled = true;
+
   /** Creates a new Swerve. */
   public Swerve(Vision vision, DoubleSupplier elevatorHeight) {
     this.vision = vision;
@@ -321,8 +323,10 @@ public class Swerve extends SubsystemBase {
     // Update visualization
     field.setRobotPose(getPose());
 
-    // Process vision data from all cameras
-    updateVision();
+    if(visionEnabled){
+      // Process vision data from all cameras
+      updateVision();
+    }
 
     // Display alignment mode status
     SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
@@ -341,6 +345,11 @@ public class Swerve extends SubsystemBase {
 
   public void startTele() {
     tele = true;
+    visionEnabled = true;
+  }
+
+  public Command disableVision(){
+    return Commands.runOnce(()->visionEnabled = false);
   }
 
   /** Process vision data from all cameras and update pose estimation */

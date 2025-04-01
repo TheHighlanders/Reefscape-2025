@@ -228,6 +228,7 @@ public class Autos {
         .active()
         .onTrue(
             Commands.sequence(
+                    drive.disableVision(),
                     centerStart_centerFar.resetOdometry().withName("Reset Odometry"),
                     // drive.presetWheelsToTraj((SwerveSample)
                     // centerStart_centerFar.getRawTrajectory().getInitialSample(true).get()),
