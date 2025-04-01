@@ -52,7 +52,7 @@ final class CoralScorerConstants {
     heightToSpeedMap.put(ElevatorState.HOME, 0.3d);
     heightToSpeedMap.put(ElevatorState.L2_POSITION, 1d);
     heightToSpeedMap.put(ElevatorState.L3_POSITION, 1d);
-    heightToSpeedMap.put(ElevatorState.L4_POSITION, 0.3d);
+    heightToSpeedMap.put(ElevatorState.L4_POSITION, 0.35d);
   }
 }
 

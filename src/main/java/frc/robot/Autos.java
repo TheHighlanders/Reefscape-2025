@@ -153,8 +153,8 @@ public class Autos {
     leftFarToleftStation
         .done()
         .onTrue(
-            Commands.waitSeconds(0.25)
-                .withName("Short Wait")
+            coral.biteCMD()
+                .withName("Bite")
                 .andThen(leftStationToleftClose.cmd().withName("Drive to Close Position"))
                 .withName("Wait and Drive"));
 
@@ -184,47 +184,37 @@ public class Autos {
         .onTrue(
             Commands.sequence(
                     rightStart_rightFar.resetOdometry().withName("Reset Odometry"),
-                    rightStart_rightFar.cmd().withName("Drive to Right Far"))
-                .withName("Initial Drive Sequence"));
+                    rightStart_rightFar.cmd().withName("Drive to Left Far"))
+                .withName("Initial Drive Sequence")); // Starts driving
 
-    rightStart_rightFar
-        .done()
+    canAlign
+        .and(rightStart_rightFar.active())
         .onTrue(
             alignToRightCoral
                 .get()
-                .withTimeout(1.25)
-                .alongWith(
-                    elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
-                .withName("Align to Right Coral")
-                .andThen(
-                    elevator.elevatorAuto(ElevatorState.L4_POSITION).withName("Elevator to L4"))
-                .andThen(coral.slowDepositCMD().withTimeout(1).withName("Deposit Coral"))
-                .andThen(elevator.elevatorAuto(ElevatorState.HOME).withName("Elevator Home"))
+                .withName("Align1")
+                .andThen(score().withName("Score First Piece"))
                 .andThen(rightFar_rightStation.cmd().withName("Drive to Station"))
-                .withName("First Score Sequence")); // move
+                .withName("Drive to Station"));
 
     rightFar_rightStation
         .done()
         .onTrue(
-            Commands.waitSeconds(1)
-                .withName("Wait at Station")
+            coral.biteCMD()
+                .withName("Bite")
                 .andThen(rightStation_rightClose.cmd().withName("Drive to Close Position"))
                 .withName("Wait and Drive"));
 
-    rightStation_rightClose
-        .done()
+    canAlign
+        .and(rightStation_rightClose.active())
         .onTrue(
-            alignToRightCoral
+            alignToLeftCoral
                 .get()
-                .withTimeout(1.25)
-                .alongWith(
-                    elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
-                .withName("Align to Right Coral")
-                .andThen(
-                    elevator.elevatorAuto(ElevatorState.L4_POSITION).withName("Elevator to L4"))
-                .andThen(coral.slowDepositCMD().withTimeout(1).withName("Deposit Coral"))
-                .andThen(elevator.elevatorAuto(ElevatorState.HOME).withName("Elevator Home"))
-                .withName("Second Score Sequence"));
+                .withName("Align2")
+                // .alongWith(
+                //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
+                .andThen(score().withName("Score Second Piece"))
+                .withName("Align and Score"));
 
     return routine;
   }

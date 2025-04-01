@@ -345,48 +345,87 @@ public class Swerve extends SubsystemBase {
 
   /** Process vision data from all cameras and update pose estimation */
   private void updateVision() {
-    for (int i = 0; i < Vision.CAMERA_COUNT; i++) {
-      // Get the best result from vision
-      Optional<EstimatedRobotPose> estPose = vision.getEstimatedRobotPose(i);
+    // for (int i = 0; i < Vision.CAMERA_COUNT; i++) {
+    //   // Get the best result from vision
+    //   Optional<EstimatedRobotPose> estPose = vision.getEstimatedRobotPose(i);
 
-      if (estPose.isPresent()) {
-        // Store the camera pose for debugging
-        cameraPose = estPose.get().estimatedPose;
+    //   if (estPose.isPresent()) {
+    //     // Store the camera pose for debugging
+    //     cameraPose = estPose.get().estimatedPose;
 
-        // Get standard deviations from the camera
-        Matrix<N3, N1> stdDev = vision.getEstimationStdDev(i);
+    //     // Get standard deviations from the camera
+    //     Matrix<N3, N1> stdDev = vision.getEstimationStdDev(i);
 
-        // Apply additional scaling based on game state
-        if (DriverStation.isAutonomous()) {
-          // Increase uncertainty during auto
-          stdDev = stdDev.times(2.0);
+    //     // Apply additional scaling based on game state
+    //     if (DriverStation.isAutonomous()) {
+    //       // Increase uncertainty during auto
+    //       stdDev = stdDev.times(2.0);
+    //     }
+
+    //     // Add measurement to pose estimator
+    //     poseEst.addVisionMeasurement(
+    //         estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
+
+    //     lastEstTimestamp = estPose.get().timestampSeconds;
+
+    //     // Log vision data
+    //     SmartDashboard.putNumber(
+    //         "Vision/" + vision.getName() + "/Processing Delay",
+    //         Timer.getFPGATimestamp() - lastEstTimestamp);
+
+    //     SmartDashboard.putNumber(
+    //         "Vision/" + vision.getName() + "/Target Count", estPose.get().targetsUsed.size());
+
+    //     // Log whether this camera has a valid result
+    //     SmartDashboard.putBoolean(
+    //         "Vision/" + vision.getName() + "/Has Target", estPose.isPresent());
+
+    //     // Log camera poses for debugging
+    //     if (Constants.devMode) {
+    //       SmartDashboard.putData("Vision/Camera Poses", new Field2d());
+    //       // Add code to visualize camera poses on field
+    //     }
+    //   }
+    // }
+
+    Optional<EstimatedRobotPose> bestEst = vision.getEstimatedRobotPose();
+    if (bestEst.isPresent()) {
+          // Store the camera pose for debugging
+          cameraPose = bestEst.get().estimatedPose;
+  
+          // Get standard deviations from the camera
+          Matrix<N3, N1> stdDev = vision.getEstimationStdDev();
+  
+          // Apply additional scaling based on game state
+          if (DriverStation.isAutonomous()) {
+            // Increase uncertainty during auto
+            stdDev = stdDev.times(2.0);
+          }
+  
+          // Add measurement to pose estimator
+          poseEst.addVisionMeasurement(
+              bestEst.get().estimatedPose.toPose2d(), bestEst.get().timestampSeconds, stdDev);
+  
+          lastEstTimestamp = bestEst.get().timestampSeconds;
+  
+          // Log vision data
+          SmartDashboard.putNumber(
+              "Vision/" + vision.getName() + "/Processing Delay",
+              Timer.getFPGATimestamp() - lastEstTimestamp);
+  
+          SmartDashboard.putNumber(
+              "Vision/" + vision.getName() + "/Target Count", bestEst.get().targetsUsed.size());
+  
+          // Log whether this camera has a valid result
+          SmartDashboard.putBoolean(
+              "Vision/" + vision.getName() + "/Has Target", bestEst.isPresent());
+  
+          // Log camera poses for debugging
+          if (Constants.devMode) {
+            SmartDashboard.putData("Vision/Camera Poses", new Field2d());
+            // Add code to visualize camera poses on field
+          }
         }
-
-        // Add measurement to pose estimator
-        poseEst.addVisionMeasurement(
-            estPose.get().estimatedPose.toPose2d(), estPose.get().timestampSeconds, stdDev);
-
-        lastEstTimestamp = estPose.get().timestampSeconds;
-
-        // Log vision data
-        SmartDashboard.putNumber(
-            "Vision/" + vision.getName() + "/Processing Delay",
-            Timer.getFPGATimestamp() - lastEstTimestamp);
-
-        SmartDashboard.putNumber(
-            "Vision/" + vision.getName() + "/Target Count", estPose.get().targetsUsed.size());
-
-        // Log whether this camera has a valid result
-        SmartDashboard.putBoolean(
-            "Vision/" + vision.getName() + "/Has Target", estPose.isPresent());
-
-        // Log camera poses for debugging
-        if (Constants.devMode) {
-          SmartDashboard.putData("Vision/Camera Poses", new Field2d());
-          // Add code to visualize camera poses on field
-        }
-      }
-    }
   }
 
   /**
@@ -807,8 +846,8 @@ public class Swerve extends SubsystemBase {
       slowModeXCoefficient = getCurrentSlowModeCoefficient(elevatorHeight.getAsDouble());
 
     } else {
-      slowModeYCoefficient = 0.3;
-      slowModeXCoefficient = 0.15;
+      slowModeYCoefficient = 0.2;
+      slowModeXCoefficient = 0.1;
     }
 
     y *= slowModeYCoefficient;

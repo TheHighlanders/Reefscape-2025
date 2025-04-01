@@ -43,8 +43,8 @@ class ElevatorConstants {
   static final double elevPCF = 2 * 1.685 / 9.0d * Math.PI;
 
   static final double homeTarget = 2; // Position before autolanding
-  static final double l2Target = 10.5;
-  static final double l3Target = 27;
+  static final double l2Target = 11;
+  static final double l3Target = 27.5;
   static final double l4Target = 52.125;
   static final double algaeLow = 7;
   static final double algaeHigh = 25;
@@ -92,12 +92,16 @@ public class Elevator extends SubsystemBase {
   double downwardOutput = ElevatorConstants.maximumNegatieOutput;
   double upwardOutput = ElevatorConstants.maximumPositiveOutput;
 
-  @Logged double trim;
+  @Logged
+  double trim;
 
   double arbFF;
   double antiSlamVoltageOffset;
 
   private ElevatorState setpoint = ElevatorState.HOME;
+
+  // False means fast
+  private boolean slot = false;
 
   private SparkClosedLoopController elevatorController;
 
@@ -111,33 +115,30 @@ public class Elevator extends SubsystemBase {
   public Elevator() { // Creates a new Elevator.
     SparkMaxConfig elevatorMotorConfig = new SparkMaxConfig();
     elevatorMotor = new SparkMax(ElevatorConstants.elevMotorID, MotorType.kBrushless);
-    elevatorMotorConfig
-        .encoder
+    elevatorMotorConfig.encoder
         .positionConversionFactor(ElevatorConstants.elevPCF)
         .velocityConversionFactor(ElevatorConstants.elevPCF);
 
     elevatorMotorConfig.idleMode(IdleMode.kBrake).inverted(true);
 
-    elevatorMotorConfig
-        .limitSwitch
+    elevatorMotorConfig.limitSwitch
         .reverseLimitSwitchType(Type.kNormallyOpen)
         .reverseLimitSwitchEnabled(false)
         .forwardLimitSwitchEnabled(false);
 
-    elevatorMotorConfig
-        .softLimit
+    elevatorMotorConfig.softLimit
         .forwardSoftLimit(ElevatorConstants.forwardSoftLimit)
         .forwardSoftLimitEnabled(true)
         .reverseSoftLimit(ElevatorConstants.backwardSoftLimit)
         .reverseSoftLimitEnabled(true);
 
     elevatorMotorConfig.closedLoop.outputRange(downwardOutput, upwardOutput);
+    elevatorMotorConfig.closedLoop.outputRange(-0.25, upwardOutput, ClosedLoopSlot.kSlot1);
 
     elevatorMotorConfig.closedLoopRampRate(0.05);
 
     // Set PID gains
-    elevatorMotorConfig
-        .closedLoop // pid loop to control elevator elevating rate
+    elevatorMotorConfig.closedLoop // pid loop to control elevator elevating rate
         .p(ElevatorConstants.elevP)
         .i(ElevatorConstants.elevI)
         .d(ElevatorConstants.elevD);
@@ -199,41 +200,43 @@ public class Elevator extends SubsystemBase {
 
   public Command zeroElevator() {
     return Commands.runOnce(
-            () -> {
-              elevatorEncoder.setPosition(0);
-            })
+        () -> {
+          elevatorEncoder.setPosition(0);
+        })
         .ignoringDisable(true)
         .withName("Zero Elevator Encoder");
   }
 
-  // public Command enableSlowDown(){
-  //   return Commands.runOnce(()->{
-
-  //   });
-  // }
+  public Command slowDownElevator() {
+    return Commands.startEnd(() -> {
+      slot = true;
+    }, () -> {
+      slot = false;
+    });
+  }
 
   public Command setPosition(ElevatorState position) {
     return Commands.runOnce(
-            () -> {
-              if (position != ElevatorState.CURRENT) {
-                setpoint = position;
-              }
-              targetPosition =
-                  switch (setpoint) {
-                    case HOME -> ElevatorConstants.homeTarget;
-                    case L2_POSITION -> ElevatorConstants.l2Target + trim + positionOffset;
-                    case L3_POSITION -> ElevatorConstants.l3Target + trim + positionOffset;
-                    case L4_POSITION -> ElevatorConstants.l4Target + trim + positionOffset;
-                    case ALGAELOW -> ElevatorConstants.algaeLow + trim;
-                    case ALGAEHIGH -> ElevatorConstants.algaeHigh + trim;
-                    default -> ElevatorConstants.homeTarget;
-                  };
-              if (!(position == ElevatorState.HOME && isAtHome(ElevatorConstants.homeTarget))) {
-                elevatorController.setReference(
-                    targetPosition, ControlType.kPosition, ClosedLoopSlot.kSlot0, arbFF);
-              }
-            },
-            this)
+        () -> {
+          if (position != ElevatorState.CURRENT) {
+            setpoint = position;
+          }
+          targetPosition = switch (setpoint) {
+            case HOME -> ElevatorConstants.homeTarget;
+            case L2_POSITION -> ElevatorConstants.l2Target + trim + positionOffset;
+            case L3_POSITION -> ElevatorConstants.l3Target + trim + positionOffset;
+            case L4_POSITION -> ElevatorConstants.l4Target + trim + positionOffset;
+            case ALGAELOW -> ElevatorConstants.algaeLow + trim;
+            case ALGAEHIGH -> ElevatorConstants.algaeHigh + trim;
+            default -> ElevatorConstants.homeTarget;
+          };
+          if (!(position == ElevatorState.HOME && isAtHome(ElevatorConstants.homeTarget))) {
+            ClosedLoopSlot closedLoopSlot = slot ? ClosedLoopSlot.kSlot1 : ClosedLoopSlot.kSlot0;
+            elevatorController.setReference(
+                targetPosition, ControlType.kPosition, closedLoopSlot, arbFF);
+          }
+        },
+        this)
         .withName("Set Elevator Position to " + position);
   }
 
@@ -263,25 +266,21 @@ public class Elevator extends SubsystemBase {
     double p = SmartDashboard.getNumber("Tuning/Elevator/Elevator P", ElevatorConstants.elevP);
     double i = SmartDashboard.getNumber("Tuning/Elevator/Elevator I", ElevatorConstants.elevI);
     double d = SmartDashboard.getNumber("Tuning/Elevator/Elevator D", ElevatorConstants.elevD);
-    double f =
-        SmartDashboard.getNumber("Tuning/Elevator/Elevator F", ElevatorConstants.feedForward);
+    double f = SmartDashboard.getNumber("Tuning/Elevator/Elevator F", ElevatorConstants.feedForward);
 
     double mV = SmartDashboard.getNumber("Tuning/Elevator/Max V", maxV);
     double mA = SmartDashboard.getNumber("Tuning/Elevator/Max A", maxA);
 
-    double down =
-        SmartDashboard.getNumber(
-            "Tuning/Elevator/Maximum Downward Output", ElevatorConstants.maximumNegatieOutput);
-    double up =
-        SmartDashboard.getNumber(
-            "Tuning/Elevator/Maximum Upward Output", ElevatorConstants.maximumPositiveOutput);
+    double down = SmartDashboard.getNumber(
+        "Tuning/Elevator/Maximum Downward Output", ElevatorConstants.maximumNegatieOutput);
+    double up = SmartDashboard.getNumber(
+        "Tuning/Elevator/Maximum Upward Output", ElevatorConstants.maximumPositiveOutput);
 
-    antiSlamVoltageOffset =
-        SmartDashboard.getNumber(
-            "Tuning/Elevator/Anti Slam Voltage", ElevatorConstants.antiSlamVoltageOffset);
+    antiSlamVoltageOffset = SmartDashboard.getNumber(
+        "Tuning/Elevator/Anti Slam Voltage", ElevatorConstants.antiSlamVoltageOffset);
 
     SparkMaxConfig config = new SparkMaxConfig();
-    config.closedLoop.outputRange(down, up);
+    config.closedLoop.outputRange(down, up, ClosedLoopSlot.kSlot0);
 
     config.closedLoop.pid(p, i, d);
     arbFF = f;
@@ -301,7 +300,7 @@ public class Elevator extends SubsystemBase {
 
   public Command jogElevator(double voltage) {
     return Commands.run(
-            () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
+        () -> elevatorController.setReference(voltage + arbFF, ControlType.kVoltage))
         .finallyDo(() -> elevatorMotor.stopMotor())
         .withName("Jog Elevator at " + voltage + " Volts");
   }
@@ -339,14 +338,14 @@ public class Elevator extends SubsystemBase {
 
   public Command offsetElevator() {
     return Commands.startEnd(
-            () -> {
-              positionOffset = ElevatorConstants.coralBetweenReefOffset;
-              setPosition(setpoint).schedule();
-            },
-            () -> {
-              positionOffset = 0;
-              setPosition(setpoint).schedule();
-            })
+        () -> {
+          positionOffset = ElevatorConstants.coralBetweenReefOffset;
+          setPosition(setpoint).schedule();
+        },
+        () -> {
+          positionOffset = 0;
+          setPosition(setpoint).schedule();
+        })
         .withName("Offset Elevator");
   }
 
@@ -362,16 +361,16 @@ public class Elevator extends SubsystemBase {
 
   public Command algaeCMD(DoubleSupplier algae) {
     return runOnce(
-            () -> {
-              if (algae.getAsDouble() <= -0.5) {
-                setPosition(ElevatorState.ALGAEHIGH).schedule();
-                ;
-              } else if (algae.getAsDouble() >= 0.5) {
-                setPosition(ElevatorState.ALGAELOW).schedule();
-                ;
-              }
-              System.out.print(algae.getAsDouble());
-            })
+        () -> {
+          if (algae.getAsDouble() <= -0.5) {
+            setPosition(ElevatorState.ALGAEHIGH).schedule();
+            ;
+          } else if (algae.getAsDouble() >= 0.5) {
+            setPosition(ElevatorState.ALGAELOW).schedule();
+            ;
+          }
+          System.out.print(algae.getAsDouble());
+        })
         .withName("Algae Position Command");
   }
 
