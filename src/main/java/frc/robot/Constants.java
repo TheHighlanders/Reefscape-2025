@@ -31,7 +31,7 @@ public class Constants {
 
   public static final boolean devMode = false;
 
-  public static final boolean alignDevMode = true;
+  public static final boolean alignDevMode = false;
 
   // Add alerts for tag loading status
   private static final Alert tagLoadFailureAlert =

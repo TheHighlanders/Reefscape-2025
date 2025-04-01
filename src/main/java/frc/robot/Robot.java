@@ -72,8 +72,6 @@ public class Robot extends TimedRobot {
 
     DriverStation.startDataLog(DataLogManager.getLog());
 
-    SmartDashboard.putData(CommandScheduler.getInstance());
-
     configureCommandSchedulerLogging();
   }
 
@@ -183,7 +181,6 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
-    SmartDashboard.putData(CommandScheduler.getInstance());
   }
 
   @Override

@@ -163,8 +163,6 @@ public class Align extends Command {
     rotController.setIntegratorRange(0, 5);
 
     addRequirements(swerve);
-
-    SmartDashboard.putNumber("Align/TranslateP", AlignConstants.translateP);
   }
 
   @Override
@@ -176,9 +174,6 @@ public class Align extends Command {
     }
 
     leds.runPattern(LEDPattern.solid(Color.kYellow));
-
-    AlignConstants.translateP =
-        SmartDashboard.getNumber("Align/Translate P", AlignConstants.translateP);
 
     closestReefTagPose = vision.findClosestReefTag(currentPose);
 
@@ -199,9 +194,9 @@ public class Align extends Command {
             swerve.kinematics.toChassisSpeeds(swerve.getModuleStates()),
             swerve.getPose().getRotation());
 
-    SmartDashboard.putNumber("Align/InitSpeedX", currentSpeeds.vxMetersPerSecond);
-    SmartDashboard.putNumber("Align/InitSpeedY", currentSpeeds.vyMetersPerSecond);
-    SmartDashboard.putNumber("Align/InitSpeedRot", currentSpeeds.omegaRadiansPerSecond);
+    // SmartDashboard.putNumber("Align/InitSpeedX", currentSpeeds.vxMetersPerSecond);
+    // SmartDashboard.putNumber("Align/InitSpeedY", currentSpeeds.vyMetersPerSecond);
+    // SmartDashboard.putNumber("Align/InitSpeedRot", currentSpeeds.omegaRadiansPerSecond);
 
     // Reset controllers with the current error and target of 0 (no error)
     xController.reset(currentPose.getX(), -currentSpeeds.vxMetersPerSecond);
@@ -281,7 +276,7 @@ public class Align extends Command {
   public void end(boolean interrupted) {
     swerve.stopDrive();
 
-    SmartDashboard.putBoolean("Align/Has Tag on Finish", vision.hasTarget());
+    // SmartDashboard.putBoolean("Align/Has Tag on Finish", vision.hasTarget());
 
     finalXError = targetPose.getX() - swerve.getPose().getX();
 

@@ -182,7 +182,6 @@ public class Swerve extends SubsystemBase {
 
   private final Vision vision;
   private Pose3d cameraPose;
-  private double lastEstTimestamp = 0.0;
 
   @Logged(name = "rotationTarget")
   Rotation2d rotationTarget = new Rotation2d();
@@ -329,7 +328,7 @@ public class Swerve extends SubsystemBase {
     }
 
     // Display alignment mode status
-    SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
+    // SmartDashboard.putBoolean("Align Mode", current == SwerveState.LINEUP);
 
     // "module" - progamming lead Miles
     for (Module module : modules) {
@@ -414,16 +413,6 @@ public class Swerve extends SubsystemBase {
           // Add measurement to pose estimator
           poseEst.addVisionMeasurement(
               bestEst.get().estimatedPose.toPose2d(), bestEst.get().timestampSeconds, stdDev);
-  
-          lastEstTimestamp = bestEst.get().timestampSeconds;
-  
-          // Log vision data
-          SmartDashboard.putNumber(
-              "Vision/" + vision.getName() + "/Processing Delay",
-              Timer.getFPGATimestamp() - lastEstTimestamp);
-  
-          SmartDashboard.putNumber(
-              "Vision/" + vision.getName() + "/Target Count", bestEst.get().targetsUsed.size());
   
           // Log whether this camera has a valid result
           SmartDashboard.putBoolean(
@@ -552,7 +541,7 @@ public class Swerve extends SubsystemBase {
                   getPose().getRotation().getRadians() - rotationTarget.getRadians();
 
               orbitControllerOutput = orbitController.calculate(radiansOff, 0);
-              SmartDashboard.putNumber("Orbit/Error", radiansOff);
+              // SmartDashboard.putNumber("Orbit/Error", radiansOff);
 
               drive(
                   squaredCurve(orbitX_PID_Out),
@@ -580,7 +569,6 @@ public class Swerve extends SubsystemBase {
                   getPose().getRotation().getRadians() - rotationTarget.getRadians();
 
               orbitControllerOutput = orbitController.calculate(radiansOff, 0);
-              SmartDashboard.putNumber("Orbit/Error", radiansOff);
 
               drive(
                   squaredCurve(orbitX_PID_Out),
@@ -1028,11 +1016,13 @@ public class Swerve extends SubsystemBase {
             -(sample.omega
                 + headingController.calculate(pose.getRotation().getRadians(), sample.heading)));
 
+    if(Constants.devMode){
     SmartDashboard.putNumber("Trajectory/XError", xController.getError());
     SmartDashboard.putNumber("Trajectory/YError", yController.getError());
     SmartDashboard.putNumber("Trajectory/HeadingError", headingController.getError());
+    }
 
-    sendDiagnostics();
+    // sendDiagnostics();
     // Apply the generated speeds
     driveChassisSpeedsRobotRelative(
         ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getPose().getRotation()));

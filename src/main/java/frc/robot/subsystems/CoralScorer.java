@@ -111,7 +111,7 @@ public class CoralScorer extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Coral/EncoderPosition", encoder.getPosition());
+    // SmartDashboard.putNumber("Coral/EncoderPosition", encoder.getPosition);
     SmartDashboard.putBoolean("Coral/Has Piece", hasGamePiece());
   }
 
