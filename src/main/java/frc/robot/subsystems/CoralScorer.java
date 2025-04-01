@@ -247,6 +247,6 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public void effectorSlowForward() {
-    effector.set(0.3);
+    effector.set(0.45);
   }
 }
