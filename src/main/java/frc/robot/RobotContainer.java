@@ -198,10 +198,7 @@ public class RobotContainer {
         .whileTrue(
             elevator
                 .trimCMD(operator::getRightY)
-                .withName("Trim Elevator")
-                .andThen(
-                    elevator.setPosition(ElevatorState.CURRENT).withName("Set Current Position"))
-                .withName("Trim and Set Elevator"));
+                .withName("Trim Elevator"));
 
   }
 

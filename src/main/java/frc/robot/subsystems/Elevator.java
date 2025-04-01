@@ -330,6 +330,7 @@ public class Elevator extends SubsystemBase {
 
   public void trim(double trimAmount) {
     trim = -trimAmount * 2;
+    setPosition(ElevatorState.CURRENT).schedule();
   }
 
   public Command trimCMD(DoubleSupplier trimSup) {
