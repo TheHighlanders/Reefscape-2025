@@ -193,7 +193,6 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledPeriodic() {
-    m_robotContainer.leds.runPattern(LEDPattern.solid(Color.kBlack)); // one hundred yellow
     if (loops % 50 == 0) {
       loops = 0;
     } else if (loops % 25 == 0) {
