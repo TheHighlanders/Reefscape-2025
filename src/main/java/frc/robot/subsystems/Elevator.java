@@ -178,11 +178,13 @@ public class Elevator extends SubsystemBase {
 
         DriverStation.reportWarning("IN AUTOLAND", false);
       }
+      
+      if (elevatorEncoder.getPosition() < 0) {
+        elevatorEncoder.setPosition(0);
+      }
     }
 
-    if (elevatorEncoder.getPosition() < 0) {
-      elevatorEncoder.setPosition(0);
-    }
+    
 
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
     SmartDashboard.putNumber("Tuning/Elevator/Trim", trim);
