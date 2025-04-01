@@ -143,6 +143,11 @@ public class Elevator extends SubsystemBase {
         .i(ElevatorConstants.elevI)
         .d(ElevatorConstants.elevD);
 
+    elevatorMotorConfig.closedLoop // pid loop to control elevator elevating rate
+        .p(ElevatorConstants.elevP, ClosedLoopSlot.kSlot1)
+        .i(ElevatorConstants.elevI, ClosedLoopSlot.kSlot1)
+        .d(ElevatorConstants.elevD, ClosedLoopSlot.kSlot1);
+
     elevatorMotor.configure(
         elevatorMotorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
