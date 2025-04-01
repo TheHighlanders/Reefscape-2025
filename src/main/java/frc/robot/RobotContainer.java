@@ -236,6 +236,7 @@ public class RobotContainer {
 
     return Commands.sequence(
         align,
+        autoScore().until(isTryingToDrive()),
         drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 
@@ -262,6 +263,7 @@ public class RobotContainer {
 
     return Commands.sequence(
         align,
+        autoScore().until(isTryingToDrive()),
         drive.driveCMD(driver::getLeftX, driver::getLeftY, driver::getRightX));
   }
 

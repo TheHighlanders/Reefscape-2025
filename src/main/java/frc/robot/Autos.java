@@ -166,7 +166,7 @@ public class Autos {
                 .withName("Align2")
                 // .alongWith(
                 //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
-                .andThen(score().withName("Score Second Piece"))
+                .andThen(Commands.deadline(score().withName("Score Second Piece"), elevator.slowDownElevator()))
                 .withName("Align and Score"));
 
     return routine;
@@ -243,7 +243,7 @@ public class Autos {
                 .withName("Elevator to L4")
                 .andThen(Commands.waitSeconds(0.5).withName("Short Wait"))
                 .andThen(coral.slowDepositCMD().withTimeout(3).withName("Deposit Coral"))
-                .andThen(elevator.elevatorAuto(ElevatorState.HOME).withName("Elevator Home"))
+                .andThen(Commands.deadline(elevator.elevatorAuto(ElevatorState.HOME).withName("Elevator Home")), elevator.slowDownElevator())
                 .withName("Score Sequence"));
 
     return routine;
