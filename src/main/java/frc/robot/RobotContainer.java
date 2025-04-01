@@ -180,7 +180,7 @@ public class RobotContainer {
     operator.povRight().onTrue(climber.holdClimbPosition().withName("Hold Climb Position"));
 
     operator
-        .rightBumper().whileTrue(elevator.slowDownElevator());
+        .rightBumper().whileTrue(elevator.slowDownElevator()).onFalse(elevator.setPosition(ElevatorState.CURRENT));
 
     operator
         .start()
