@@ -231,7 +231,7 @@ public class RobotContainer {
   }
 
   public Command alignToRightCoralManual() {
-    align = new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds)
+    align = new Align(drive, cameras, () -> true, createDirectionalRumbleCallback(), leds).until(isTryingToDrive())
         .withName("Align to Right Coral Final");
 
     return Commands.sequence(
@@ -257,7 +257,7 @@ public class RobotContainer {
   }
 
   public Command alignToLeftCoralManual() {
-    align = new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds)
+    align = new Align(drive, cameras, () -> false, createDirectionalRumbleCallback(), leds).until(isTryingToDrive())
         .withName("Align to Left Coral Final");
 
     return Commands.sequence(
