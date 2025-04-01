@@ -522,22 +522,29 @@ public class Swerve extends SubsystemBase {
 
   public Command driveOrbit(DoubleSupplier x, DoubleSupplier y) {
     return Commands.run(
-            () -> {
-              rotationTarget =
-                  new Rotation2d(
-                          Math.atan2(
-                              reefPose().getY() - getPose().getY(),
-                              reefPose().getX() - getPose().getX()))
-                      .plus(Rotation2d.fromDegrees(-15));
+      () -> {
+        rotationTarget =
+            new Rotation2d(
+                Math.atan2(
+                  reefPose().getY() - getPose().getY(),
+                  reefPose().getX() - getPose().getX()))
+                .plus(Rotation2d.fromDegrees(-15));
 
-              orbitPosePublisher.accept(
-                  new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
-              orbitX_PID_Out =
-                  (x.getAsDouble() * SwerveConstants.orbitCosScalar)
-                      - (y.getAsDouble() * SwerveConstants.orbitSinScalar);
-              orbitY_PID_Out =
-                  (y.getAsDouble() * SwerveConstants.orbitCosScalar)
-                      + (x.getAsDouble() * SwerveConstants.orbitSinScalar);
+          orbitPosePublisher.accept(
+            new Pose2d(getPose().getX(), getPose().getY(), rotationTarget));
+
+          if (current == SwerveState.LINEUP) {
+            orbitX_PID_Out =
+              (x.getAsDouble() * SwerveConstants.orbitCosScalar)
+                - (y.getAsDouble() * SwerveConstants.orbitSinScalar);
+            orbitY_PID_Out =
+              (y.getAsDouble() * SwerveConstants.orbitCosScalar)
+                + (x.getAsDouble() * SwerveConstants.orbitSinScalar); // rotates inputs by 15 degrees to accout for offset for cameras
+          }
+          else {
+            orbitX_PID_Out = x.getAsDouble();
+            orbitY_PID_Out = y.getAsDouble();
+          }
 
               double radiansOff =
                   getPose().getRotation().getRadians() - rotationTarget.getRadians();
