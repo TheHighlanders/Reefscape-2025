@@ -308,7 +308,7 @@ public class Align extends Command {
     //     && yController.atGoal()
     //     && rotController.atGoal()
     //     && vision.hasTarget();
-    return timer.hasElapsed(0.25);
+    return timer.hasElapsed(0.1);
   }
 
   public static boolean canAlign(Swerve swerve, Vision vision) {
