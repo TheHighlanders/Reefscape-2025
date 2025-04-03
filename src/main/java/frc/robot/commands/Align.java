@@ -45,7 +45,7 @@ public class Align extends Command {
     static final double ejectOffset = 0.27;
 
     // Position tolerance (meters)
-    static final double positionTolerance = 0.020;
+    static final double positionTolerance = 0.030;
 
     // Velocity tolerance (meters/s)
     static final double velocityTolerance = 0.1;
@@ -57,7 +57,7 @@ public class Align extends Command {
     static final double rotationVelocityTolerance = 0.05;
 
     // Maximum approach speed (m/s)
-    static final double maxApproachSpeed = 2;
+    static final double maxApproachSpeed = 3;
     static final double maxApproachAccel = 1.75;
 
     // Maximum rotation speed (rad/s)

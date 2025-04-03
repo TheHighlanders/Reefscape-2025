@@ -147,7 +147,8 @@ public class Autos {
         .onTrue(
             alignToRightCoral
                 .get()
-                .withName("Align1").withTimeout(alignWaitTime)
+                .withName("Align1")
+                .withTimeout(alignWaitTime)
                 .andThen(score().withName("Score First Piece"))
                 .andThen(leftFarToleftStation.cmd().withName("Drive to Station"))
                 .withName("Drive to Station"));
@@ -166,7 +167,8 @@ public class Autos {
         .onTrue(
             alignToLeftCoral
                 .get()
-                .withName("Align2").withTimeout(alignWaitTime)
+                .withName("Align2")
+                .withTimeout(alignWaitTime)
                 // .alongWith(
                 //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
                 .andThen(
@@ -196,7 +198,8 @@ public class Autos {
         .onTrue(
             alignToRightCoral
                 .get()
-                .withName("Align1").withTimeout(alignWaitTime)
+                .withName("Align1")
+                .withTimeout(alignWaitTime)
                 .andThen(score().withName("Score First Piece"))
                 .andThen(rightFar_rightStation.cmd().withName("Drive to Station"))
                 .withName("Drive to Station"));
@@ -215,7 +218,8 @@ public class Autos {
         .onTrue(
             alignToLeftCoral
                 .get()
-                .withName("Align2").withTimeout(alignWaitTime)
+                .withName("Align2")
+                .withTimeout(alignWaitTime)
                 // .alongWith(
                 //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
                 .andThen(

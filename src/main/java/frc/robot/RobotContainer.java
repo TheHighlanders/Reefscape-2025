@@ -143,7 +143,7 @@ public class RobotContainer {
 
     driver.start().whileTrue(elevator.zeroElevator().withName("Zero Elevator"));
     driver.povRight().onTrue(drive.resetGyro().withName("Reset Gyro"));
-    
+
     driver.povUp().and(driver.rightTrigger()).onTrue(removeAlgaeHigh());
     driver.povDown().and(driver.rightTrigger()).onTrue(removeAlgaeLow());
 
@@ -402,7 +402,10 @@ public class RobotContainer {
   public Command GoHomeAndDisableSlowMode() {
     return elevator
         .elevatorAuto(ElevatorState.HOME)
-        .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")
-        .alongWith(Commands.runOnce(() -> coralScorer.effectorStop())));
+        .alongWith(
+            drive
+                .disableSlowMode()
+                .withName("Disable Slow Mode")
+                .alongWith(Commands.runOnce(() -> coralScorer.effectorStop())));
   }
 }
