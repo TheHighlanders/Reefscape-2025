@@ -402,6 +402,7 @@ public class RobotContainer {
   public Command GoHomeAndDisableSlowMode() {
     return elevator
         .elevatorAuto(ElevatorState.HOME)
-        .alongWith(drive.disableSlowMode().withName("Disable Slow Mode"));
+        .alongWith(drive.disableSlowMode().withName("Disable Slow Mode")
+        .alongWith(Commands.runOnce(() -> coralScorer.effectorStop())));
   }
 }
