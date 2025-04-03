@@ -162,7 +162,7 @@ public class RobotContainer {
     driver.leftBumper().onTrue(Commands.runOnce(() -> this.lastAlignSide = false));
 
     driver.rightTrigger().whileTrue(selectScoreRoutine());
-    driver.rightTrigger().onFalse(removeAlgaeAndSlowMode());
+    driver.rightTrigger().onFalse(GoHomeAndDisableSlowMode());
 
     driver.leftBumper().onFalse(elevator.setPosition(ElevatorState.HOME));
 
@@ -392,8 +392,8 @@ public class RobotContainer {
         .or(driver.axisMagnitudeGreaterThan(4, 0.05));
   }
 
-  public Command removeAlgaeAndSlowMode() {
-    return removeAlgae(ElevatorState.HOME)
+  public Command GoHomeAndDisableSlowMode() {
+    return elevator.elevatorAuto(ElevatorState.HOME)
         .alongWith(drive.disableSlowMode().withName("Disable Slow Mode"));
   }
 }
