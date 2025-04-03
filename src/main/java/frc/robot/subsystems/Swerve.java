@@ -242,6 +242,13 @@ public class Swerve extends SubsystemBase {
 
     orbitController.setTolerance(Units.degreesToRadians(5));
 
+    SmartDashboard.putData(
+          "Swerve/Gyro",
+          builder -> {
+            builder.setSmartDashboardType("Gyro");
+            builder.addDoubleProperty("Value", () -> getPose().getRotation().getDegrees(), null);
+          });
+
     if (Constants.devMode) {
       // Only send lots of data via NT if in devMode
       SmartDashboard.putData(
