@@ -32,7 +32,7 @@ final class ClimberConstants {
   static final double climberPCF = 360.0 / 337.5;
 
   static final double climberSoftLimitForward = 40;
-  static final double climberSoftLimitBackward = -115;
+  static final double climberSoftLimitBackward = -100;
 
   static final double climberHoldVoltage = 1.5;
 
