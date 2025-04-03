@@ -222,7 +222,7 @@ public class Swerve extends SubsystemBase {
             new Translation2d(-x, -y));
 
     // Default Port is MXP
-    gyro = new AHRS(NavXComType.kI2C);
+    gyro = new AHRS(NavXComType.kUSB1);
 
     this.elevatorHeight = elevatorHeight;
 
