@@ -159,7 +159,10 @@ public class RobotContainer {
 
     driver.y().and(manual.negate()).onTrue(coralScorer.biteCMD().withName("Bite Coral"));
 
-    driver.leftTrigger().whileTrue(drive.toggleSlowMode().withName("Enable Slow Mode"));
+    driver
+        .leftTrigger()
+        .or(driver.rightTrigger())
+        .whileTrue(drive.toggleSlowMode().withName("Enable Slow Mode"));
 
     driver.rightBumper().whileTrue(alignToRightCoralManual().alongWith(drive.toggleSlowMode()));
     driver.rightBumper().onTrue(Commands.runOnce(() -> this.lastAlignSide = true));
