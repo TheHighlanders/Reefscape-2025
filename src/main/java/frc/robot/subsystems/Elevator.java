@@ -46,8 +46,8 @@ class ElevatorConstants {
   static final double l2Target = 11;
   static final double l3Target = 27.5;
   static final double l4Target = 52.125;
-  static final double algaeLow = 7;
-  static final double algaeHigh = 25;
+  static final double algaeLow = l2Target + 4;
+  static final double algaeHigh = l3Target + 4;
 
   static final double coralBetweenReefOffset = 2;
 
