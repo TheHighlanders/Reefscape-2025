@@ -13,7 +13,6 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-import choreo.auto.AutoChooser;
 import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
@@ -25,6 +24,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+
 import frc.robot.commands.Align;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.CoralScorer;
@@ -34,6 +34,8 @@ import frc.robot.subsystems.LEDs;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.Vision;
 import frc.robot.utils.CommandXboxControllerSubsystem;
+
+import choreo.auto.AutoChooser;
 
 public class RobotContainer {
 
@@ -147,7 +149,10 @@ public class RobotContainer {
     driver.x().onTrue(drive.pointWheelsInXPattern().withName("X Pattern Wheels"));
 
     driver.b().and(driver.rightTrigger().negate()).whileTrue(getOrbitCommand());
-    driver.b().and(driver.rightTrigger()).whileTrue(elevator.offsetElevator().withName("Offset Elevator"));
+    driver
+        .b()
+        .and(driver.rightTrigger())
+        .whileTrue(elevator.offsetElevator().withName("Offset Elevator"));
 
     driver.y().and(manual.negate()).onTrue(coralScorer.biteCMD().withName("Bite Coral"));
 
@@ -180,7 +185,9 @@ public class RobotContainer {
     operator.povRight().onTrue(climber.holdClimbPosition().withName("Hold Climb Position"));
 
     operator
-        .rightBumper().whileTrue(elevator.slowDownElevator()).onFalse(elevator.setPosition(ElevatorState.CURRENT));
+        .rightBumper()
+        .whileTrue(elevator.slowDownElevator())
+        .onFalse(elevator.setPosition(ElevatorState.CURRENT));
 
     operator
         .start()
@@ -195,11 +202,7 @@ public class RobotContainer {
 
     operator
         .rightStick()
-        .whileTrue(
-            elevator
-                .trimCMD(operator::getRightY)
-                .withName("Trim Elevator"));
-
+        .whileTrue(elevator.trimCMD(operator::getRightY).withName("Trim Elevator"));
   }
 
   private void configureAutonomous() {
@@ -382,7 +385,8 @@ public class RobotContainer {
     return Commands.sequence(
         elevator.runToNextHeight(),
         Commands.defer(
-            () -> coralScorer.depositCMDTeleop(elevator.nextSetpoint()), Set.of(elevator, coralScorer)));
+            () -> coralScorer.depositCMDTeleop(elevator.nextSetpoint()),
+            Set.of(elevator, coralScorer)));
   }
 
   public Trigger isTryingToDrive() {
@@ -393,7 +397,8 @@ public class RobotContainer {
   }
 
   public Command GoHomeAndDisableSlowMode() {
-    return elevator.elevatorAuto(ElevatorState.HOME)
+    return elevator
+        .elevatorAuto(ElevatorState.HOME)
         .alongWith(drive.disableSlowMode().withName("Disable Slow Mode"));
   }
 }

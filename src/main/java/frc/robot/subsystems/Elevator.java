@@ -146,7 +146,8 @@ public class Elevator extends SubsystemBase {
         .i(ElevatorConstants.elevI)
         .d(ElevatorConstants.elevD);
 
-    elevatorMotorConfig.closedLoop // pid loop to control elevator elevating rate
+    elevatorMotorConfig
+        .closedLoop // pid loop to control elevator elevating rate
         .p(ElevatorConstants.elevP, ClosedLoopSlot.kSlot1)
         .i(ElevatorConstants.elevI, ClosedLoopSlot.kSlot1)
         .d(ElevatorConstants.elevD, ClosedLoopSlot.kSlot1);
@@ -186,13 +187,11 @@ public class Elevator extends SubsystemBase {
 
         DriverStation.reportWarning("IN AUTOLAND", false);
       }
-      
+
       if (elevatorEncoder.getPosition() < 0) {
         elevatorEncoder.setPosition(0);
       }
     }
-
-    
 
     SmartDashboard.putNumber("Tuning/Elevator/Position", elevatorEncoder.getPosition());
     SmartDashboard.putNumber("Tuning/Elevator/Trim", trim);

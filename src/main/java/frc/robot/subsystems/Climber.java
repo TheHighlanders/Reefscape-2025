@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-import frc.robot.Constants;
 import frc.robot.subsystems.ClimberConstants.PowerPoint;
 
 final class ClimberConstants {
@@ -32,7 +31,8 @@ final class ClimberConstants {
   // Rotations on input shaft to output shaft including gearbox conversion
   static final double climberPCF = 360.0 / 337.5;
 
-  static final double climberSoftLimit = 120;
+  static final double climberSoftLimitForward = 40;
+  static final double climberSoftLimitBackward = -115;
 
   static final double climberHoldVoltage = 1.5;
 
@@ -72,12 +72,12 @@ public class Climber extends SubsystemBase {
     climberConfig.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder);
 
     climberConfig.smartCurrentLimit(ClimberConstants.climberCurrentLimit).idleMode(IdleMode.kBrake);
-    // climberConfig
-    // .softLimit
-    // .forwardSoftLimit(0)
-    // .forwardSoftLimitEnabled(true)
-    // .reverseSoftLimit(-ClimberConstants.climberSoftLimit)
-    // .reverseSoftLimitEnabled(true);
+    climberConfig
+        .softLimit
+        .forwardSoftLimit(ClimberConstants.climberSoftLimitForward)
+        .forwardSoftLimitEnabled(true)
+        .reverseSoftLimit(ClimberConstants.climberSoftLimitBackward)
+        .reverseSoftLimitEnabled(true);
     climberHoldVoltage = ClimberConstants.climberHoldVoltage;
 
     return climberConfig;
@@ -152,7 +152,9 @@ public class Climber extends SubsystemBase {
         .until(
             () ->
                 MathUtil.isNear(
-                    ClimberConstants.climberSoftLimit, climbMotor.getEncoder().getPosition(), 0.1))
+                    ClimberConstants.climberSoftLimitBackward,
+                    climbMotor.getEncoder().getPosition(),
+                    1))
         .finallyDo(holdPosition())
         .withName("Climb In Command");
   }

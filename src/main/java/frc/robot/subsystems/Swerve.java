@@ -52,7 +52,6 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -199,8 +198,9 @@ public class Swerve extends SubsystemBase {
       needZeroing.add(modules[i]);
     }
 
-    leftStationRotation =  Rotation2d.fromDegrees(54);
-    rightStationRotation = new Rotation2d(-leftStationRotation.getCos(), leftStationRotation.getSin());
+    leftStationRotation = Rotation2d.fromDegrees(54);
+    rightStationRotation =
+        new Rotation2d(-leftStationRotation.getCos(), leftStationRotation.getSin());
 
     if (DriverStation.getAlliance().isPresent()
         && DriverStation.getAlliance().get() == Alliance.Red) {
@@ -321,7 +321,7 @@ public class Swerve extends SubsystemBase {
     // Update visualization
     field.setRobotPose(getPose());
 
-    if(visionEnabled){
+    if (visionEnabled) {
       // Process vision data from all cameras
       updateVision();
     }
@@ -346,8 +346,8 @@ public class Swerve extends SubsystemBase {
     visionEnabled = true;
   }
 
-  public Command disableVision(){
-    return Commands.runOnce(()->visionEnabled = false);
+  public Command disableVision() {
+    return Commands.runOnce(() -> visionEnabled = false);
   }
 
   /** Process vision data from all cameras and update pose estimation */
@@ -397,32 +397,31 @@ public class Swerve extends SubsystemBase {
 
     Optional<EstimatedRobotPose> bestEst = vision.getEstimatedRobotPose();
     if (bestEst.isPresent()) {
-          // Store the camera pose for debugging
-          cameraPose = bestEst.get().estimatedPose;
-  
-          // Get standard deviations from the camera
-          Matrix<N3, N1> stdDev = vision.getEstimationStdDev();
-  
-          // Apply additional scaling based on game state
-          if (DriverStation.isAutonomous()) {
-            // Increase uncertainty during auto
-            stdDev = stdDev.times(2.0);
-          }
-  
-          // Add measurement to pose estimator
-          poseEst.addVisionMeasurement(
-              bestEst.get().estimatedPose.toPose2d(), bestEst.get().timestampSeconds, stdDev);
-  
-          // Log whether this camera has a valid result
-          SmartDashboard.putBoolean(
-              "Vision/" + vision.getName() + "/Has Target", bestEst.isPresent());
-  
-          // Log camera poses for debugging
-          if (Constants.devMode) {
-            SmartDashboard.putData("Vision/Camera Poses", new Field2d());
-            // Add code to visualize camera poses on field
-          }
-        }
+      // Store the camera pose for debugging
+      cameraPose = bestEst.get().estimatedPose;
+
+      // Get standard deviations from the camera
+      Matrix<N3, N1> stdDev = vision.getEstimationStdDev();
+
+      // Apply additional scaling based on game state
+      if (DriverStation.isAutonomous()) {
+        // Increase uncertainty during auto
+        stdDev = stdDev.times(2.0);
+      }
+
+      // Add measurement to pose estimator
+      poseEst.addVisionMeasurement(
+          bestEst.get().estimatedPose.toPose2d(), bestEst.get().timestampSeconds, stdDev);
+
+      // Log whether this camera has a valid result
+      SmartDashboard.putBoolean("Vision/" + vision.getName() + "/Has Target", bestEst.isPresent());
+
+      // Log camera poses for debugging
+      if (Constants.devMode) {
+        SmartDashboard.putData("Vision/Camera Poses", new Field2d());
+        // Add code to visualize camera poses on field
+      }
+    }
   }
 
   /**
@@ -1024,10 +1023,10 @@ public class Swerve extends SubsystemBase {
             -(sample.omega
                 + headingController.calculate(pose.getRotation().getRadians(), sample.heading)));
 
-    if(Constants.devMode){
-    SmartDashboard.putNumber("Trajectory/XError", xController.getError());
-    SmartDashboard.putNumber("Trajectory/YError", yController.getError());
-    SmartDashboard.putNumber("Trajectory/HeadingError", headingController.getError());
+    if (Constants.devMode) {
+      SmartDashboard.putNumber("Trajectory/XError", xController.getError());
+      SmartDashboard.putNumber("Trajectory/YError", yController.getError());
+      SmartDashboard.putNumber("Trajectory/HeadingError", headingController.getError());
     }
 
     // sendDiagnostics();

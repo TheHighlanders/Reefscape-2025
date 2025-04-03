@@ -91,11 +91,13 @@ public class CoralScorer extends SubsystemBase {
 
     effectorConfig.smartCurrentLimit(CoralScorerConstants.currentLimit);
 
-    effectorConfig.encoder
+    effectorConfig
+        .encoder
         .positionConversionFactor(CoralScorerConstants.effectorPCF)
         .velocityConversionFactor(CoralScorerConstants.effectorPCF / 60d);
 
-    effectorConfig.closedLoop // pid loop to control elevator elevating rate
+    effectorConfig
+        .closedLoop // pid loop to control elevator elevating rate
         .pidf(
             CoralScorerConstants.kP,
             CoralScorerConstants.kI,
@@ -194,15 +196,14 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public Command depositCMDTeleop(ElevatorState height) {
-    return Commands.defer(
-        () -> deferDeposit(height),
-        Set.of(this)).finallyDo(this::effectorStop);
+    return Commands.defer(() -> deferDeposit(height), Set.of(this)).finallyDo(this::effectorStop);
   }
 
   public Command depositCMD(ElevatorState height) {
     return Commands.defer(
-        () -> deferDeposit(height).until(hasCoral.negate()).andThen(Commands.waitSeconds(1)),
-        Set.of(this)).finallyDo(this::effectorStop);
+            () -> deferDeposit(height).until(hasCoral.negate()).andThen(Commands.waitSeconds(1)),
+            Set.of(this))
+        .finallyDo(this::effectorStop);
   }
 
   // Manual stuff

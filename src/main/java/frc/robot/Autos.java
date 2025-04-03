@@ -167,7 +167,8 @@ public class Autos {
                 .withName("Align2")
                 // .alongWith(
                 //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
-                .andThen(score().withName("Score Second Piece").deadlineFor(elevator.slowDownElevator()))
+                .andThen(
+                    score().withName("Score Second Piece").deadlineFor(elevator.slowDownElevator()))
                 .withName("Align and Score"));
 
     return routine;
@@ -215,7 +216,8 @@ public class Autos {
                 .withName("Align2")
                 // .alongWith(
                 //     elevator.elevatorAuto(ElevatorState.L2_POSITION).withName("Elevator to L2"))
-                .andThen(score().withName("Score Second Piece").deadlineFor(elevator.slowDownElevator()))
+                .andThen(
+                    score().withName("Score Second Piece").deadlineFor(elevator.slowDownElevator()))
                 .withName("Align and Score"));
 
     return routine;
@@ -241,14 +243,16 @@ public class Autos {
         .done()
         .onTrue(
             elevator
-            .elevatorAuto(ElevatorState.L4_POSITION)
-            .withName("Elevator to L4")
-            .andThen(Commands.waitSeconds(0.5).withName("Short Wait"))
-            .andThen(coral.slowDepositCMD().withTimeout(3).withName("Deposit Coral"))
-            .andThen(elevator.offsetElevator().withTimeout(0.2))
-            .andThen(Commands.deadline(elevator.elevatorAuto(ElevatorState.HOME).withName("Elevator Home")))
-            .withName("Score Sequence").deadlineFor(elevator.slowDownElevator()));
-           
+                .elevatorAuto(ElevatorState.L4_POSITION)
+                .withName("Elevator to L4")
+                .andThen(Commands.waitSeconds(0.5).withName("Short Wait"))
+                .andThen(coral.slowDepositCMD().withTimeout(3).withName("Deposit Coral"))
+                .andThen(elevator.offsetElevator().withTimeout(0.2))
+                .andThen(
+                    Commands.deadline(
+                        elevator.elevatorAuto(ElevatorState.HOME).withName("Elevator Home")))
+                .withName("Score Sequence")
+                .deadlineFor(elevator.slowDownElevator()));
 
     return routine;
   }
