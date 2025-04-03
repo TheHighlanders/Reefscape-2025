@@ -59,7 +59,7 @@ final class VisionConstants {
               Units.degreesToRadians(30)));
 
   static final int[] reefTagIds = {
-    6, 7, 8, 9, 10, 11, // RED
+    6, 7, 8, 9, 10, 11, // REDx
     17, 18, 19, 20, 21, 22 // BLUE
   };
 
