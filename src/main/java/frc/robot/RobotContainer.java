@@ -143,6 +143,9 @@ public class RobotContainer {
 
     driver.start().whileTrue(elevator.zeroElevator().withName("Zero Elevator"));
     driver.povRight().onTrue(drive.resetGyro().withName("Reset Gyro"));
+    
+    driver.povUp().and(driver.rightTrigger()).onTrue(removeAlgaeHigh());
+    driver.povDown().and(driver.rightTrigger()).onTrue(removeAlgaeLow());
 
     driver.a().whileTrue(coralScorer.reverseCommand().withName("Reverse Coral"));
 
@@ -359,7 +362,7 @@ public class RobotContainer {
   }
 
   public Command removeAlgae(ElevatorState height) {
-    return Commands.deadline(elevator.elevatorAuto(height), coralScorer.reverseCommand());
+    return Commands.parallel(elevator.elevatorAuto(height), coralScorer.reverseCommand());
   }
 
   public Command removeAlgaeLow() {
