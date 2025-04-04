@@ -274,7 +274,7 @@ public class Align extends Command {
 
   @Override
   public void end(boolean interrupted) {
-    swerve.stopDrive();
+    // swerve.stopDrive();
 
     // SmartDashboard.putBoolean("Align/Has Tag on Finish", vision.hasTarget());
 
