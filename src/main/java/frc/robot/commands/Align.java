@@ -199,10 +199,13 @@ public class Align extends Command {
     // SmartDashboard.putNumber("Align/InitSpeedRot", currentSpeeds.omegaRadiansPerSecond);
 
     // Reset controllers with the current error and target of 0 (no error)
-    xController.reset(currentPose.getX(), -currentSpeeds.vxMetersPerSecond);//-currentSpeeds.vxMetersPerSecond);
-    yController.reset(currentPose.getY(), -currentSpeeds.vyMetersPerSecond);//-currentSpeeds.vyMetersPerSecond);
+    xController.reset(
+        currentPose.getX(), -currentSpeeds.vxMetersPerSecond); // -currentSpeeds.vxMetersPerSecond);
+    yController.reset(
+        currentPose.getY(), -currentSpeeds.vyMetersPerSecond); // -currentSpeeds.vyMetersPerSecond);
     rotController.reset(
-        currentPose.getRotation().getRadians(), -currentSpeeds.omegaRadiansPerSecond);//-currentSpeeds.omegaRadiansPerSecond);
+        currentPose.getRotation().getRadians(),
+        -currentSpeeds.omegaRadiansPerSecond); // -currentSpeeds.omegaRadiansPerSecond);
   }
 
   private void calculateTargetPose() {
