@@ -143,7 +143,7 @@ public class Autos {
                 .withName("Initial Drive Sequence")); // Starts driving
 
     canAlign
-        .and(leftStartToleftFar.active())
+        .and(leftStartToleftFar.done())
         .onTrue(
             alignToRightCoral
                 .get()
@@ -163,7 +163,7 @@ public class Autos {
                 .withName("Wait and Drive"));
 
     canAlign
-        .and(leftStationToleftClose.active())
+        .and(leftStationToleftClose.done())
         .onTrue(
             alignToLeftCoral
                 .get()
@@ -194,7 +194,7 @@ public class Autos {
                 .withName("Initial Drive Sequence")); // Starts driving
 
     canAlign
-        .and(rightStart_rightFar.active())
+        .and(rightStart_rightFar.done())
         .onTrue(
             alignToRightCoral
                 .get()
@@ -214,7 +214,7 @@ public class Autos {
                 .withName("Wait and Drive"));
 
     canAlign
-        .and(rightStation_rightClose.active())
+        .and(rightStation_rightClose.done())
         .onTrue(
             alignToLeftCoral
                 .get()
