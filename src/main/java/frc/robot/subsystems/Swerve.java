@@ -232,7 +232,7 @@ public class Swerve extends SubsystemBase {
             startPose.getRotation(),
             getModulePostions(),
             startPose,
-            VecBuilder.fill(0.5, 0.5, 0.5), // State standard deviations
+            VecBuilder.fill(1.25, 1.25, 0.5), // State standard deviations
             VecBuilder.fill(0.9, 0.9, 0.4)); // Default vision standard deviations
 
     SmartDashboard.putData("Swerve/Field", field);
