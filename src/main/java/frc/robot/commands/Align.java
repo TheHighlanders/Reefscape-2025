@@ -42,7 +42,7 @@ public class Align extends Command {
     static final double coralLeftOffset = -0.165; // Left coral Y offset (negative = left)
     static final double coralRightOffset = 0.165; // Right coral Y offset (positive = right)
 
-    static final double ejectOffset = 0.27;
+    static final double ejectOffset = 0.28;
 
     // Position tolerance (meters)
     static final double positionTolerance = 0.020;
