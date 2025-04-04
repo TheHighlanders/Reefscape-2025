@@ -199,14 +199,14 @@ public class Autos {
     canAlign
         .and(rightStart_rightFar.done())
         .onTrue(
-            alignToRightCoral
+            alignToLeftCoral
                 .get()
                 .withName("Align1")
                 .withTimeout(alignWaitTime)
                 .andThen(score().withName("Score First Piece"))
                 .andThen(rightFar_rightStation.cmd().withName("Drive to Station"))
                 .withName("Drive to Station"));
-                
+
     rightFar_rightStation
         .done()
         .onTrue(
