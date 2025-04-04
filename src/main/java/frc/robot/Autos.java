@@ -6,7 +6,9 @@ package frc.robot;
 
 import java.util.function.Supplier;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -27,6 +29,7 @@ public class Autos {
   Elevator elevator;
   CoralScorer coral;
   Trigger canAlign;
+  Trigger isAuto;
   Supplier<Command> alignToLeftCoral;
   Supplier<Command> alignToRightCoral;
 
@@ -52,7 +55,7 @@ public class Autos {
     this.drive = drive;
     this.elevator = elevator;
     this.coral = coral;
-    this.canAlign = canAlign;
+    this.canAlign = canAlign.and(() -> DriverStation.isAutonomous());
     this.alignToLeftCoral = alignToLeftCoral;
     this.alignToRightCoral = alignToRightCoral;
   }
