@@ -150,7 +150,7 @@ public class CoralScorer extends SubsystemBase {
   }
 
   public void setBiteDutyCycle() {
-    setDutyCycle(0.5);
+    setDutyCycle(0.7);
   }
 
   public void effectorSpeedByHeight(ElevatorState height) {
